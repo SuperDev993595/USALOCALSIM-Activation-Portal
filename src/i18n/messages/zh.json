@@ -1,0 +1,52 @@
+{
+  "home": {
+    "title": "激活您的 USALOCALSIM 服务",
+    "subtitle": "我们的技术团队人工处理每笔请求，确保质量。",
+    "startActivation": "开始激活",
+    "adminLogin": "管理员/经销商登录"
+  },
+  "activate": {
+    "title": "激活您的 USALOCALSIM 服务",
+    "subtitle": "我们的技术团队人工处理每笔请求。请按以下步骤操作。",
+    "option1Title": "选项1：我有 USALOCALSIM 卡和充值券",
+    "option1Desc": "请输入 ICCID 和充值券代码。我们将在数分钟内人工处理您的激活，无需额外费用。",
+    "option2Title": "选项2：我只有 USALOCALSIM 卡",
+    "option2Desc": "请输入 ICCID 选择数据套餐，使用信用卡或加密货币付款。SIM 硬件费将已抵扣。",
+    "option3Title": "选项3：我有 eSIM 券",
+    "option3Desc": "请输入券码，处理完成后我们将通过邮件发送数字 QR 码。",
+    "optionHint": "选项1：ICCID + 充值券（组合）。选项2：仅 ICCID（选择套餐并付款）。选项3：仅 eSIM 券。",
+    "iccidLabel": "ICCID（SIM 号）",
+    "iccidPlaceholder": "18–22 位数字",
+    "voucherLabel": "充值券代码（选填）",
+    "voucherPlaceholder": "如有券码",
+    "continue": "继续",
+    "checking": "验证中…",
+    "emailLabel": "邮箱",
+    "comboEmailHint": "请输入邮箱。我们将在数分钟内人工处理您的激活，无需额外费用。",
+    "esimEmailHint": "请输入邮箱，处理完成后我们将发送数字 QR 码。",
+    "back": "返回",
+    "submit": "提交",
+    "submitting": "提交中…",
+    "backToHome": "← 返回激活"
+  },
+  "success": {
+    "title": "请求已收到！",
+    "message": "我们的技术团队正在人工激活您的 USALOCALSIM 服务。线路开通后，您将在几分钟内收到确认邮件。",
+    "backToActivation": "返回激活"
+  },
+  "plan": {
+    "title": "选择数据套餐",
+    "subtitle": "输入 ICCID 选择套餐，使用信用卡或加密货币付款。SIM 硬件费将已抵扣。",
+    "backToActivation": "← 返回激活",
+    "loading": "加载套餐中…",
+    "noPlans": "暂无可用套餐。",
+    "continueToPayment": "前往付款",
+    "redirecting": "正在跳转付款…"
+  },
+  "checkout": {
+    "title": "结账",
+    "subtitle": "使用信用卡或加密货币付款",
+    "emailLabel": "邮箱",
+    "backToPlans": "← 返回套餐"
+  }
+}

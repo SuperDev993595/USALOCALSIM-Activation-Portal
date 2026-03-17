@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth models (compatible with Prisma adapter)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // hashed; for Credentials provider
+  role          String    @default("dealer") // "admin" | "dealer"
+  dealerId      String?   // optional external dealer id for tracking
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  vouchersActivated Voucher[] @relation("ActivatedBy")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+// App models
+model Plan {
+  id            String   @id @default(cuid())
+  name          String
+  dataAllowance String   // e.g. "Unlimited", "5GB"
+  durationDays  Int
+  priceCents    Int
+  planType      String   // "physical_sim" | "esim"
+  market        String   // "global" | "us"
+  createdAt     DateTime @default(now())
+  vouchers      Voucher[]
+  activationRequests ActivationRequest[]
+}
+
+model Voucher {
+  id                 String   @id @default(cuid())
+  code               String   @unique
+  status             String   // "inactive" | "activated" | "redeemed"
+  type               String   // "top_up" | "esim"
+  planId             String
+  plan               Plan     @relation(fields: [planId], references: [id])
+  activatedAt        DateTime?
+  activatedById      String?
+  activatedBy        User?    @relation("ActivatedBy", fields: [activatedById], references: [id])
+  redeemedAt         DateTime?
+  redeemedBy         String?  // email or ICCID
+  createdAt          DateTime @default(now())
+  activationRequest  ActivationRequest?
+}
+
+model ActivationRequest {
+  id               String   @id @default(cuid())
+  iccid            String?
+  voucherCode      String?
+  email            String
+  scenario         String   // "sim_only" | "combo" | "esim_voucher"
+  planId           String
+  plan             Plan     @relation(fields: [planId], references: [id])
+  amountPaidCents  Int      @default(0)
+  stripePaymentId  String?
+  status           String   // "pending" | "completed"
+  completedAt      DateTime?
+  completedById    String?
+  createdAt        DateTime @default(now())
+  voucherId        String?  @unique
+  voucher          Voucher? @relation(fields: [voucherId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  metadata  String?  @db.Text // JSON: ip, userAgent, resourceId
+  createdAt DateTime @default(now())
+}
+
+model RateLimitBlock {
+  id           String   @id @default(cuid())
+  key          String   // e.g. ip:123.45.67.89
+  blockedUntil DateTime
+  createdAt    DateTime @default(now())
+  @@index([key, blockedUntil])
+}

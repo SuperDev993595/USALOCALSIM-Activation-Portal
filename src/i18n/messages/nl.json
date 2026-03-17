@@ -1,0 +1,52 @@
+{
+  "home": {
+    "title": "Activeer uw USALOCALSIM-service",
+    "subtitle": "Ons technisch team verwerkt elke aanvraag handmatig voor gegarandeerde kwaliteit.",
+    "startActivation": "Activering starten",
+    "adminLogin": "Admin / Dealer login"
+  },
+  "activate": {
+    "title": "Activeer uw USALOCALSIM-service",
+    "subtitle": "Ons technisch team verwerkt elke aanvraag handmatig. Volg de stappen hieronder.",
+    "option1Title": "Optie 1: Ik heb een USALOCALSIM-kaart en een voucher",
+    "option1Desc": "Voer uw ICCID en vouchercode in. Uw activering wordt binnen enkele minuten handmatig verwerkt zonder extra kosten.",
+    "option2Title": "Optie 2: Ik heb alleen een USALOCALSIM-kaart",
+    "option2Desc": "Voer uw ICCID in om uw databundel te kiezen en te betalen met creditcard of crypto. De initiële SIM-kosten worden in mindering gebracht.",
+    "option3Title": "Optie 3: Ik heb een eSIM-voucher",
+    "option3Desc": "Voer uw vouchercode in om uw digitale QR-code per e-mail te ontvangen na verwerking door ons team.",
+    "optionHint": "Optie 1: ICCID + voucher (Combo). Optie 2: Alleen ICCID (kies plan en betaal). Optie 3: Alleen eSIM-voucher.",
+    "iccidLabel": "ICCID (SIM-nummer)",
+    "iccidPlaceholder": "18–22 cijfers",
+    "voucherLabel": "Vouchercode (optioneel)",
+    "voucherPlaceholder": "Als u een voucher heeft",
+    "continue": "Doorgaan",
+    "checking": "Controleren…",
+    "emailLabel": "E-mail",
+    "comboEmailHint": "Voer uw e-mail in. Uw activering wordt binnen enkele minuten handmatig verwerkt zonder extra kosten.",
+    "esimEmailHint": "Voer uw e-mail in om uw digitale QR-code te ontvangen na verwerking door ons team.",
+    "back": "Terug",
+    "submit": "Verzenden",
+    "submitting": "Verzenden…",
+    "backToHome": "← Terug naar activering"
+  },
+  "success": {
+    "title": "Aanvraag ontvangen!",
+    "message": "Ons technisch team activeert nu handmatig uw USALOCALSIM-service. U ontvangt binnen enkele minuten een bevestigingsbericht/e-mail zodra uw lijn actief is.",
+    "backToActivation": "Terug naar activering"
+  },
+  "plan": {
+    "title": "Kies uw databundel",
+    "subtitle": "Voer uw ICCID in om uw databundel te kiezen en te betalen met creditcard of crypto. De initiële SIM-kosten worden in mindering gebracht.",
+    "backToActivation": "← Terug naar activering",
+    "loading": "Bundels laden…",
+    "noPlans": "Geen bundels beschikbaar.",
+    "continueToPayment": "Doorgaan naar betaling",
+    "redirecting": "Doorverwijzen naar betaling…"
+  },
+  "checkout": {
+    "title": "Afrekenen",
+    "subtitle": "Betaal met creditcard of crypto",
+    "emailLabel": "E-mail",
+    "backToPlans": "← Terug naar bundels"
+  }
+}

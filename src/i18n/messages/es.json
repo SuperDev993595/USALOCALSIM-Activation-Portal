@@ -1,0 +1,52 @@
+{
+  "home": {
+    "title": "Activa tu servicio USALOCALSIM",
+    "subtitle": "Nuestro equipo técnico procesa manualmente cada solicitud para garantizar la calidad.",
+    "startActivation": "Iniciar activación",
+    "adminLogin": "Acceso Admin / Distribuidor"
+  },
+  "activate": {
+    "title": "Activa tu servicio USALOCALSIM",
+    "subtitle": "Nuestro equipo técnico procesa manualmente cada solicitud. Sigue los pasos a continuación.",
+    "option1Title": "Opción 1: Tengo una tarjeta USALOCALSIM y un cupón",
+    "option1Desc": "Introduce tu ICCID y el código del cupón. Tu activación se procesará manualmente en minutos sin coste adicional.",
+    "option2Title": "Opción 2: Solo tengo una tarjeta USALOCALSIM",
+    "option2Desc": "Introduce tu ICCID para elegir tu plan de datos y pagar con tarjeta o cripto. El coste inicial de la SIM se descontará.",
+    "option3Title": "Opción 3: Tengo un cupón eSIM",
+    "option3Desc": "Introduce tu código de cupón para recibir tu código QR por correo una vez procesado por nuestro equipo.",
+    "optionHint": "Opción 1: ICCID + cupón (Combo). Opción 2: Solo ICCID (elegir plan y pagar). Opción 3: Solo cupón eSIM.",
+    "iccidLabel": "ICCID (número SIM)",
+    "iccidPlaceholder": "18–22 dígitos",
+    "voucherLabel": "Código de cupón (opcional)",
+    "voucherPlaceholder": "Si tienes un cupón",
+    "continue": "Continuar",
+    "checking": "Comprobando…",
+    "emailLabel": "Correo electrónico",
+    "comboEmailHint": "Introduce tu correo. Tu activación se procesará manualmente en minutos sin coste adicional.",
+    "esimEmailHint": "Introduce tu correo para recibir tu código QR una vez procesado por nuestro equipo.",
+    "back": "Atrás",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "backToHome": "← Volver a activación"
+  },
+  "success": {
+    "title": "¡Solicitud recibida!",
+    "message": "Nuestro equipo técnico está activando manualmente tu servicio USALOCALSIM. Recibirás un mensaje/correo de confirmación en unos minutos cuando tu línea esté activa.",
+    "backToActivation": "Volver a activación"
+  },
+  "plan": {
+    "title": "Elige tu plan de datos",
+    "subtitle": "Introduce tu ICCID para elegir plan y pagar con tarjeta o cripto. El coste inicial de la SIM se descontará.",
+    "backToActivation": "← Volver a activación",
+    "loading": "Cargando planes…",
+    "noPlans": "No hay planes disponibles.",
+    "continueToPayment": "Continuar al pago",
+    "redirecting": "Redirigiendo al pago…"
+  },
+  "checkout": {
+    "title": "Pago",
+    "subtitle": "Pagar con tarjeta o cripto",
+    "emailLabel": "Correo electrónico",
+    "backToPlans": "← Volver a planes"
+  }
+}
