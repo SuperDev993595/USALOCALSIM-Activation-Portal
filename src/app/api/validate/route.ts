@@ -48,7 +48,21 @@ export async function GET(req: Request) {
     );
   }
 
-  let voucher: { id: string; status: string; type: string; planId: string; plan: { name: string; dataAllowance: string; durationDays: number; priceCents: number; planType: string; market: string } } | null = null;
+  let voucher: {
+    id: string;
+    status: string;
+    type: string;
+    planId: string;
+    plan: {
+      id: string;
+      name: string;
+      dataAllowance: string;
+      durationDays: number;
+      priceCents: number;
+      planType: string;
+      market: string;
+    };
+  } | null = null;
   if (hasVoucher) {
     voucher = await prisma.voucher.findUnique({
       where: { code: voucherCode },

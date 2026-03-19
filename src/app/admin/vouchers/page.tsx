@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 
 type Plan = { id: string; name: string; planType: string; market: string };

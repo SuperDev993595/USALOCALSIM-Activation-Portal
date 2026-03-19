@@ -10,7 +10,7 @@ type Item = {
   email: string;
   scenario: string;
   amountPaidCents: number;
-  createdAt: string;
+  createdAt: string | Date;
   plan: Plan;
 };
 

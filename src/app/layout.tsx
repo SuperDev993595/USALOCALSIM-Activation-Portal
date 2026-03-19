@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import type { AbstractIntlMessages } from "next-intl";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
@@ -12,14 +13,14 @@ import zh from "@/i18n/messages/zh.json";
 import es from "@/i18n/messages/es.json";
 import hi from "@/i18n/messages/hi.json";
 
-const messagesMap: Record<Locale, Record<string, unknown>> = {
-  en: en as Record<string, unknown>,
-  fr: fr as Record<string, unknown>,
-  ja: ja as Record<string, unknown>,
-  nl: nl as Record<string, unknown>,
-  zh: zh as Record<string, unknown>,
-  es: es as Record<string, unknown>,
-  hi: hi as Record<string, unknown>,
+const messagesMap: Record<Locale, AbstractIntlMessages> = {
+  en: en as AbstractIntlMessages,
+  fr: fr as AbstractIntlMessages,
+  ja: ja as AbstractIntlMessages,
+  nl: nl as AbstractIntlMessages,
+  zh: zh as AbstractIntlMessages,
+  es: es as AbstractIntlMessages,
+  hi: hi as AbstractIntlMessages,
 };
 
 export const metadata: Metadata = {
