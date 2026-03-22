@@ -27,9 +27,6 @@ yarn-error.log*
 .env
 .env*.local
 
-# prisma
-/prisma/migrations/**/migration_lock.toml
-
 # ide
 .idea
 .vscode

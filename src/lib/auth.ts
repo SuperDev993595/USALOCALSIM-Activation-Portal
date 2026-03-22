@@ -6,7 +6,8 @@ import { prisma } from "./db";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "database", maxAge: 30 * 24 * 60 * 60 },
+  // Credentials provider requires JWT sessions (database sessions are not supported).
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   pages: {
     signIn: "/login",
   },
@@ -36,14 +37,23 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as { role?: string }).role ?? "dealer";
+      }
+      if (token.sub) {
         const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
+          where: { id: token.sub },
           select: { role: true },
         });
-        (session.user as { id?: string; role?: string }).id = user.id;
-        (session.user as { role?: string }).role = dbUser?.role ?? "dealer";
+        if (dbUser) token.role = dbUser.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+        session.user.role = (token.role as string) ?? "dealer";
       }
       return session;
     },
