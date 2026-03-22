@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    payment_method_types: ["card", "us_bank_account"], // Stripe Checkout: card + bank. Crypto is via separate Stripe Crypto Onramp product if needed.
+    payment_method_types: ["card"],
     customer_email: body.email,
     line_items: [
       {

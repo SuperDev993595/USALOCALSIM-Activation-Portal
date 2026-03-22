@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { getRequestClientMeta } from "@/lib/request-meta";
 
 const bodySchema = z.union([
   z.object({ code: z.string().min(1) }),
@@ -48,8 +49,7 @@ export async function POST(req: Request) {
         activatedById: session.user.id,
       },
     });
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? null;
-    const userAgent = req.headers.get("user-agent") ?? null;
+    const { ip, userAgent } = getRequestClientMeta(req);
     await prisma.auditLog.create({
       data: {
         action: "voucher_unlock",

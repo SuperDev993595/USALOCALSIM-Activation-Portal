@@ -18,7 +18,7 @@ Customer enters a USALOCALSIM ICCID.
 
 System validates the SIM -> Shows Plan Menu -> Applies "Hardware Discount" (deducting the SIM cost already paid).
 
-Customer pays the remaining balance via Stripe (Credit Card or Crypto).
+Customer pays the remaining balance via Stripe (Credit Card ).
 
 The Combo (SIM + Top-up Voucher):
 
@@ -40,7 +40,7 @@ Exclusive Hardware: The system is strictly for USALOCALSIM hardware. The supplie
 Two-Field Input: The activation page needs two distinct fields: [ICCID] (required for physical) and [Voucher Code] (optional/conditional).
 
 4. Payment & Globalization
-Stripe Integration: Native support for Credit Cards and Cryptocurrency payments.
+Stripe Integration: Native support for Credit Cards payments.
 
 Intelligent Localization (Geo-IP): The site must automatically detect the user's location and load the dominant language.
 
@@ -73,11 +73,11 @@ Enter your ICCID and Voucher code. Your activation will be processed manually in
 
 Option 2: I only have a USALOCALSIM Card
 
-Enter your ICCID to choose your data plan and pay via Credit Card or Crypto. Your initial SIM cost will be discounted.
+Enter your ICCID to choose your data plan and pay via Credit Card . Your initial SIM cost will be discounted.
 
 Option 3: I have an eSIM Voucher
 
 Enter your voucher code to receive your digital QR code via email once processed by our team.
 
 Final Developer Handover Summary:
-"Build a portal exclusively for USALOCALSIM hardware. Implement a Manual Activation Queue. The system must handle SIM Cards (ICCIDs) and Vouchers as separate entities. All paths (Voucher or Stripe/Crypto payment) lead to a 'Processing' status. Localization must support English plus 6 other languages via Geo-IP. The final activation confirmation is sent only after manual admin approval."
+"Build a portal exclusively for USALOCALSIM hardware. Implement a Manual Activation Queue. The system must handle SIM Cards (ICCIDs) and Vouchers as separate entities. All paths (Voucher or Stripe payment) lead to a 'Processing' status. Localization must support English plus 6 other languages via Geo-IP. The final activation confirmation is sent only after manual admin approval."

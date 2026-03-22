@@ -1,17 +1,21 @@
 {
   "home": {
     "title": "激活您的 USALOCALSIM 服务",
-    "subtitle": "我们的技术团队人工处理每笔请求，确保质量。",
+    "subtitle": "我们的技术团队人工处理每笔请求，确保质量。请按以下步骤操作：",
     "startActivation": "开始激活",
-    "adminLogin": "管理员/经销商登录"
+    "adminLogin": "管理员/经销商登录",
+    "usResidentsIntro": "美国用户：",
+    "usResidentsLink": "eSIM 激活",
+    "usResidentsDetail": "— 30/60/90 天无限流量。",
+    "physicalSimElsewhere": "实体 SIM 或国际用户？"
   },
   "activate": {
     "title": "激活您的 USALOCALSIM 服务",
-    "subtitle": "我们的技术团队人工处理每笔请求。请按以下步骤操作。",
+    "subtitle": "我们的技术团队人工处理每笔请求，确保质量。请按以下步骤操作：",
     "option1Title": "选项1：我有 USALOCALSIM 卡和充值券",
     "option1Desc": "请输入 ICCID 和充值券代码。我们将在数分钟内人工处理您的激活，无需额外费用。",
     "option2Title": "选项2：我只有 USALOCALSIM 卡",
-    "option2Desc": "请输入 ICCID 选择数据套餐，使用信用卡或加密货币付款。SIM 硬件费将已抵扣。",
+    "option2Desc": "请输入 ICCID 选择数据套餐，使用信用卡付款。SIM 硬件费将已抵扣。",
     "option3Title": "选项3：我有 eSIM 券",
     "option3Desc": "请输入券码，处理完成后我们将通过邮件发送数字 QR 码。",
     "optionHint": "选项1：ICCID + 充值券（组合）。选项2：仅 ICCID（选择套餐并付款）。选项3：仅 eSIM 券。",
@@ -29,6 +33,24 @@
     "submitting": "提交中…",
     "backToHome": "← 返回激活"
   },
+  "activateUs": {
+    "title": "美国 eSIM 激活",
+    "subtitle": "美国用户：请仅输入 eSIM 券码。30/60/90 天无限流量套餐。每笔请求均由人工处理。",
+    "voucherLabel": "eSIM 券码",
+    "voucherPlaceholder": "券上所示代码",
+    "continue": "继续",
+    "checking": "验证中…",
+    "emailLabel": "邮箱",
+    "esimEmailHint": "请输入邮箱，团队处理完成后您将收到 eSIM 二维码邮件。",
+    "back": "返回",
+    "submit": "提交",
+    "submitting": "提交中…",
+    "backToHome": "← 首页",
+    "globalActivationLink": "国际或实体 SIM 激活 →",
+    "enterVoucher": "请输入券码。",
+    "invalidResponse": "响应无效，请重试。",
+    "genericError": "出错了，请重试。"
+  },
   "success": {
     "title": "请求已收到！",
     "message": "我们的技术团队正在人工激活您的 USALOCALSIM 服务。线路开通后，您将在几分钟内收到确认邮件。",
@@ -36,17 +58,27 @@
   },
   "plan": {
     "title": "选择数据套餐",
-    "subtitle": "输入 ICCID 选择套餐，使用信用卡或加密货币付款。SIM 硬件费将已抵扣。",
+    "subtitle": "输入 ICCID 选择套餐，使用信用卡付款。SIM 硬件费将已抵扣。",
     "backToActivation": "← 返回激活",
     "loading": "加载套餐中…",
     "noPlans": "暂无可用套餐。",
+    "missingIccid": "缺少 ICCID",
+    "loadFailed": "加载套餐失败",
+    "iccidLine": "ICCID：{iccid}",
     "continueToPayment": "前往付款",
     "redirecting": "正在跳转付款…"
   },
   "checkout": {
     "title": "结账",
-    "subtitle": "使用信用卡或加密货币付款",
+    "subtitle": "使用信用卡付款",
     "emailLabel": "邮箱",
-    "backToPlans": "← 返回套餐"
+    "backToPlans": "← 返回套餐",
+    "continueToPayment": "前往付款",
+    "redirecting": "正在跳转付款…",
+    "missingParams": "缺少 ICCID 或套餐，请从激活页重新开始。",
+    "backToActivation": "← 激活",
+    "paymentError": "无法开始付款",
+    "genericError": "出现问题。",
+    "missingCheckoutUrl": "缺少结账链接"
   }
 }

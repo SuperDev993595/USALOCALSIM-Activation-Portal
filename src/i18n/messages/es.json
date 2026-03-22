@@ -1,17 +1,21 @@
 {
   "home": {
     "title": "Activa tu servicio USALOCALSIM",
-    "subtitle": "Nuestro equipo técnico procesa manualmente cada solicitud para garantizar la calidad.",
+    "subtitle": "Nuestro equipo técnico procesa manualmente cada solicitud para garantizar la calidad. Sigue los pasos a continuación:",
     "startActivation": "Iniciar activación",
-    "adminLogin": "Acceso Admin / Distribuidor"
+    "adminLogin": "Acceso Admin / Distribuidor",
+    "usResidentsIntro": "Residentes en EE. UU.:",
+    "usResidentsLink": "Activación eSIM",
+    "usResidentsDetail": "— datos ilimitados 30, 60 o 90 días.",
+    "physicalSimElsewhere": "¿SIM física o internacional?"
   },
   "activate": {
     "title": "Activa tu servicio USALOCALSIM",
-    "subtitle": "Nuestro equipo técnico procesa manualmente cada solicitud. Sigue los pasos a continuación.",
+    "subtitle": "Nuestro equipo técnico procesa manualmente cada solicitud para garantizar la calidad. Sigue los pasos a continuación:",
     "option1Title": "Opción 1: Tengo una tarjeta USALOCALSIM y un cupón",
     "option1Desc": "Introduce tu ICCID y el código del cupón. Tu activación se procesará manualmente en minutos sin coste adicional.",
     "option2Title": "Opción 2: Solo tengo una tarjeta USALOCALSIM",
-    "option2Desc": "Introduce tu ICCID para elegir tu plan de datos y pagar con tarjeta o cripto. El coste inicial de la SIM se descontará.",
+    "option2Desc": "Introduce tu ICCID para elegir tu plan de datos y pagar con tarjeta de crédito. El coste inicial de la SIM se descontará.",
     "option3Title": "Opción 3: Tengo un cupón eSIM",
     "option3Desc": "Introduce tu código de cupón para recibir tu código QR por correo una vez procesado por nuestro equipo.",
     "optionHint": "Opción 1: ICCID + cupón (Combo). Opción 2: Solo ICCID (elegir plan y pagar). Opción 3: Solo cupón eSIM.",
@@ -29,6 +33,24 @@
     "submitting": "Enviando…",
     "backToHome": "← Volver a activación"
   },
+  "activateUs": {
+    "title": "Activación eSIM (EE. UU.)",
+    "subtitle": "Para residentes en EE. UU.: introduce solo el código de tu cupón eSIM. Planes ilimitados de 30, 60 o 90 días. Cada solicitud se procesa manualmente.",
+    "voucherLabel": "Código de cupón eSIM",
+    "voucherPlaceholder": "Código del cupón",
+    "continue": "Continuar",
+    "checking": "Comprobando…",
+    "emailLabel": "Correo electrónico",
+    "esimEmailHint": "Introduce tu correo para recibir el QR eSIM cuando nuestro equipo procese la solicitud.",
+    "back": "Atrás",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "backToHome": "← Inicio",
+    "globalActivationLink": "Activación internacional o SIM física →",
+    "enterVoucher": "Introduce el código del cupón.",
+    "invalidResponse": "Respuesta no válida. Inténtalo de nuevo.",
+    "genericError": "Algo salió mal. Inténtalo de nuevo."
+  },
   "success": {
     "title": "¡Solicitud recibida!",
     "message": "Nuestro equipo técnico está activando manualmente tu servicio USALOCALSIM. Recibirás un mensaje/correo de confirmación en unos minutos cuando tu línea esté activa.",
@@ -36,17 +58,27 @@
   },
   "plan": {
     "title": "Elige tu plan de datos",
-    "subtitle": "Introduce tu ICCID para elegir plan y pagar con tarjeta o cripto. El coste inicial de la SIM se descontará.",
+    "subtitle": "Introduce tu ICCID para elegir plan y pagar con tarjeta de crédito. El coste inicial de la SIM se descontará.",
     "backToActivation": "← Volver a activación",
     "loading": "Cargando planes…",
     "noPlans": "No hay planes disponibles.",
+    "missingIccid": "Falta el ICCID",
+    "loadFailed": "Error al cargar los planes",
+    "iccidLine": "ICCID: {iccid}",
     "continueToPayment": "Continuar al pago",
     "redirecting": "Redirigiendo al pago…"
   },
   "checkout": {
     "title": "Pago",
-    "subtitle": "Pagar con tarjeta o cripto",
+    "subtitle": "Pagar con tarjeta de crédito",
     "emailLabel": "Correo electrónico",
-    "backToPlans": "← Volver a planes"
+    "backToPlans": "← Volver a planes",
+    "continueToPayment": "Continuar al pago",
+    "redirecting": "Redirigiendo al pago…",
+    "missingParams": "Falta ICCID o plan. Vuelve a empezar desde la activación.",
+    "backToActivation": "← Activación",
+    "paymentError": "No se pudo iniciar el pago",
+    "genericError": "Algo salió mal.",
+    "missingCheckoutUrl": "Falta la URL de pago"
   }
 }

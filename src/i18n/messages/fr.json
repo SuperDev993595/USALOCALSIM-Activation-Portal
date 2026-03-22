@@ -1,17 +1,21 @@
 {
   "home": {
     "title": "Activez votre service USALOCALSIM",
-    "subtitle": "Notre équipe technique traite manuellement chaque demande pour une qualité garantie.",
+    "subtitle": "Notre équipe technique traite manuellement chaque demande pour une qualité garantie. Suivez les étapes ci-dessous :",
     "startActivation": "Démarrer l'activation",
-    "adminLogin": "Connexion Admin / Revendeur"
+    "adminLogin": "Connexion Admin / Revendeur",
+    "usResidentsIntro": "Résidents US :",
+    "usResidentsLink": "Activation eSIM",
+    "usResidentsDetail": "— données illimitées 30, 60 ou 90 jours.",
+    "physicalSimElsewhere": "SIM physique ou international ?"
   },
   "activate": {
     "title": "Activez votre service USALOCALSIM",
-    "subtitle": "Notre équipe technique traite manuellement chaque demande. Suivez les étapes ci-dessous.",
+    "subtitle": "Notre équipe technique traite manuellement chaque demande pour une qualité garantie. Suivez les étapes ci-dessous :",
     "option1Title": "Option 1 : J'ai une carte USALOCALSIM et un bon",
     "option1Desc": "Entrez votre ICCID et le code du bon. Votre activation sera traitée manuellement en quelques minutes sans frais supplémentaires.",
     "option2Title": "Option 2 : J'ai uniquement une carte USALOCALSIM",
-    "option2Desc": "Entrez votre ICCID pour choisir votre forfait et payer par carte ou crypto. Le coût initial de la SIM sera déduit.",
+    "option2Desc": "Entrez votre ICCID pour choisir votre forfait et payer par carte bancaire. Le coût initial de la SIM sera déduit.",
     "option3Title": "Option 3 : J'ai un bon eSIM",
     "option3Desc": "Entrez votre code bon pour recevoir votre QR code par e-mail une fois traité par notre équipe.",
     "optionHint": "Option 1 : ICCID + bon (Combo). Option 2 : ICCID seul (choisir forfait et payer). Option 3 : bon eSIM uniquement.",
@@ -29,6 +33,24 @@
     "submitting": "Envoi…",
     "backToHome": "← Retour à l'activation"
   },
+  "activateUs": {
+    "title": "Activation eSIM (États-Unis)",
+    "subtitle": "Pour les résidents US : entrez uniquement le code de votre bon eSIM. Forfaits illimités 30, 60 ou 90 jours. Chaque demande est traitée manuellement.",
+    "voucherLabel": "Code bon eSIM",
+    "voucherPlaceholder": "Code indiqué sur votre bon",
+    "continue": "Continuer",
+    "checking": "Vérification…",
+    "emailLabel": "E-mail",
+    "esimEmailHint": "Entrez votre e-mail pour recevoir le QR code eSIM une fois la demande traitée par notre équipe.",
+    "back": "Retour",
+    "submit": "Envoyer",
+    "submitting": "Envoi…",
+    "backToHome": "← Accueil",
+    "globalActivationLink": "Activation internationale ou SIM physique →",
+    "enterVoucher": "Entrez votre code bon.",
+    "invalidResponse": "Réponse invalide. Réessayez.",
+    "genericError": "Une erreur s'est produite. Réessayez."
+  },
   "success": {
     "title": "Demande reçue !",
     "message": "Notre équipe technique active manuellement votre service USALOCALSIM. Vous recevrez un message/e-mail de confirmation dans quelques minutes une fois votre ligne active.",
@@ -36,17 +58,27 @@
   },
   "plan": {
     "title": "Choisissez votre forfait",
-    "subtitle": "Entrez votre ICCID pour choisir votre forfait et payer par carte ou crypto. Le coût initial de la SIM sera déduit.",
+    "subtitle": "Entrez votre ICCID pour choisir votre forfait et payer par carte bancaire. Le coût initial de la SIM sera déduit.",
     "backToActivation": "← Retour à l'activation",
     "loading": "Chargement des forfaits…",
     "noPlans": "Aucun forfait disponible.",
+    "missingIccid": "ICCID manquant",
+    "loadFailed": "Échec du chargement des forfaits",
+    "iccidLine": "ICCID : {iccid}",
     "continueToPayment": "Continuer vers le paiement",
     "redirecting": "Redirection vers le paiement…"
   },
   "checkout": {
     "title": "Paiement",
-    "subtitle": "Payer par carte ou crypto",
+    "subtitle": "Payer par carte bancaire",
     "emailLabel": "E-mail",
-    "backToPlans": "← Retour aux forfaits"
+    "backToPlans": "← Retour aux forfaits",
+    "continueToPayment": "Continuer vers le paiement",
+    "redirecting": "Redirection vers le paiement…",
+    "missingParams": "ICCID ou forfait manquant. Reprenez depuis l'activation.",
+    "backToActivation": "← Activation",
+    "paymentError": "Impossible de démarrer le paiement",
+    "genericError": "Une erreur s'est produite.",
+    "missingCheckoutUrl": "URL de paiement manquante"
   }
 }

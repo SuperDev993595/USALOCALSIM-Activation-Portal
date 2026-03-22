@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
+import { getRequestClientMeta } from "@/lib/request-meta";
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing planId or email in session" }, { status: 400 });
   }
 
-  await prisma.activationRequest.create({
+  const created = await prisma.activationRequest.create({
     data: {
       iccid,
       planId,
@@ -56,6 +57,23 @@ export async function POST(req: Request) {
       amountPaidCents: session.amount_total ?? 0,
       stripePaymentId: paymentId,
       status: "pending",
+    },
+  });
+
+  const { ip, userAgent } = getRequestClientMeta(req);
+  await prisma.auditLog.create({
+    data: {
+      action: "stripe_checkout_completed",
+      metadata: JSON.stringify({
+        requestId: created.id,
+        email,
+        planId,
+        iccid,
+        stripePaymentId: paymentId,
+        amountTotal: session.amount_total,
+        ip,
+        userAgent,
+      }),
     },
   });
 

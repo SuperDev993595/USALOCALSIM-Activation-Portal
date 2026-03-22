@@ -4,8 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendSuccessEmail } from "@/lib/email";
 import { z } from "zod";
+import { getRequestClientMeta } from "@/lib/request-meta";
 
-const bodySchema = z.object({ requestId: z.string().min(1) });
+const bodySchema = z.object({
+  requestId: z.string().min(1),
+  esimQrPayload: z.string().max(4096).optional(),
+});
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -30,10 +34,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Already completed" }, { status: 400 });
   }
 
+  const qrTrimmed = body.esimQrPayload?.trim();
+  const esimQrPayload =
+    request.scenario === "esim_voucher" && qrTrimmed ? qrTrimmed : undefined;
+
   const result = await sendSuccessEmail(request.email, {
     name: request.plan.name,
     dataAllowance: request.plan.dataAllowance,
     durationDays: request.plan.durationDays,
+    planType: request.plan.planType,
+    market: request.plan.market,
+    scenario: request.scenario,
+    esimQrPayload,
   });
 
   await prisma.activationRequest.update({
@@ -42,11 +54,11 @@ export async function POST(req: Request) {
       status: "completed",
       completedAt: new Date(),
       completedById: session.user.id,
+      esimQrPayload: esimQrPayload ?? null,
     },
   });
 
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? null;
-  const userAgent = req.headers.get("user-agent") ?? null;
+  const { ip, userAgent } = getRequestClientMeta(req);
   await prisma.auditLog.create({
     data: {
       action: "activation_complete",
@@ -54,6 +66,7 @@ export async function POST(req: Request) {
       metadata: JSON.stringify({
         requestId: body.requestId,
         email: request.email,
+        hasEsimQr: Boolean(esimQrPayload),
         ip,
         userAgent,
       }),

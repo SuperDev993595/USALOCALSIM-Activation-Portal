@@ -1,17 +1,21 @@
 {
   "home": {
     "title": "USALOCALSIMサービスを有効化",
-    "subtitle": "品質を保証するため、すべてのリクエストを手動で処理しています。",
+    "subtitle": "品質を保証するため、すべてのリクエストを手動で処理しています。以下の手順に従ってください：",
     "startActivation": "有効化を開始",
-    "adminLogin": "管理者/販売者ログイン"
+    "adminLogin": "管理者/販売者ログイン",
+    "usResidentsIntro": "米国在住の方：",
+    "usResidentsLink": "eSIM 有効化",
+    "usResidentsDetail": "— 30/60/90日間の無制限データ。",
+    "physicalSimElsewhere": "物理SIM・国際向けはこちら"
   },
   "activate": {
     "title": "USALOCALSIMサービスを有効化",
-    "subtitle": "品質を保証するため、すべてのリクエストを手動で処理しています。以下の手順に従ってください。",
+    "subtitle": "品質を保証するため、すべてのリクエストを手動で処理しています。以下の手順に従ってください：",
     "option1Title": "オプション1: USALOCALSIMカードとバウチャーをお持ちの方",
     "option1Desc": "ICCIDとバウチャーコードを入力してください。数分以内に手動で有効化され、追加料金はかかりません。",
     "option2Title": "オプション2: USALOCALSIMカードのみお持ちの方",
-    "option2Desc": "ICCIDを入力してデータプランを選択し、クレジットカードまたは暗号資産でお支払いください。SIMの初期費用は割引されます。",
+    "option2Desc": "ICCIDを入力してデータプランを選択し、クレジットカードでお支払いください。SIMの初期費用は割引されます。",
     "option3Title": "オプション3: eSIMバウチャーをお持ちの方",
     "option3Desc": "バウチャーコードを入力してください。処理完了後、デジタルQRコードをメールでお送りします。",
     "optionHint": "オプション1: ICCID＋バウチャー（コンボ）。オプション2: ICCIDのみ（プラン選択・支払い）。オプション3: eSIMバウチャーのみ。",
@@ -29,6 +33,24 @@
     "submitting": "送信中…",
     "backToHome": "← 有効化に戻る"
   },
+  "activateUs": {
+    "title": "米国向け eSIM 有効化",
+    "subtitle": "米国在住の方：eSIM バウチャーコードのみを入力してください。30/60/90日間の無制限プラン。すべて手動で処理します。",
+    "voucherLabel": "eSIM バウチャーコード",
+    "voucherPlaceholder": "バウチャーに記載のコード",
+    "continue": "続ける",
+    "checking": "確認中…",
+    "emailLabel": "メールアドレス",
+    "esimEmailHint": "チームが処理完了後、eSIM の QR コードをメールでお送りします。メールアドレスを入力してください。",
+    "back": "戻る",
+    "submit": "送信",
+    "submitting": "送信中…",
+    "backToHome": "← ホーム",
+    "globalActivationLink": "国際・物理SIM の有効化 →",
+    "enterVoucher": "バウチャーコードを入力してください。",
+    "invalidResponse": "無効な応答です。もう一度お試しください。",
+    "genericError": "エラーが発生しました。もう一度お試しください。"
+  },
   "success": {
     "title": "リクエストを受け付けました",
     "message": "技術チームがUSALOCALSIMサービスを手動で有効化しています。回線が有効になり次第、数分以内に確認メールをお送りします。",
@@ -36,17 +58,27 @@
   },
   "plan": {
     "title": "データプランを選択",
-    "subtitle": "ICCIDを入力してプランを選択し、クレジットカードまたは暗号資産でお支払いください。SIMの初期費用は割引されます。",
+    "subtitle": "ICCIDを入力してプランを選択し、クレジットカードでお支払いください。SIMの初期費用は割引されます。",
     "backToActivation": "← 有効化に戻る",
     "loading": "プランを読み込み中…",
     "noPlans": "利用可能なプランはありません。",
+    "missingIccid": "ICCID がありません",
+    "loadFailed": "プランの読み込みに失敗しました",
+    "iccidLine": "ICCID: {iccid}",
     "continueToPayment": "お支払いへ進む",
     "redirecting": "お支払いへリダイレクト中…"
   },
   "checkout": {
     "title": "お支払い",
-    "subtitle": "クレジットカードまたは暗号資産でお支払い",
+    "subtitle": "クレジットカードでお支払い",
     "emailLabel": "メールアドレス",
-    "backToPlans": "← プランに戻る"
+    "backToPlans": "← プランに戻る",
+    "continueToPayment": "お支払いへ進む",
+    "redirecting": "お支払いへリダイレクト中…",
+    "missingParams": "ICCID またはプランがありません。有効化からやり直してください。",
+    "backToActivation": "← 有効化",
+    "paymentError": "お支払いを開始できませんでした",
+    "genericError": "問題が発生しました。",
+    "missingCheckoutUrl": "チェックアウト URL がありません"
   }
 }

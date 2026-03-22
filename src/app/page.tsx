@@ -16,8 +16,16 @@ export default function HomePage() {
         {t("startActivation")}
       </Link>
       <p className="mt-4 text-sm text-gray-500">
-        <Link href="/activate" className="text-blue-600 hover:underline">US residents</Link>
-        {" "}: eSIM only — 30, 60, or 90 days Unlimited.
+        <span>{t("usResidentsIntro")} </span>
+        <Link href="/activate/us" className="text-blue-600 hover:underline">
+          {t("usResidentsLink")}
+        </Link>
+        <span> {t("usResidentsDetail")}</span>
+        <span className="block mt-1">
+          <Link href="/activate" className="text-blue-600 hover:underline">
+            {t("physicalSimElsewhere")}
+          </Link>
+        </span>
       </p>
       <div className="mt-4 flex gap-4 text-sm text-gray-500">
         <Link href="/login">{t("adminLogin")}</Link>

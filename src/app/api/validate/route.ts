@@ -8,6 +8,7 @@ const ICCID_REGEX = /^\d{18,22}$/;
 const querySchema = z.object({
   iccid: z.string().optional().transform((s) => s?.trim().replace(/\s/g, "") ?? ""),
   voucherCode: z.string().optional().transform((s) => s?.trim().toUpperCase() ?? ""),
+  market: z.enum(["us", "global"]).optional().default("global"),
 });
 
 export async function GET(req: Request) {
@@ -24,14 +25,22 @@ export async function GET(req: Request) {
   const parsed = querySchema.safeParse({
     iccid: searchParams.get("iccid") ?? undefined,
     voucherCode: searchParams.get("voucherCode") ?? undefined,
+    market: (searchParams.get("market") as "us" | "global" | null) ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
-  const { iccid, voucherCode } = parsed.data;
+  const { iccid, voucherCode, market } = parsed.data;
 
   const hasIccid = iccid.length > 0;
   const hasVoucher = voucherCode.length > 0;
+
+  if (market === "us" && hasIccid) {
+    return NextResponse.json(
+      { error: "US eSIM activation uses your voucher code only. For a physical SIM, use international activation." },
+      { status: 400 }
+    );
+  }
 
   if (!hasIccid && !hasVoucher) {
     return NextResponse.json(
@@ -88,6 +97,14 @@ export async function GET(req: Request) {
         { error: "This voucher has already been used.", code: "VOUCHER_REDEEMED" },
         { status: 409 }
       );
+    }
+    if (market === "us") {
+      if (voucher.plan.planType !== "esim" || voucher.plan.market !== "us") {
+        return NextResponse.json(
+          { error: "This voucher is not a US eSIM voucher. Use international activation for other products." },
+          { status: 400 }
+        );
+      }
     }
   }
 

@@ -64,7 +64,7 @@ This plan merges the **Master Specification** (project description.md) and **Vou
 
 | # | Task | Details |
 |---|------|--------|
-| 4.1 | **Stripe account** | Configure Stripe (test/live): products or prices for plans; enable Cards and Cryptocurrency. |
+| 4.1 | **Stripe account** | Configure Stripe (test/live): Checkout uses **card** payments per project description. |
 | 4.2 | **Checkout** | For SIM Only: create Stripe Checkout Session (or Payment Intent) with correct amount; success/cancel return URLs. |
 | 4.3 | **Webhook** | On successful payment: create activation request (status pending), link payment ID, send to admin queue. |
 | 4.4 | **Idempotency** | Avoid duplicate activation requests for same payment (idempotency key or id check). |
@@ -158,7 +158,7 @@ This plan merges the **Master Specification** (project description.md) and **Vou
 - **No carrier/eSIM API:** Activation is manual; no "fetch QR in &lt;1 min" or "notify carrier instantly" in this phase. These can be added later as optional automation hooks after admin or system calls external APIs.
 - **Supplier validation:** "Supplier's system will naturally reject non-USALOCALSIM" is handled outside this portal (by the team when they activate with the supplier).
 - **Dealer assignment:** How dealers get accounts (invite, self-register, or admin-created) is configurable; tracking is required.
-- **Crypto via Stripe:** Stripe Cryptocurrency support used as per Stripe docs; no separate crypto gateway unless specified.
+- **Payments:** Stripe Checkout with card only (no crypto in scope).
 
 ---
 

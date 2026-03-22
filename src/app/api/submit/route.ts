@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
+import { getRequestClientMeta } from "@/lib/request-meta";
 
 const bodySchema = z.object({
   scenario: z.enum(["combo", "esim_voucher"]),
@@ -63,6 +64,22 @@ export async function POST(req: Request) {
       status: "redeemed",
       redeemedAt: new Date(),
       redeemedBy: body.email,
+    },
+  });
+
+  const { ip, userAgent } = getRequestClientMeta(req);
+  await prisma.auditLog.create({
+    data: {
+      action: "activation_submit",
+      metadata: JSON.stringify({
+        requestId: activationRequest.id,
+        scenario: body.scenario,
+        email: body.email,
+        voucherCode: body.voucherCode.trim().toUpperCase(),
+        iccid: body.scenario === "combo" ? body.iccid ?? null : null,
+        ip,
+        userAgent,
+      }),
     },
   });
 

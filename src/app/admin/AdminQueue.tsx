@@ -17,6 +17,7 @@ type Item = {
 export function AdminQueue({ initial }: { initial: Item[] }) {
   const [items, setItems] = useState<Item[]>(initial);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [esimQrPayload, setEsimQrPayload] = useState<Record<string, string>>({});
 
   async function refresh() {
     const res = await fetch("/api/admin/queue");
@@ -34,10 +35,13 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   async function handleComplete(id: string) {
     setLoading((s) => ({ ...s, [id]: true }));
     try {
+      const item = items.find((x) => x.id === id);
+      const qr =
+        item?.scenario === "esim_voucher" ? esimQrPayload[id]?.trim() || undefined : undefined;
       const res = await fetch("/api/admin/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: id }),
+        body: JSON.stringify({ requestId: id, esimQrPayload: qr }),
       });
       if (res.ok) await refresh();
       else alert((await res.json()).error ?? "Failed");
@@ -72,6 +76,20 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
             <div className="text-xs text-gray-400">
               {new Date(r.createdAt).toLocaleString()} · {r.scenario}
             </div>
+            {r.scenario === "esim_voucher" && (
+              <label className="mt-2 block text-xs text-gray-600">
+                <span className="font-medium text-gray-700">eSIM QR / LPA string (optional)</span>
+                <textarea
+                  value={esimQrPayload[r.id] ?? ""}
+                  onChange={(e) =>
+                    setEsimQrPayload((s) => ({ ...s, [r.id]: e.target.value }))
+                  }
+                  rows={2}
+                  placeholder="Paste LPA or provisioning string to embed in customer email"
+                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1 font-mono text-xs text-gray-900"
+                />
+              </label>
+            )}
           </div>
           <button
             onClick={() => handleComplete(r.id)}

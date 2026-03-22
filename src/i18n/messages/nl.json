@@ -1,17 +1,21 @@
 {
   "home": {
     "title": "Activeer uw USALOCALSIM-service",
-    "subtitle": "Ons technisch team verwerkt elke aanvraag handmatig voor gegarandeerde kwaliteit.",
+    "subtitle": "Ons technisch team verwerkt elke aanvraag handmatig voor gegarandeerde kwaliteit. Volg de onderstaande stappen:",
     "startActivation": "Activering starten",
-    "adminLogin": "Admin / Dealer login"
+    "adminLogin": "Admin / Dealer login",
+    "usResidentsIntro": "VS-bewoners:",
+    "usResidentsLink": "eSIM-activering",
+    "usResidentsDetail": "— 30, 60 of 90 dagen onbeperkt.",
+    "physicalSimElsewhere": "Fysieke SIM of internationaal?"
   },
   "activate": {
     "title": "Activeer uw USALOCALSIM-service",
-    "subtitle": "Ons technisch team verwerkt elke aanvraag handmatig. Volg de stappen hieronder.",
+    "subtitle": "Ons technisch team verwerkt elke aanvraag handmatig voor gegarandeerde kwaliteit. Volg de onderstaande stappen:",
     "option1Title": "Optie 1: Ik heb een USALOCALSIM-kaart en een voucher",
     "option1Desc": "Voer uw ICCID en vouchercode in. Uw activering wordt binnen enkele minuten handmatig verwerkt zonder extra kosten.",
     "option2Title": "Optie 2: Ik heb alleen een USALOCALSIM-kaart",
-    "option2Desc": "Voer uw ICCID in om uw databundel te kiezen en te betalen met creditcard of crypto. De initiële SIM-kosten worden in mindering gebracht.",
+    "option2Desc": "Voer uw ICCID in om uw databundel te kiezen en met creditcard te betalen. De initiële SIM-kosten worden in mindering gebracht.",
     "option3Title": "Optie 3: Ik heb een eSIM-voucher",
     "option3Desc": "Voer uw vouchercode in om uw digitale QR-code per e-mail te ontvangen na verwerking door ons team.",
     "optionHint": "Optie 1: ICCID + voucher (Combo). Optie 2: Alleen ICCID (kies plan en betaal). Optie 3: Alleen eSIM-voucher.",
@@ -29,6 +33,24 @@
     "submitting": "Verzenden…",
     "backToHome": "← Terug naar activering"
   },
+  "activateUs": {
+    "title": "eSIM-activering (VS)",
+    "subtitle": "Voor VS-bewoners: voer alleen uw eSIM-vouchercode in. Onbeperkte bundels voor 30, 60 of 90 dagen. Elke aanvraag wordt handmatig verwerkt.",
+    "voucherLabel": "eSIM-vouchercode",
+    "voucherPlaceholder": "Code op uw voucher",
+    "continue": "Doorgaan",
+    "checking": "Controleren…",
+    "emailLabel": "E-mail",
+    "esimEmailHint": "Voer uw e-mail in om de eSIM-QR te ontvangen zodra ons team de aanvraag heeft verwerkt.",
+    "back": "Terug",
+    "submit": "Verzenden",
+    "submitting": "Verzenden…",
+    "backToHome": "← Home",
+    "globalActivationLink": "Internationale of fysieke SIM-activering →",
+    "enterVoucher": "Voer uw vouchercode in.",
+    "invalidResponse": "Ongeldige reactie. Probeer opnieuw.",
+    "genericError": "Er ging iets mis. Probeer opnieuw."
+  },
   "success": {
     "title": "Aanvraag ontvangen!",
     "message": "Ons technisch team activeert nu handmatig uw USALOCALSIM-service. U ontvangt binnen enkele minuten een bevestigingsbericht/e-mail zodra uw lijn actief is.",
@@ -36,17 +58,27 @@
   },
   "plan": {
     "title": "Kies uw databundel",
-    "subtitle": "Voer uw ICCID in om uw databundel te kiezen en te betalen met creditcard of crypto. De initiële SIM-kosten worden in mindering gebracht.",
+    "subtitle": "Voer uw ICCID in om uw databundel te kiezen en met creditcard te betalen. De initiële SIM-kosten worden in mindering gebracht.",
     "backToActivation": "← Terug naar activering",
     "loading": "Bundels laden…",
     "noPlans": "Geen bundels beschikbaar.",
+    "missingIccid": "ICCID ontbreekt",
+    "loadFailed": "Bundels laden mislukt",
+    "iccidLine": "ICCID: {iccid}",
     "continueToPayment": "Doorgaan naar betaling",
     "redirecting": "Doorverwijzen naar betaling…"
   },
   "checkout": {
     "title": "Afrekenen",
-    "subtitle": "Betaal met creditcard of crypto",
+    "subtitle": "Betaal met creditcard",
     "emailLabel": "E-mail",
-    "backToPlans": "← Terug naar bundels"
+    "backToPlans": "← Terug naar bundels",
+    "continueToPayment": "Doorgaan naar betaling",
+    "redirecting": "Doorverwijzen naar betaling…",
+    "missingParams": "ICCID of bundel ontbreekt. Begin opnieuw bij activering.",
+    "backToActivation": "← Activering",
+    "paymentError": "Betaling kon niet worden gestart",
+    "genericError": "Er ging iets mis.",
+    "missingCheckoutUrl": "Checkout-URL ontbreekt"
   }
 }

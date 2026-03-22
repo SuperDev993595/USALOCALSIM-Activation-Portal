@@ -1,17 +1,21 @@
 {
   "home": {
     "title": "Activate Your USALOCALSIM Service",
-    "subtitle": "Our technical team manually processes every request for guaranteed quality.",
+    "subtitle": "Our technical team manually processes every request for guaranteed quality. Follow the steps below:",
     "startActivation": "Start activation",
-    "adminLogin": "Admin / Dealer login"
+    "adminLogin": "Admin / Dealer login",
+    "usResidentsIntro": "US residents:",
+    "usResidentsLink": "eSIM activation",
+    "usResidentsDetail": "— 30, 60, or 90 days Unlimited.",
+    "physicalSimElsewhere": "Physical SIM or international?"
   },
   "activate": {
     "title": "Activate Your USALOCALSIM Service",
-    "subtitle": "Our technical team manually processes every request for guaranteed quality. Follow the steps below.",
+    "subtitle": "Our technical team manually processes every request for guaranteed quality. Follow the steps below:",
     "option1Title": "Option 1: I have a USALOCALSIM Card and a Voucher",
     "option1Desc": "Enter your ICCID and Voucher code. Your activation will be processed manually in minutes at no extra cost.",
     "option2Title": "Option 2: I only have a USALOCALSIM Card",
-    "option2Desc": "Enter your ICCID to choose your data plan and pay via Credit Card or Crypto. Your initial SIM cost will be discounted.",
+    "option2Desc": "Enter your ICCID to choose your data plan and pay by credit card. Your initial SIM cost will be discounted.",
     "option3Title": "Option 3: I have an eSIM Voucher",
     "option3Desc": "Enter your voucher code to receive your digital QR code via email once processed by our team.",
     "optionHint": "Option 1: Enter ICCID + Voucher (Combo). Option 2: ICCID only (choose plan and pay). Option 3: eSIM voucher only.",
@@ -29,6 +33,24 @@
     "submitting": "Submitting…",
     "backToHome": "← Back to activation"
   },
+  "activateUs": {
+    "title": "US eSIM activation",
+    "subtitle": "For US residents: enter your eSIM voucher code only. Unlimited data plans for 30, 60, or 90 days. Our team processes each request manually.",
+    "voucherLabel": "eSIM Voucher Code",
+    "voucherPlaceholder": "Code from your voucher",
+    "continue": "Continue",
+    "checking": "Checking…",
+    "emailLabel": "Email",
+    "esimEmailHint": "Enter your email to receive your eSIM QR code once our team has processed your request.",
+    "back": "Back",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "backToHome": "← Home",
+    "globalActivationLink": "International or physical SIM activation →",
+    "enterVoucher": "Enter your voucher code.",
+    "invalidResponse": "Invalid response. Please try again.",
+    "genericError": "Something went wrong. Please try again."
+  },
   "success": {
     "title": "Request Received!",
     "message": "Our technical team is now manually activating your USALOCALSIM service. You will receive a confirmation message/email in a few minutes once your line is live.",
@@ -36,17 +58,27 @@
   },
   "plan": {
     "title": "Choose your data plan",
-    "subtitle": "Enter your ICCID to choose your data plan and pay via Credit Card or Crypto. Your initial SIM cost will be discounted.",
+    "subtitle": "Enter your ICCID to choose your data plan and pay by credit card. Your initial SIM cost will be discounted.",
     "backToActivation": "← Back to activation",
     "loading": "Loading plans…",
     "noPlans": "No plans available.",
+    "missingIccid": "Missing ICCID",
+    "loadFailed": "Failed to load plans",
+    "iccidLine": "ICCID: {iccid}",
     "continueToPayment": "Continue to payment",
     "redirecting": "Redirecting to payment…"
   },
   "checkout": {
     "title": "Checkout",
-    "subtitle": "Pay with Credit Card or Crypto",
+    "subtitle": "Pay with credit card",
     "emailLabel": "Email",
-    "backToPlans": "← Back to plans"
+    "backToPlans": "← Back to plans",
+    "continueToPayment": "Continue to payment",
+    "redirecting": "Redirecting to payment…",
+    "missingParams": "Missing ICCID or plan. Start from the activation page.",
+    "backToActivation": "← Activation",
+    "paymentError": "Could not start checkout",
+    "genericError": "Something went wrong.",
+    "missingCheckoutUrl": "Missing checkout URL"
   }
 }

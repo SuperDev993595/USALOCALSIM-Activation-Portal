@@ -3,8 +3,10 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function CheckoutPage() {
+  const t = useTranslations("checkout");
   const searchParams = useSearchParams();
   const iccid = searchParams.get("iccid") ?? "";
   const planId = searchParams.get("planId") ?? "";
@@ -24,14 +26,14 @@ export default function CheckoutPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not start checkout");
+        setError(data.error ?? t("paymentError"));
         setLoading(false);
         return;
       }
       if (data.url) window.location.href = data.url;
-      else setError("Missing checkout URL");
+      else setError(t("missingCheckoutUrl"));
     } catch {
-      setError("Something went wrong.");
+      setError(t("genericError"));
     }
     setLoading(false);
   }
@@ -39,8 +41,10 @@ export default function CheckoutPage() {
   if (!iccid || !planId) {
     return (
       <main className="min-h-screen p-6 flex flex-col items-center justify-center">
-        <p className="text-gray-600">Missing ICCID or plan. Start from the activation page.</p>
-        <Link href="/activate" className="mt-4 text-blue-600 hover:underline">← Activation</Link>
+        <p className="text-gray-600">{t("missingParams")}</p>
+        <Link href="/activate" className="mt-4 text-blue-600 hover:underline">
+          {t("backToActivation")}
+        </Link>
       </main>
     );
   }
@@ -48,11 +52,13 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen p-6 flex flex-col items-center justify-center">
       <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">Checkout</h1>
-        <p className="mt-1 text-sm text-gray-600">Pay with Credit Card or Crypto</p>
+        <h1 className="text-xl font-bold text-gray-900">{t("title")}</h1>
+        <p className="mt-1 text-sm text-gray-600">{t("subtitle")}</p>
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              {t("emailLabel")}
+            </label>
             <input
               id="email"
               type="email"
@@ -68,11 +74,16 @@ export default function CheckoutPage() {
             disabled={loading}
             className="w-full rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "Redirecting to payment…" : "Continue to payment"}
+            {loading ? t("redirecting") : t("continueToPayment")}
           </button>
         </form>
         <p className="mt-4 text-center">
-          <Link href={`/activate/plan?iccid=${encodeURIComponent(iccid)}`} className="text-sm text-blue-600 hover:underline">← Back to plans</Link>
+          <Link
+            href={`/activate/plan?iccid=${encodeURIComponent(iccid)}`}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            {t("backToPlans")}
+          </Link>
         </p>
       </div>
     </main>

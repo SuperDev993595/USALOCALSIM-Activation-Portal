@@ -80,4 +80,4 @@ As admin, go to **Admin → Import vouchers**. Paste codes (one per line or comm
 - `src/i18n/` – locale detection and message JSON (en, fr, ja, nl, zh, es, hi)
 - `prisma/` – schema and migrations
 
-See `doc/development-plan.md` and `doc/implementation-guide-hostinger.md` for full spec and implementation details.
+See `doc/development-plan.md`, `doc/use-cases.md`, and `doc/implementation-guide-hostinger.md` for full spec, use cases, and implementation details.
