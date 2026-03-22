@@ -102,8 +102,7 @@ model ActivationRequest {
   createdAt        DateTime @default(now())
   voucherId        String?  @unique
   voucher          Voucher? @relation(fields: [voucherId], references: [id])
-  /** LPA/SMDP+ string or any text to encode as QR for eSIM delivery email */
-  esimQrPayload    String?  @db.Text
+  esimQrPayload    String?  @db.Text // LPA/SMDP+ string or QR payload for eSIM delivery email
 }
 
 model AuditLog {

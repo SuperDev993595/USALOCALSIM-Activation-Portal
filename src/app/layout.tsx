@@ -42,7 +42,11 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className="min-h-screen bg-gray-50 antialiased">
         <SessionProvider>
-          <LocaleProvider locale={locale} messages={messages}>
+          <LocaleProvider
+            locale={locale}
+            messages={messages}
+            timeZone={process.env.NEXT_PUBLIC_INTL_TIMEZONE ?? "America/New_York"}
+          >
             {children}
           </LocaleProvider>
         </SessionProvider>
