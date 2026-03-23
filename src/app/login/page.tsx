@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
+  const urlError = searchParams.get("error");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +69,11 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
+            {urlError === "AccountDisabled" && (
+              <p className="text-sm text-amber-400/95">
+                This account has been disabled. Contact an administrator if you need access.
+              </p>
+            )}
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading ? "Signing in…" : "Sign in"}

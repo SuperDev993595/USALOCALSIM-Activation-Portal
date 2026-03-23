@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
-        if (!user || !user.password) return null;
+        if (!user || !user.password || user.disabled) return null;
         const valid = await compare(credentials.password, user.password);
         if (!valid) return null;
         return {
@@ -44,9 +44,11 @@ export const authOptions: NextAuthOptions = {
       if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { role: true },
+          select: { role: true, disabled: true },
         });
-        if (dbUser) token.role = dbUser.role;
+        if (dbUser) {
+          token.role = dbUser.disabled ? "disabled" : dbUser.role;
+        }
       }
       return token;
     },

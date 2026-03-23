@@ -11,6 +11,12 @@ export default async function DealerLayout({
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) redirect("/login?callbackUrl=/dealer");
   const role = (session.user as { role?: string }).role;
+  if (role === "disabled") {
+    redirect(
+      "/api/auth/signout?callbackUrl=" +
+        encodeURIComponent("/login?error=AccountDisabled"),
+    );
+  }
   if (role !== "admin" && role !== "dealer") redirect("/login?callbackUrl=/dealer");
   return (
     <>

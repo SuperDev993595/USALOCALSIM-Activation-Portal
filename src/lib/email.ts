@@ -155,3 +155,63 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+type SimpleMail = { to: string; subject: string; text: string; html: string };
+
+async function deliverSimpleMail(opts: SimpleMail): Promise<{ ok: boolean; error?: string }> {
+  const from = process.env.EMAIL_FROM ?? "noreply@example.com";
+  const transport = getTransport();
+  if (transport) {
+    try {
+      await transport.sendMail({
+        from,
+        to: opts.to,
+        subject: opts.subject,
+        text: opts.text,
+        html: opts.html,
+      });
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Send failed" };
+    }
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from,
+          to: opts.to,
+          subject: opts.subject,
+          text: opts.text,
+          html: opts.html,
+        }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { message?: string };
+        return { ok: false, error: data.message ?? res.statusText };
+      }
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Send failed" };
+    }
+  }
+
+  console.warn("No email transport; password change email not sent to", opts.to);
+  return { ok: false, error: "Email is not configured (SMTP or RESEND_API_KEY)." };
+}
+
+export async function sendPasswordChangeCodeEmail(
+  to: string,
+  code: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const subject = "Your USALOCALSIM password change code";
+  const text = `Your verification code is: ${code}\n\nThis code expires in 15 minutes. If you did not request a password change, ignore this email.\n`;
+  const html = `<p>Your verification code is:</p><p style="font-size:24px;font-weight:bold;letter-spacing:0.2em">${escapeHtml(code)}</p><p>This code expires in 15 minutes.</p><p>If you did not request a password change, you can ignore this email.</p>`;
+  return deliverSimpleMail({ to, subject, text, html });
+}

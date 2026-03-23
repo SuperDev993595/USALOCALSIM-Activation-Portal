@@ -12,6 +12,12 @@ export function DealerNav({ email }: { email: string }) {
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <span className="truncate text-xs text-muted-dim">{email}</span>
           <Link
+            href="/dealer/change-password"
+            className="text-xs font-medium uppercase tracking-wide text-muted transition hover:text-white"
+          >
+            Password
+          </Link>
+          <Link
             href="/api/auth/signout"
             className="text-xs font-medium uppercase tracking-wide text-red-400/90 hover:text-red-300"
           >

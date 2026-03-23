@@ -18,10 +18,22 @@ model User {
   password      String?   // hashed; for Credentials provider
   role          String    @default("dealer") // "admin" | "dealer"
   dealerId      String?   // optional external dealer id for tracking
+  disabled      Boolean   @default(false) // when true, login is blocked and sessions invalidated on refresh
   createdAt     DateTime  @default(now())
   accounts      Account[]
   sessions      Session[]
   vouchersActivated Voucher[] @relation("ActivatedBy")
+  passwordChangeOtp PasswordChangeOtp?
+}
+
+model PasswordChangeOtp {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
