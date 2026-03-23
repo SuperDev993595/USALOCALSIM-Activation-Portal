@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -46,6 +46,8 @@ export default function ActivatePlanPage() {
   const [error, setError] = useState("");
   const [payingId, setPayingId] = useState<string | null>(null);
   const [payError, setPayError] = useState("");
+  const [confirmPlan, setConfirmPlan] = useState<Plan | null>(null);
+  const confirmTitleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (!iccid || !email) {
@@ -71,6 +73,26 @@ export default function ActivatePlanPage() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- t() is stable for our message keys
   }, [iccid, email]);
+
+  useEffect(() => {
+    if (!confirmPlan) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    confirmTitleRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setConfirmPlan(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [confirmPlan]);
+
+  function requestPlan(plan: Plan) {
+    if (simState && (simState.pending || simState.completed)) setConfirmPlan(plan);
+    else void pay(plan.id);
+  }
 
   async function pay(planId: string) {
     setPayError("");
@@ -142,7 +164,15 @@ export default function ActivatePlanPage() {
     );
   }
 
+  function confirmAndPay() {
+    if (!confirmPlan) return;
+    const id = confirmPlan.id;
+    setConfirmPlan(null);
+    void pay(id);
+  }
+
   return (
+    <>
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex flex-1 flex-col px-6 py-12">
@@ -210,7 +240,7 @@ export default function ActivatePlanPage() {
                   key={plan.id}
                   type="button"
                   disabled={!!payingId}
-                  onClick={() => pay(plan.id)}
+                  onClick={() => requestPlan(plan)}
                   aria-busy={busy}
                   className={`ui-card block w-full cursor-pointer p-4 text-left transition hover:border-accent/40 hover:shadow-accent-sm disabled:cursor-not-allowed disabled:opacity-60 ${
                     popular ? "border-brand-purple/50 ring-1 ring-brand-purple/30" : ""
@@ -251,5 +281,50 @@ export default function ActivatePlanPage() {
         </div>
       </main>
     </div>
+
+    {confirmPlan && (
+      <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center" aria-live="polite">
+        <button
+          type="button"
+          className="absolute inset-0 bg-black/65 backdrop-blur-[6px] transition-opacity"
+          aria-label={t("confirmExistingClose")}
+          onClick={() => setConfirmPlan(null)}
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="plan-confirm-title"
+          aria-describedby="plan-confirm-desc"
+          className="relative z-10 w-full max-w-md rounded-2xl border border-white/[0.14] bg-gradient-to-b from-surface-elevated to-surface-card p-6 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/10"
+        >
+          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-accent/35 bg-accent/10 text-accent">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h2
+            id="plan-confirm-title"
+            ref={confirmTitleRef}
+            tabIndex={-1}
+            className="text-lg font-bold tracking-tight text-white outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated"
+          >
+            {t("confirmExistingTitle")}
+          </h2>
+          <p id="plan-confirm-desc" className="mt-3 text-sm leading-relaxed text-muted">
+            {t("confirmExistingBody", { plan: confirmPlan.name })}
+          </p>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" className="btn-secondary w-full sm:w-auto" onClick={() => setConfirmPlan(null)}>
+              {t("confirmExistingCancel")}
+            </button>
+            <button type="button" className="btn-primary w-full sm:w-auto" onClick={confirmAndPay}>
+              {t("confirmExistingContinue")}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
