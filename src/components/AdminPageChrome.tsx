@@ -7,11 +7,13 @@ export function AdminPageHeader({
   title,
   description,
   meta,
+  rightActions,
 }: {
   eyebrow?: string;
   title: string;
   description: string;
   meta?: ReactNode;
+  rightActions?: ReactNode;
 }) {
   return (
     <header className="relative overflow-hidden rounded-2xl border border-white/[0.14] bg-gradient-to-br from-surface-elevated via-surface-card to-surface-elevated p-6 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.65)] md:p-8">
@@ -31,8 +33,9 @@ export function AdminPageHeader({
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
             {meta ? <div className="mt-5 flex flex-wrap items-center gap-3">{meta}</div> : null}
           </div>
-          <div className="flex shrink-0 justify-end sm:pt-1">
+          <div className="flex shrink-0 flex-col items-end gap-5 sm:pt-1">
             <AdminPageRefreshButton />
+            {rightActions}
           </div>
         </div>
       </div>

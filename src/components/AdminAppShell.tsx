@@ -150,7 +150,19 @@ export function AdminAppShell({
   );
 
   return (
-    <div className="flex min-h-screen bg-surface-darkest">
+    <div className="relative flex min-h-screen overflow-hidden bg-gradient-to-br from-[#070b14] via-[#0b1220] to-[#05070a]">
+      <div
+        className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent/10 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -right-20 top-1/3 h-80 w-80 rounded-full bg-brand-purple/12 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.05),transparent_38%),radial-gradient(circle_at_80%_85%,rgba(52,211,153,0.08),transparent_36%)]"
+        aria-hidden
+      />
       {/* Mobile overlay */}
       {mobileNavOpen ? (
         <button
@@ -172,7 +184,7 @@ export function AdminAppShell({
         {sidebarInner}
       </aside>
 
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-surface-darkest/90 px-4 backdrop-blur-md lg:px-6">
           <button
             type="button"

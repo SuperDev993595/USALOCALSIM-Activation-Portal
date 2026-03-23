@@ -4,9 +4,17 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-server";
 import { assertAdminAccountPatchAllowed } from "@/lib/user-admin-guard";
 import { getRequestClientMeta } from "@/lib/request-meta";
+import { verifyAdminDeleteChallenge } from "@/lib/admin-user-delete-verification";
+import { verifyAdminUpdateChallenge } from "@/lib/admin-user-update-verification";
 
 const patchSchema = z
   .object({
+    email: z
+      .preprocess(
+        (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
+        z.string().email(),
+      )
+      .optional(),
     role: z.enum(["admin", "dealer"]).optional(),
     disabled: z.boolean().optional(),
     name: z
@@ -21,8 +29,15 @@ const patchSchema = z
       .optional()
       .nullable()
       .transform((v) => (v === "" || v === undefined ? null : v)),
+    verificationCode: z.string().min(1).optional(),
+    verificationChallenge: z.string().min(1).optional(),
   })
   .strict();
+
+const deleteSchema = z.object({
+  code: z.string().min(1),
+  challenge: z.string().min(1),
+});
 
 export async function PATCH(
   req: Request,
@@ -49,6 +64,32 @@ export async function PATCH(
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
   }
 
+  const targetUser = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, role: true },
+  });
+  if (!targetUser) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  if (targetUser.role === "admin") {
+    if (!body.verificationCode || !body.verificationChallenge) {
+      return NextResponse.json(
+        { error: "Admin account updates require email verification code." },
+        { status: 400 },
+      );
+    }
+    const verified = verifyAdminUpdateChallenge({
+      actorUserId: session.user.id,
+      targetUserId: id,
+      code: body.verificationCode,
+      challenge: body.verificationChallenge,
+    });
+    if (!verified.ok) {
+      return NextResponse.json({ error: verified.error }, { status: 400 });
+    }
+  }
+
   const guard = await assertAdminAccountPatchAllowed(id, {
     role: body.role,
     disabled: body.disabled,
@@ -58,12 +99,26 @@ export async function PATCH(
   }
 
   const data: {
+    email?: string;
     role?: string;
     disabled?: boolean;
     name?: string | null;
     dealerId?: string | null;
   } = {};
 
+  if (body.email !== undefined) {
+    const existing = await prisma.user.findFirst({
+      where: {
+        email: body.email,
+        id: { not: id },
+      },
+      select: { id: true },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "A user with this email already exists." }, { status: 409 });
+    }
+    data.email = body.email;
+  }
   if (body.role !== undefined) data.role = body.role;
   if (body.disabled !== undefined) data.disabled = body.disabled;
   if (body.name !== undefined) data.name = body.name;
@@ -102,4 +157,68 @@ export async function PATCH(
   } catch {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
+}
+
+export async function DELETE(
+  req: Request,
+  context: { params: { id: string } },
+) {
+  const session = await requireAdmin();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = context.params;
+  if (!id?.trim()) {
+    return NextResponse.json({ error: "Missing user id" }, { status: 400 });
+  }
+  if (id === session.user.id) {
+    return NextResponse.json({ error: "You cannot delete your own account." }, { status: 400 });
+  }
+
+  let body: z.infer<typeof deleteSchema>;
+  try {
+    body = deleteSchema.parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
+
+  const verified = verifyAdminDeleteChallenge({
+    actorUserId: session.user.id,
+    targetUserId: id,
+    challenge: body.challenge,
+    code: body.code,
+  });
+  if (!verified.ok) {
+    return NextResponse.json({ error: verified.error }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: { id: true, role: true, email: true },
+  });
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  if (user.role === "admin") {
+    return NextResponse.json({ error: "Admin accounts cannot be deleted here." }, { status: 400 });
+  }
+
+  await prisma.user.delete({ where: { id } });
+
+  const { ip, userAgent } = getRequestClientMeta(req);
+  await prisma.auditLog.create({
+    data: {
+      action: "user_delete",
+      userId: session.user.id,
+      metadata: JSON.stringify({
+        targetUserId: id,
+        targetEmail: user.email,
+        ip,
+        userAgent,
+      }),
+    },
+  });
+
+  return NextResponse.json({ ok: true });
 }

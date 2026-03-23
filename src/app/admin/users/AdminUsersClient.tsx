@@ -2,6 +2,7 @@
 
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useState } from "react";
 
 type UserRow = {
@@ -15,6 +16,7 @@ type UserRow = {
 };
 
 type Editable = {
+  email: string;
   role: "admin" | "dealer";
   disabled: boolean;
   dealerId: string;
@@ -23,6 +25,7 @@ type Editable = {
 
 function emptyEditable(row: UserRow): Editable {
   return {
+    email: row.email ?? "",
     role: row.role === "admin" ? "admin" : "dealer",
     disabled: row.disabled,
     dealerId: row.dealerId ?? "",
@@ -33,10 +36,31 @@ function emptyEditable(row: UserRow): Editable {
 export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [createLoading, setCreateLoading] = useState(false);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [sendDeleteCodeLoading, setSendDeleteCodeLoading] = useState(false);
+  const [verifyUpdateOpen, setVerifyUpdateOpen] = useState(false);
+  const [verifyUpdateLoading, setVerifyUpdateLoading] = useState(false);
+  const [sendUpdateCodeLoading, setSendUpdateCodeLoading] = useState(false);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
   const [createError, setCreateError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+  const [deleteCode, setDeleteCode] = useState("");
+  const [deleteChallenge, setDeleteChallenge] = useState<string | null>(null);
+  const [updateVerifyCode, setUpdateVerifyCode] = useState("");
+  const [updateVerifyChallenge, setUpdateVerifyChallenge] = useState<string | null>(null);
+  const [updateVerifyMessage, setUpdateVerifyMessage] = useState<string | null>(null);
 
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -101,6 +125,7 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
       setNewName("");
       setNewDealerId("");
       setNewRole("dealer");
+      setCreateOpen(false);
       await loadUsers();
     } catch {
       setCreateError("Could not create user.");
@@ -121,15 +146,23 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
     const row = users.find((u) => u.id === id);
     const edit = edits[id];
     if (!row || !edit) return;
-    setSavingId(id);
+    if (!edit.email.trim()) {
+      setSaveError("Email is required.");
+      return;
+    }
+    setSaveLoading(true);
     setSaveError(null);
     const payload: Record<string, unknown> = {
+      email: edit.email.trim(),
       dealerId: edit.dealerId.trim() || null,
       name: edit.name.trim() || null,
     };
     if (row.role !== "admin") {
       payload.role = edit.role;
       payload.disabled = edit.disabled;
+    } else if (updateVerifyChallenge) {
+      payload.verificationCode = updateVerifyCode.trim();
+      payload.verificationChallenge = updateVerifyChallenge;
     }
     try {
       const res = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {
@@ -140,90 +173,185 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setSaveError(typeof data.error === "string" ? data.error : "Update failed.");
-        setSavingId(null);
+        setSaveLoading(false);
         return;
       }
+      setEditOpen(false);
+      setVerifyUpdateOpen(false);
+      setEditingUserId(null);
+      setUpdateVerifyCode("");
+      setUpdateVerifyChallenge(null);
+      setUpdateVerifyMessage(null);
       await loadUsers();
     } catch {
       setSaveError("Update failed.");
     }
-    setSavingId(null);
+    setSaveLoading(false);
   }
+
+  function openEditDialog(userId: string) {
+    setSaveError(null);
+    setEditingUserId(userId);
+    setEditOpen(true);
+  }
+
+  function closeEditDialog() {
+    setEditOpen(false);
+    setEditingUserId(null);
+    setSaveError(null);
+    setVerifyUpdateOpen(false);
+    setUpdateVerifyCode("");
+    setUpdateVerifyChallenge(null);
+    setUpdateVerifyMessage(null);
+  }
+
+  function openUpdateVerifyDialog() {
+    setUpdateVerifyCode("");
+    setUpdateVerifyChallenge(null);
+    setUpdateVerifyMessage(null);
+    setSaveError(null);
+    setVerifyUpdateOpen(true);
+  }
+
+  function closeUpdateVerifyDialog() {
+    if (verifyUpdateLoading || sendUpdateCodeLoading) return;
+    setVerifyUpdateOpen(false);
+    setUpdateVerifyCode("");
+    setUpdateVerifyChallenge(null);
+    setUpdateVerifyMessage(null);
+  }
+
+  async function sendUpdateCode() {
+    if (!editingUserId) return;
+    setSaveError(null);
+    setUpdateVerifyMessage(null);
+    setSendUpdateCodeLoading(true);
+    try {
+      const res = await fetch("/api/admin/users/update-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: editingUserId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSaveError(typeof data.error === "string" ? data.error : "Could not send verification code.");
+        setSendUpdateCodeLoading(false);
+        return;
+      }
+      setUpdateVerifyChallenge(typeof data.challenge === "string" ? data.challenge : null);
+      setUpdateVerifyMessage(typeof data.message === "string" ? data.message : "Verification code sent.");
+    } catch {
+      setSaveError("Could not send verification code.");
+    }
+    setSendUpdateCodeLoading(false);
+  }
+
+  async function confirmAdminUpdate() {
+    if (!editingUserId) return;
+    if (!updateVerifyChallenge) {
+      setSaveError("Request a verification code first.");
+      return;
+    }
+    if (!updateVerifyCode.trim()) {
+      setSaveError("Enter the email verification code.");
+      return;
+    }
+    setVerifyUpdateLoading(true);
+    await saveRow(editingUserId);
+    setVerifyUpdateLoading(false);
+  }
+
+  function openDeleteDialog(userId: string) {
+    setDeleteError(null);
+    setDeleteMessage(null);
+    setDeleteCode("");
+    setDeleteChallenge(null);
+    setDeletingUserId(userId);
+    setDeleteOpen(true);
+  }
+
+  function closeDeleteDialog() {
+    if (deleteLoading || sendDeleteCodeLoading) return;
+    setDeleteOpen(false);
+    setDeletingUserId(null);
+    setDeleteError(null);
+    setDeleteMessage(null);
+    setDeleteCode("");
+    setDeleteChallenge(null);
+  }
+
+  async function sendDeleteCode() {
+    const userId = deletingUserId;
+    if (!userId) return;
+    setDeleteError(null);
+    setDeleteMessage(null);
+    setSendDeleteCodeLoading(true);
+    try {
+      const res = await fetch("/api/admin/users/delete-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: userId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(typeof data.error === "string" ? data.error : "Could not send verification code.");
+        setSendDeleteCodeLoading(false);
+        return;
+      }
+      setDeleteChallenge(typeof data.challenge === "string" ? data.challenge : null);
+      setDeleteMessage(typeof data.message === "string" ? data.message : "Verification code sent.");
+    } catch {
+      setDeleteError("Could not send verification code.");
+    }
+    setSendDeleteCodeLoading(false);
+  }
+
+  async function confirmDeleteUser() {
+    const userId = deletingUserId;
+    if (!userId || !deleteChallenge) {
+      setDeleteError("Request a verification code first.");
+      return;
+    }
+    setDeleteError(null);
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: deleteCode.trim(),
+          challenge: deleteChallenge,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(typeof data.error === "string" ? data.error : "Could not delete user.");
+        setDeleteLoading(false);
+        return;
+      }
+      closeDeleteDialog();
+      await loadUsers();
+    } catch {
+      setDeleteError("Could not delete user.");
+    }
+    setDeleteLoading(false);
+  }
+
+  const editingUser = editingUserId ? users.find((u) => u.id === editingUserId) ?? null : null;
+  const deletingUser = deletingUserId ? users.find((u) => u.id === deletingUserId) ?? null : null;
+  const editingUserEdit = editingUser ? edits[editingUser.id] ?? emptyEditable(editingUser) : null;
 
   return (
     <div className="space-y-8">
       <AdminPageHeader
         title="User management"
-        description="Create dealer or admin accounts and set dealer IDs for tracking. Dealers can be disabled; admin role and access cannot be removed here. Everyone changes their own password via Admin → Password with an email code."
-      />
-
-      <form
-        onSubmit={handleCreate}
-        className="max-w-2xl space-y-0 overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
-      >
-        <div className="divide-y divide-white/[0.06] px-6 py-5 md:px-8 md:py-6">
-          <div className="pb-5 md:pb-6">
-            <label className="ui-label">Email</label>
-            <input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              required
-              className="ui-input"
-              autoComplete="off"
-            />
-          </div>
-          <div className="py-5 md:py-6">
-            <label className="ui-label">Temporary password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              minLength={8}
-              className="ui-input"
-              autoComplete="new-password"
-            />
-            <p className="mt-1 text-xs text-muted-dim">Minimum 8 characters. Ask the user to change it after first sign-in.</p>
-          </div>
-          <div className="py-5 md:py-6">
-            <label className="ui-label">Role</label>
-            <select
-              value={newRole}
-              onChange={(e) => setNewRole(e.target.value as "admin" | "dealer")}
-              className="ui-select"
-            >
-              <option value="dealer">Dealer</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div className="py-5 md:py-6">
-            <label className="ui-label">Display name (optional)</label>
-            <input
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="ui-input"
-            />
-          </div>
-          <div className="pt-5 md:pt-6">
-            <label className="ui-label">External dealer ID (optional)</label>
-            <input
-              type="text"
-              value={newDealerId}
-              onChange={(e) => setNewDealerId(e.target.value)}
-              placeholder="Partner store code"
-              className="ui-input"
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-4 border-t border-white/[0.06] bg-black/20 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
-          {createError ? <p className="text-sm text-red-400">{createError}</p> : <span />}
-          <button type="submit" disabled={createLoading} className="btn-primary w-full shrink-0 md:w-auto md:min-w-[140px]">
-            {createLoading ? "Creating…" : "Create user"}
+        description="Manage account details from the table. Create new accounts from the header action, edit from row actions, and delete users only after email code verification."
+        rightActions={
+          <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary">
+            Create account
           </button>
-        </div>
-      </form>
+        }
+      />
 
       <section className="overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated">
         <div className="border-b border-white/[0.06] px-4 py-3 md:px-6">
@@ -241,15 +369,15 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
               <thead>
                 <tr className="border-b border-white/[0.06] text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-dim">
                   <th className="px-4 py-3 md:px-6">Email</th>
+                  <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Role</th>
                   <th className="px-4 py-3">Dealer ID</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right md:pr-6">Save</th>
+                  <th className="px-4 py-3 text-right md:pr-6">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => {
-                  const edit = edits[u.id] ?? emptyEditable(u);
                   const isSelf = u.id === currentUserId;
                   return (
                     <tr key={u.id} className="border-b border-white/[0.06] align-top">
@@ -260,60 +388,27 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
                             You
                           </span>
                         ) : null}
-                        <input
-                          type="text"
-                          value={edit.name}
-                          onChange={(e) => updateEdit(u.id, { name: e.target.value })}
-                          placeholder="Display name"
-                          className="ui-input mt-2 text-xs"
-                        />
                       </td>
+                      <td className="px-4 py-4 text-muted">{u.name?.trim() || "—"}</td>
+                      <td className="px-4 py-4 text-white">{u.role === "admin" ? "Admin" : "Dealer"}</td>
+                      <td className="px-4 py-4 text-muted">{u.dealerId?.trim() || "—"}</td>
                       <td className="px-4 py-4">
-                        {u.role === "admin" ? (
-                          <span className="text-xs font-semibold uppercase tracking-wide text-accent">Admin</span>
-                        ) : (
-                          <select
-                            value={edit.role}
-                            onChange={(e) => updateEdit(u.id, { role: e.target.value as "admin" | "dealer" })}
-                            className="ui-select text-xs"
-                          >
-                            <option value="dealer">Dealer</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        <input
-                          type="text"
-                          value={edit.dealerId}
-                          onChange={(e) => updateEdit(u.id, { dealerId: e.target.value })}
-                          className="ui-input text-xs"
-                        />
-                      </td>
-                      <td className="px-4 py-4">
-                        {u.role === "admin" ? (
-                          <span className="text-xs text-muted-dim">Protected</span>
-                        ) : (
-                          <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
-                            <input
-                              type="checkbox"
-                              checked={edit.disabled}
-                              onChange={(e) => updateEdit(u.id, { disabled: e.target.checked })}
-                              className="rounded border-white/20 bg-surface-darkest"
-                            />
-                            Disabled
-                          </label>
-                        )}
+                        {u.role === "admin" ? <span className="text-xs text-muted-dim">Protected</span> : u.disabled ? "Disabled" : "Active"}
                       </td>
                       <td className="px-4 py-4 text-right md:pr-6">
-                        <button
-                          type="button"
-                          disabled={savingId === u.id}
-                          onClick={() => saveRow(u.id)}
-                          className="btn-primary min-w-[100px] text-xs"
-                        >
-                          {savingId === u.id ? "Saving…" : "Save"}
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => openEditDialog(u.id)} className="btn-secondary text-xs">
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isSelf || u.role === "admin"}
+                            onClick={() => openDeleteDialog(u.id)}
+                            className="inline-flex items-center justify-center rounded-xl border border-red-500/45 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-100 transition hover:border-red-400/60 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -325,6 +420,230 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
       </section>
 
       <AdminPageFooter href="/admin" label="Back to queue" />
+
+      <ConfirmDialog
+        open={createOpen}
+        title="Create account"
+        initialFocus="none"
+        confirmLabel={createLoading ? "Creating…" : "Create account"}
+        loading={createLoading}
+        error={createError}
+        onCancel={() => {
+          if (createLoading) return;
+          setCreateOpen(false);
+          setCreateError(null);
+        }}
+        onConfirm={() => {
+          const form = document.getElementById("create-account-form") as HTMLFormElement | null;
+          form?.requestSubmit();
+        }}
+      >
+        <form id="create-account-form" onSubmit={handleCreate} className="space-y-3">
+          <div>
+            <label className="ui-label">Email</label>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+              autoFocus
+              className="ui-input"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label className="ui-label">Temporary password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={8}
+              className="ui-input"
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="ui-label">Role</label>
+            <select value={newRole} onChange={(e) => setNewRole(e.target.value as "admin" | "dealer")} className="ui-select">
+              <option value="dealer">Dealer</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label className="ui-label">Display name (optional)</label>
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} className="ui-input" />
+          </div>
+          <div>
+            <label className="ui-label">External dealer ID (optional)</label>
+            <input
+              type="text"
+              value={newDealerId}
+              onChange={(e) => setNewDealerId(e.target.value)}
+              placeholder="Partner store code"
+              className="ui-input"
+            />
+          </div>
+        </form>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={editOpen && !!editingUser && !!editingUserEdit}
+        title="Edit user"
+        confirmLabel={saveLoading ? "Saving…" : "Save changes"}
+        loading={saveLoading}
+        error={saveError}
+        onCancel={closeEditDialog}
+        onConfirm={() => {
+          if (!editingUser) return;
+          if (editingUser.role === "admin") {
+            openUpdateVerifyDialog();
+            return;
+          }
+          void saveRow(editingUser.id);
+        }}
+      >
+        {editingUser && editingUserEdit ? (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-dim">Editing {editingUser.email ?? "user"}.</p>
+            <div>
+              <label className="ui-label">Email</label>
+              <input
+                type="email"
+                value={editingUserEdit.email}
+                onChange={(e) => updateEdit(editingUser.id, { email: e.target.value })}
+                required
+                className="ui-input"
+              />
+            </div>
+            <div>
+              <label className="ui-label">Display name</label>
+              <input
+                type="text"
+                value={editingUserEdit.name}
+                onChange={(e) => updateEdit(editingUser.id, { name: e.target.value })}
+                className="ui-input"
+              />
+            </div>
+            <div>
+              <label className="ui-label">Role</label>
+              {editingUser.role === "admin" ? (
+                <input type="text" value="Admin (protected)" readOnly className="ui-input opacity-75" />
+              ) : (
+                <select
+                  value={editingUserEdit.role}
+                  onChange={(e) => updateEdit(editingUser.id, { role: e.target.value as "admin" | "dealer" })}
+                  className="ui-select"
+                >
+                  <option value="dealer">Dealer</option>
+                  <option value="admin">Admin</option>
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="ui-label">Dealer ID</label>
+              <input
+                type="text"
+                value={editingUserEdit.dealerId}
+                onChange={(e) => updateEdit(editingUser.id, { dealerId: e.target.value })}
+                className="ui-input"
+              />
+            </div>
+            {editingUser.role !== "admin" ? (
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
+                <input
+                  type="checkbox"
+                  checked={editingUserEdit.disabled}
+                  onChange={(e) => updateEdit(editingUser.id, { disabled: e.target.checked })}
+                  className="rounded border-white/20 bg-surface-darkest"
+                />
+                Disabled
+              </label>
+            ) : null}
+          </div>
+        ) : null}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={verifyUpdateOpen && !!editingUser && editingUser.role === "admin"}
+        title="Confirm admin update"
+        variant="default"
+        confirmLabel={verifyUpdateLoading ? "Saving…" : "Confirm and save"}
+        loading={verifyUpdateLoading}
+        error={saveError}
+        onCancel={closeUpdateVerifyDialog}
+        onConfirm={() => void confirmAdminUpdate()}
+      >
+        <div className="space-y-3">
+          <p>
+            Updating admin account <strong>{editingUser?.email ?? "user"}</strong> requires email verification.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void sendUpdateCode()}
+              disabled={sendUpdateCodeLoading || verifyUpdateLoading}
+              className="btn-secondary text-xs"
+            >
+              {sendUpdateCodeLoading ? "Sending code…" : "Send verification code"}
+            </button>
+            {updateVerifyMessage ? <span className="text-xs text-accent">{updateVerifyMessage}</span> : null}
+          </div>
+          <div>
+            <label className="ui-label">Verification code</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={updateVerifyCode}
+              onChange={(e) => setUpdateVerifyCode(e.target.value)}
+              placeholder="6-digit code"
+              className="ui-input"
+            />
+          </div>
+        </div>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={deleteOpen && !!deletingUser}
+        title="Delete user account"
+        confirmLabel={deleteLoading ? "Deleting…" : "Delete user"}
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={deleteLoading}
+        error={deleteError}
+        onCancel={closeDeleteDialog}
+        onConfirm={() => void confirmDeleteUser()}
+      >
+        {deletingUser ? (
+          <div className="space-y-3">
+            <p>
+              Delete <strong>{deletingUser.email ?? "this user"}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void sendDeleteCode()}
+                disabled={sendDeleteCodeLoading || deleteLoading}
+                className="btn-secondary text-xs"
+              >
+                {sendDeleteCodeLoading ? "Sending code…" : "Send verification code"}
+              </button>
+              {deleteMessage ? <span className="text-xs text-accent">{deleteMessage}</span> : null}
+            </div>
+            <div>
+              <label className="ui-label">Verification code</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={deleteCode}
+                onChange={(e) => setDeleteCode(e.target.value)}
+                placeholder="6-digit code"
+                className="ui-input"
+              />
+            </div>
+          </div>
+        ) : null}
+      </ConfirmDialog>
     </div>
   );
 }

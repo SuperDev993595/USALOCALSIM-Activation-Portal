@@ -215,3 +215,41 @@ export async function sendPasswordChangeCodeEmail(
   const html = `<p>Your verification code is:</p><p style="font-size:24px;font-weight:bold;letter-spacing:0.2em">${escapeHtml(code)}</p><p>This code expires in 15 minutes.</p><p>If you did not request a password change, you can ignore this email.</p>`;
   return deliverSimpleMail({ to, subject, text, html });
 }
+
+export async function sendAdminUserDeleteCodeEmail(
+  to: string,
+  code: string,
+  targetEmail: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const subject = "Your USALOCALSIM user delete verification code";
+  const text =
+    `You requested to delete user: ${targetEmail}\n\n` +
+    `Your verification code is: ${code}\n\n` +
+    "This code expires in 15 minutes. If you did not request this action, ignore this email.\n";
+  const html =
+    `<p>You requested to delete user: <strong>${escapeHtml(targetEmail)}</strong></p>` +
+    "<p>Your verification code is:</p>" +
+    `<p style="font-size:24px;font-weight:bold;letter-spacing:0.2em">${escapeHtml(code)}</p>` +
+    "<p>This code expires in 15 minutes.</p>" +
+    "<p>If you did not request this action, you can ignore this email.</p>";
+  return deliverSimpleMail({ to, subject, text, html });
+}
+
+export async function sendAdminUserUpdateCodeEmail(
+  to: string,
+  code: string,
+  targetEmail: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const subject = "Your USALOCALSIM admin update verification code";
+  const text =
+    `You requested to update admin user: ${targetEmail}\n\n` +
+    `Your verification code is: ${code}\n\n` +
+    "This code expires in 15 minutes. If you did not request this action, ignore this email.\n";
+  const html =
+    `<p>You requested to update admin user: <strong>${escapeHtml(targetEmail)}</strong></p>` +
+    "<p>Your verification code is:</p>" +
+    `<p style="font-size:24px;font-weight:bold;letter-spacing:0.2em">${escapeHtml(code)}</p>` +
+    "<p>This code expires in 15 minutes.</p>" +
+    "<p>If you did not request this action, you can ignore this email.</p>";
+  return deliverSimpleMail({ to, subject, text, html });
+}

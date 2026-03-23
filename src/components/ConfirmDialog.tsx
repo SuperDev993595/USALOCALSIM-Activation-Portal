@@ -10,6 +10,7 @@ export function ConfirmDialog({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   variant = "default",
+  initialFocus = "none",
   loading = false,
   error = null,
   onConfirm,
@@ -21,12 +22,14 @@ export function ConfirmDialog({
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: "default" | "danger";
+  initialFocus?: "cancel" | "confirm" | "none";
   loading?: boolean;
   error?: string | null;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -38,7 +41,15 @@ export function ConfirmDialog({
 
   useEffect(() => {
     if (!open) return;
-    const t = requestAnimationFrame(() => cancelRef.current?.focus());
+    const t = requestAnimationFrame(() => {
+      if (initialFocus === "cancel") {
+        cancelRef.current?.focus();
+        return;
+      }
+      if (initialFocus === "confirm") {
+        confirmRef.current?.focus();
+      }
+    });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !loading) onCancel();
     };
@@ -47,7 +58,7 @@ export function ConfirmDialog({
       cancelAnimationFrame(t);
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onCancel, loading]);
+  }, [open, onCancel, loading, initialFocus]);
 
   if (!open) return null;
 
@@ -94,7 +105,7 @@ export function ConfirmDialog({
           >
             {cancelLabel}
           </button>
-          <button type="button" onClick={() => void onConfirm()} disabled={loading} className={confirmClass}>
+          <button ref={confirmRef} type="button" onClick={() => void onConfirm()} disabled={loading} className={confirmClass}>
             {loading ? "Working…" : confirmLabel}
           </button>
         </div>
