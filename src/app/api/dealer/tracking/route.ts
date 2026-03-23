@@ -3,6 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+function parseLocalDateBoundary(value: string, boundary: "start" | "end"): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return null;
+  const year = Number.parseInt(m[1], 10);
+  const monthIndex = Number.parseInt(m[2], 10) - 1;
+  const day = Number.parseInt(m[3], 10);
+  if (!Number.isInteger(year) || !Number.isInteger(monthIndex) || !Number.isInteger(day)) return null;
+  if (boundary === "start") return new Date(year, monthIndex, day, 0, 0, 0, 0);
+  return new Date(year, monthIndex, day, 23, 59, 59, 999);
+}
+
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -36,16 +47,12 @@ export async function GET(req: Request) {
   if (dateFrom || dateTo) {
     const dateWhere: { gte?: Date; lte?: Date } = {};
     if (dateFrom) {
-      const parsed = new Date(dateFrom);
-      if (!Number.isNaN(parsed.getTime())) dateWhere.gte = parsed;
+      const parsed = parseLocalDateBoundary(dateFrom, "start");
+      if (parsed && !Number.isNaN(parsed.getTime())) dateWhere.gte = parsed;
     }
     if (dateTo) {
-      const parsed = new Date(dateTo);
-      if (!Number.isNaN(parsed.getTime())) {
-        // Include the full day in local date filters.
-        parsed.setHours(23, 59, 59, 999);
-        dateWhere.lte = parsed;
-      }
+      const parsed = parseLocalDateBoundary(dateTo, "end");
+      if (parsed && !Number.isNaN(parsed.getTime())) dateWhere.lte = parsed;
     }
     if (dateWhere.gte || dateWhere.lte) where.activatedAt = dateWhere;
   }
