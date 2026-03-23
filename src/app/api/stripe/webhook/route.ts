@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getRequestClientMeta } from "@/lib/request-meta";
+import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -40,7 +41,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true });
   }
 
-  const iccid = session.metadata?.iccid ?? null;
+  const iccidRaw = session.metadata?.iccid ?? null;
+  const iccid = iccidRaw ? normalizeIccid(iccidRaw) : null;
   const planId = session.metadata?.planId ?? null;
   const email = session.customer_email ?? session.customer_details?.email ?? "";
 
@@ -48,9 +50,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing planId or email in session" }, { status: 400 });
   }
 
+  if (iccid && (await iccidHasExistingActivation(iccid))) {
+    const { ip, userAgent } = getRequestClientMeta(req);
+    await prisma.auditLog.create({
+      data: {
+        action: "stripe_checkout_duplicate_iccid",
+        metadata: JSON.stringify({
+          email,
+          planId,
+          iccid,
+          stripePaymentId: paymentId,
+          amountTotal: session.amount_total,
+          ip,
+          userAgent,
+          note: "Payment succeeded but ICCID already has an activation request; no ActivationRequest created — refund may be required.",
+        }),
+      },
+    });
+    return NextResponse.json({ received: true });
+  }
+
   const created = await prisma.activationRequest.create({
     data: {
-      iccid,
+      iccid: iccid || null,
       planId,
       email,
       scenario: "sim_only",

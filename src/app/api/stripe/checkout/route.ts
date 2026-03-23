@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
+import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
 
 const bodySchema = z.object({
   iccid: z.string().min(1),
@@ -23,6 +24,20 @@ export async function POST(req: Request) {
   const plan = await prisma.plan.findUnique({ where: { id: body.planId } });
   if (!plan || plan.planType !== "physical_sim") {
     return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+  }
+
+  const iccid = normalizeIccid(body.iccid);
+  if (!iccid) {
+    return NextResponse.json({ error: "Invalid ICCID" }, { status: 400 });
+  }
+  if (await iccidHasExistingActivation(iccid)) {
+    return NextResponse.json(
+      {
+        error:
+          "This SIM (ICCID) already has an activation request. If you already paid, contact support with your payment receipt.",
+      },
+      { status: 409 }
+    );
   }
 
   const hardwareCost = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;
@@ -51,9 +66,9 @@ export async function POST(req: Request) {
       },
     ],
     success_url: `${appUrl}/activate/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/activate/plan?iccid=${encodeURIComponent(body.iccid)}`,
+    cancel_url: `${appUrl}/activate/plan?iccid=${encodeURIComponent(iccid)}`,
     metadata: {
-      iccid: body.iccid,
+      iccid,
       planId: body.planId,
       scenario: "sim_only",
     },

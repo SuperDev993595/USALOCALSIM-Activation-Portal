@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
+import { iccidHasExistingActivation } from "@/lib/activation-dedupe";
 
 const ICCID_REGEX = /^\d{18,22}$/;
 
@@ -54,6 +55,18 @@ export async function GET(req: Request) {
     return NextResponse.json(
       { error: "Invalid ICCID. Use 18–22 digits from your SIM card." },
       { status: 400 }
+    );
+  }
+
+  if (hasIccid && (await iccidHasExistingActivation(iccid))) {
+    await recordFailedAttempt(key);
+    return NextResponse.json(
+      {
+        error:
+          "This SIM (ICCID) already has an activation request. If you need help, contact support with your ICCID.",
+        code: "ICCID_ALREADY_USED",
+      },
+      { status: 409 }
     );
   }
 

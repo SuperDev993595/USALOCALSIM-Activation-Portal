@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { getRequestClientMeta } from "@/lib/request-meta";
+import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
 
 const ICCID_REGEX = /^\d{18,22}$/;
 
@@ -61,33 +62,67 @@ export async function POST(req: Request) {
   }
 
   const comboIccid =
-    body.scenario === "combo" ? (body.iccid ?? "").trim().replace(/\s/g, "") : null;
+    body.scenario === "combo" ? normalizeIccid(body.iccid ?? "") : null;
 
-  const activationRequest = await prisma.activationRequest.create({
-    data: {
-      email: body.email,
-      scenario: body.scenario,
-      planId: body.planId,
-      iccid: comboIccid,
-      voucherCode: body.voucherCode.trim().toUpperCase(),
-      voucherId: voucher.id,
-      status: "pending",
-    },
-  });
-
+  const voucherCodeUpper = body.voucherCode.trim().toUpperCase();
   const redeemedBy =
     body.scenario === "combo" && comboIccid
       ? `${body.email} · ICCID ${comboIccid}`
       : body.email;
 
-  await prisma.voucher.update({
-    where: { id: voucher.id },
-    data: {
-      status: "redeemed",
-      redeemedAt: new Date(),
-      redeemedBy,
-    },
-  });
+  let activationRequest: { id: string };
+  try {
+    activationRequest = await prisma.$transaction(async (tx) => {
+      if (comboIccid && (await iccidHasExistingActivation(comboIccid, tx))) {
+        const err = new Error("ICCID_ALREADY_USED");
+        err.name = "ICCID_ALREADY_USED";
+        throw err;
+      }
+
+      const claimed = await tx.voucher.updateMany({
+        where: { id: voucher.id, status: "activated" },
+        data: {
+          status: "redeemed",
+          redeemedAt: new Date(),
+          redeemedBy,
+        },
+      });
+      if (claimed.count === 0) {
+        const err = new Error("VOUCHER_ALREADY_USED");
+        err.name = "VOUCHER_ALREADY_USED";
+        throw err;
+      }
+
+      return tx.activationRequest.create({
+        data: {
+          email: body.email,
+          scenario: body.scenario,
+          planId: body.planId,
+          iccid: comboIccid,
+          voucherCode: voucherCodeUpper,
+          voucherId: voucher.id,
+          status: "pending",
+        },
+      });
+    });
+  } catch (e) {
+    const name = e instanceof Error ? e.name : "";
+    if (name === "ICCID_ALREADY_USED") {
+      await recordFailedAttempt(key);
+      return NextResponse.json(
+        {
+          error:
+            "This SIM (ICCID) already has an activation request. If you need help, contact support with your ICCID.",
+        },
+        { status: 409 }
+      );
+    }
+    if (name === "VOUCHER_ALREADY_USED") {
+      await recordFailedAttempt(key);
+      return NextResponse.json({ error: "This voucher has already been used." }, { status: 409 });
+    }
+    throw e;
+  }
 
   const { ip, userAgent } = getRequestClientMeta(req);
   await prisma.auditLog.create({
@@ -97,7 +132,7 @@ export async function POST(req: Request) {
         requestId: activationRequest.id,
         scenario: body.scenario,
         email: body.email,
-        voucherCode: body.voucherCode.trim().toUpperCase(),
+        voucherCode: voucherCodeUpper,
         iccid: comboIccid,
         ip,
         userAgent,

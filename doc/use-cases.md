@@ -243,6 +243,8 @@ This document describes **actors**, **primary use cases**, **alternative flows**
 | **A-7** | **`market=us`** but ICCID supplied | **400** — US flow is voucher-only for eSIM. |
 | **A-8** | Voucher **type** wrong for path | e.g. **top_up** without ICCID, or **esim** when combo expected — **`/api/validate`** returns **400** with explanatory copy. |
 | **A-9** | **`POST /api/submit`** voucher **planId** mismatch | **400** — voucher or plan invalid. |
+| **A-10** | **ICCID** already has any **`ActivationRequest`** (pending or completed) | **409** on **`GET /api/validate`** (when ICCID is sent), **`POST /api/stripe/checkout`**, and **`POST /api/submit`** (combo). **`/api/validate`** returns **`code: ICCID_ALREADY_USED`**. Stripe webhook still returns **200** to Stripe but logs **`stripe_checkout_duplicate_iccid`** (paid session with duplicate ICCID — ops may refund). |
+| **A-11** | **Concurrent** **`POST /api/submit`** with the same **activated** voucher | Transaction **claims** voucher (**`activated` → `redeemed`**) before creating the request; second client gets **409** *This voucher has already been used.* |
 
 ---
 
@@ -276,3 +278,4 @@ This document describes **actors**, **primary use cases**, **alternative flows**
 |---------|------|--------|
 | 1.0 | — | Initial use-case catalog for manual QA and handover. |
 | 1.1 | 2025-03-22 | Synced with code: validate/submit rules, US path, rate-limit semantics, SIM-only via webhook only, admin complete + optional eSIM QR, plan catalog via API only, email/locale notes. |
+| 1.2 | 2025-03-22 | Duplicate prevention: one ICCID per activation queue; transactional voucher claim on submit; Stripe duplicate-ICCID webhook audit. |
