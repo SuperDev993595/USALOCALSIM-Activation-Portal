@@ -1,3 +1,104 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  ::selection {
+    @apply bg-accent/30 text-white;
+  }
+}
+
+@layer components {
+  .ui-page {
+    @apply min-h-screen text-slate-100;
+    background-color: theme("colors.surface.darkest");
+    background-image: theme("backgroundImage.grid-tech");
+    background-size: theme("backgroundSize.grid");
+  }
+
+  .ui-card {
+    @apply rounded-lg border border-white/10 bg-surface-card/95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)];
+  }
+
+  .ui-label {
+    @apply block text-xs font-semibold uppercase tracking-wider text-muted;
+  }
+
+  .ui-input {
+    @apply mt-1 block w-full rounded-md border border-white/15 bg-black/35 px-3 py-2 text-white shadow-inner placeholder:text-muted-dim/70 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+  }
+
+  .ui-select {
+    @apply mt-1 block w-full rounded-md border border-white/15 bg-black/35 px-3 py-2 text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+  }
+
+  .ui-select option {
+    background-color: theme("colors.surface.card");
+    color: #e2e8f0;
+  }
+
+  .ui-textarea {
+    @apply mt-1 block w-full rounded-md border border-white/15 bg-black/35 px-3 py-2 font-mono text-sm text-white placeholder:text-muted-dim/70 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-surface-darkest shadow-accent-sm transition hover:bg-accent-hover hover:shadow-accent-md disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-white/25 bg-transparent px-4 py-2.5 text-sm font-semibold text-white transition hover:border-white/45 hover:bg-white/5 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .link-accent {
+    @apply text-accent hover:text-accent-hover hover:underline;
+  }
+
+  .page-hero-title {
+    @apply text-center text-3xl font-bold uppercase tracking-tight text-white sm:text-4xl;
+  }
+
+  .page-hero-subtitle {
+    @apply mt-2 text-center text-sm text-muted;
+  }
+
+  .ui-table-wrap {
+    @apply overflow-x-auto rounded-lg border border-white/10 bg-surface-card/80;
+  }
+
+  .ui-table {
+    @apply min-w-full divide-y divide-white/10 text-sm;
+  }
+
+  .ui-table thead {
+    @apply bg-black/30;
+  }
+
+  .ui-table th {
+    @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted;
+  }
+
+  .ui-table td {
+    @apply px-3 py-2 text-muted;
+  }
+
+  .ui-table tbody tr {
+    @apply border-t border-white/5 transition hover:bg-white/[0.03];
+  }
+
+  .ui-table td strong,
+  .ui-table .font-mono {
+    @apply text-white/95;
+  }
+
+  .badge {
+    @apply inline-flex rounded px-2 py-0.5 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .badge-success {
+    @apply border border-accent/40 bg-accent/15 text-accent-hover;
+  }
+
+  .badge-muted {
+    @apply border border-white/15 bg-white/5 text-muted;
+  }
+}

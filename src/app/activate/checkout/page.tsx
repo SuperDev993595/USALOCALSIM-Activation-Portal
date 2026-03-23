@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
@@ -40,52 +41,54 @@ export default function CheckoutPage() {
 
   if (!iccid || !planId) {
     return (
-      <main className="min-h-screen p-6 flex flex-col items-center justify-center">
-        <p className="text-gray-600">{t("missingParams")}</p>
-        <Link href="/activate" className="mt-4 text-blue-600 hover:underline">
-          {t("backToActivation")}
-        </Link>
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+          <p className="text-muted">{t("missingParams")}</p>
+          <Link href="/activate" className="link-accent mt-4">
+            {t("backToActivation")}
+          </Link>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-6 flex flex-col items-center justify-center">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-gray-900">{t("title")}</h1>
-        <p className="mt-1 text-sm text-gray-600">{t("subtitle")}</p>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              {t("emailLabel")}
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
-            />
-          </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? t("redirecting") : t("continueToPayment")}
-          </button>
-        </form>
-        <p className="mt-4 text-center">
-          <Link
-            href={`/activate/plan?iccid=${encodeURIComponent(iccid)}`}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            {t("backToPlans")}
-          </Link>
-        </p>
-      </div>
-    </main>
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex flex-1 flex-col items-center px-6 py-12">
+        <div className="ui-card w-full max-w-sm p-6">
+          <h1 className="text-xl font-bold uppercase tracking-tight text-white">{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="email" className="ui-label">
+                {t("emailLabel")}
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="ui-input"
+              />
+            </div>
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? t("redirecting") : t("continueToPayment")}
+            </button>
+          </form>
+          <p className="mt-4 text-center">
+            <Link
+              href={`/activate/plan?iccid=${encodeURIComponent(iccid)}`}
+              className="link-accent text-sm"
+            >
+              {t("backToPlans")}
+            </Link>
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }

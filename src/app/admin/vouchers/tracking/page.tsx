@@ -33,16 +33,16 @@ export default function VoucherTrackingPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Voucher tracking</h1>
-      <p className="mt-1 text-sm text-gray-600">
+      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Voucher tracking</h1>
+      <p className="mt-1 text-sm text-muted">
         Which dealer (or admin) unlocked which voucher. Redeemed vouchers show who used them (email/ICCID).
       </p>
-      <div className="mt-2">
-        <label className="text-sm text-gray-600">Filter by status: </label>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <label className="text-sm text-muted">Filter by status:</label>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="ml-2 rounded border border-gray-300 px-2 py-1 text-sm"
+          className="ui-select !mt-0 inline-block w-auto min-w-[140px] py-1.5 text-sm"
         >
           <option value="">All</option>
           <option value="inactive">Inactive</option>
@@ -51,39 +51,39 @@ export default function VoucherTrackingPage() {
         </select>
       </div>
       {loading ? (
-        <p className="mt-4 text-gray-500">Loading…</p>
+        <p className="mt-4 text-muted-dim">Loading…</p>
       ) : (
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white text-sm">
+        <div className="ui-table-wrap mt-4">
+          <table className="ui-table">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="px-3 py-2 text-left font-medium text-gray-700">Code</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700">Status</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700">Type</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700">Plan</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700">Unlocked by</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700">Redeemed by</th>
+              <tr>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Type</th>
+                <th>Plan</th>
+                <th>Unlocked by</th>
+                <th>Redeemed by</th>
               </tr>
             </thead>
             <tbody>
               {vouchers.map((v) => (
-                <tr key={v.id} className="border-t border-gray-200">
-                  <td className="px-3 py-2 font-mono text-gray-900">{v.code}</td>
-                  <td className="px-3 py-2 text-gray-600">{v.status}</td>
-                  <td className="px-3 py-2 text-gray-600">{v.type}</td>
-                  <td className="px-3 py-2 text-gray-600">{v.planName}</td>
-                  <td className="px-3 py-2 text-gray-600">
+                <tr key={v.id}>
+                  <td className="font-mono text-white/95">{v.code}</td>
+                  <td>{v.status}</td>
+                  <td>{v.type}</td>
+                  <td>{v.planName}</td>
+                  <td>
                     {v.activatedByEmail ?? "—"}
                     {v.activatedAt && (
-                      <span className="block text-xs text-gray-400">
+                      <span className="block text-xs text-muted-dim">
                         {new Date(v.activatedAt).toLocaleString()}
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-gray-600">
+                  <td>
                     {v.redeemedBy ?? "—"}
                     {v.redeemedAt && (
-                      <span className="block text-xs text-gray-400">
+                      <span className="block text-xs text-muted-dim">
                         {new Date(v.redeemedAt).toLocaleString()}
                       </span>
                     )}
@@ -92,11 +92,13 @@ export default function VoucherTrackingPage() {
               ))}
             </tbody>
           </table>
-          {vouchers.length === 0 && <p className="mt-4 text-gray-500">No vouchers found.</p>}
+          {vouchers.length === 0 && <p className="p-4 text-muted">No vouchers found.</p>}
         </div>
       )}
       <p className="mt-4">
-        <Link href="/admin" className="text-blue-600 hover:underline">← Queue</Link>
+        <Link href="/admin" className="link-accent text-sm">
+          ← Queue
+        </Link>
       </p>
     </div>
   );

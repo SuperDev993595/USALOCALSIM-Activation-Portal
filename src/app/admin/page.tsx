@@ -11,8 +11,8 @@ export default async function AdminPage() {
   });
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Pending activations</h1>
-      <p className="mt-1 text-sm text-gray-600">
+      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Pending activations</h1>
+      <p className="mt-1 text-sm text-muted">
         Complete each request after activating the line with the supplier.
       </p>
       <AdminQueue initial={pending} />

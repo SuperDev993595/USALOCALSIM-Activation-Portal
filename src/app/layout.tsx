@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import type { AbstractIntlMessages } from "next-intl";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
@@ -23,6 +24,12 @@ const messagesMap: Record<Locale, AbstractIntlMessages> = {
   hi: hi as AbstractIntlMessages,
 };
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "USALOCALSIM Activation",
   description: "Activate your USALOCALSIM service",
@@ -39,8 +46,10 @@ export default async function RootLayout({
   const messages = messagesMap[locale] ?? messagesMap.en;
 
   return (
-    <html lang={locale}>
-      <body className="min-h-screen bg-gray-50 antialiased">
+    <html lang={locale} className={inter.variable}>
+      <body
+        className={`${inter.className} min-h-screen bg-surface-darkest bg-grid-tech bg-grid text-slate-100 antialiased`}
+      >
         <SessionProvider>
           <LocaleProvider
             locale={locale}

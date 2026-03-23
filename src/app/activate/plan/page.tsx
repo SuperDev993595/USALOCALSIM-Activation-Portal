@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { SiteHeader } from "@/components/SiteHeader";
 
 type Plan = {
   id: string;
@@ -41,59 +42,78 @@ export default function ActivatePlanPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-6 flex items-center justify-center">
-        <p className="text-gray-600">{t("loading")}</p>
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex flex-1 items-center justify-center px-6 py-16">
+          <p className="text-muted">{t("loading")}</p>
+        </main>
+      </div>
     );
   }
 
   if (error || !plans.length) {
     return (
-      <main className="min-h-screen p-6 flex flex-col items-center justify-center">
-        <p className="text-red-600">{error || t("noPlans")}</p>
-        <Link href="/activate" className="mt-4 text-blue-600 hover:underline">
-          {t("backToActivation")}
-        </Link>
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+          <p className="text-red-400">{error || t("noPlans")}</p>
+          <Link href="/activate" className="link-accent mt-4">
+            {t("backToActivation")}
+          </Link>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
-        <p className="mt-2 text-gray-600 text-sm">{t("subtitle")}</p>
-        <p className="mt-2 text-sm text-gray-500">{t("iccidLine", { iccid })}</p>
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex flex-1 flex-col px-6 py-12">
+        <div className="mx-auto w-full max-w-md">
+          <h1 className="text-2xl font-bold uppercase tracking-tight text-white">{t("title")}</h1>
+          <p className="mt-2 text-sm text-muted">{t("subtitle")}</p>
+          <p className="mt-2 font-mono text-xs text-muted-dim">{t("iccidLine", { iccid })}</p>
 
-        <div className="mt-6 space-y-3">
-          {plans.map((plan) => (
-            <Link
-              key={plan.id}
-              href={`/activate/checkout?iccid=${encodeURIComponent(iccid)}&planId=${encodeURIComponent(plan.id)}`}
-              className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:border-blue-500 hover:bg-blue-50/50"
-            >
-              <div className="font-medium text-gray-900">{plan.name}</div>
-              <div className="text-sm text-gray-600">
-                {plan.dataAllowance} · {plan.durationDays} days
-              </div>
-              <div className="mt-2 text-lg font-semibold text-blue-600">
-                ${(plan.priceCents / 100).toFixed(2)}
-                {plan.originalPriceCents > plan.priceCents && (
-                  <span className="ml-2 text-sm font-normal text-gray-500 line-through">
-                    ${(plan.originalPriceCents / 100).toFixed(2)}
-                  </span>
-                )}
-              </div>
+          <div className="mt-8 space-y-3">
+            {plans.map((plan, index) => {
+              const popular = index === Math.min(1, plans.length - 1);
+              return (
+                <Link
+                  key={plan.id}
+                  href={`/activate/checkout?iccid=${encodeURIComponent(iccid)}&planId=${encodeURIComponent(plan.id)}`}
+                  className={`ui-card block p-4 transition hover:border-accent/40 hover:shadow-accent-sm ${
+                    popular ? "border-brand-purple/50 ring-1 ring-brand-purple/30" : ""
+                  }`}
+                >
+                  {popular && (
+                    <span className="badge mb-2 border border-brand-purple/50 bg-brand-purple/20 text-brand-purple">
+                      Popular
+                    </span>
+                  )}
+                  <div className="font-semibold text-white">{plan.name}</div>
+                  <div className="text-sm text-muted">
+                    {plan.dataAllowance} · {plan.durationDays} days
+                  </div>
+                  <div className="mt-2 text-lg font-bold text-accent">
+                    ${(plan.priceCents / 100).toFixed(2)}
+                    {plan.originalPriceCents > plan.priceCents && (
+                      <span className="ml-2 text-sm font-normal text-muted-dim line-through">
+                        ${(plan.originalPriceCents / 100).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          <p className="mt-8 text-center">
+            <Link href="/activate" className="link-accent text-sm">
+              {t("backToActivation")}
             </Link>
-          ))}
+          </p>
         </div>
-
-        <p className="mt-6 text-center">
-          <Link href="/activate" className="text-sm text-blue-600 hover:underline">
-            {t("backToActivation")}
-          </Link>
-        </p>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

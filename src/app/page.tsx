@@ -2,34 +2,52 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export default function HomePage() {
   const t = useTranslations("home");
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
-      <p className="mt-2 text-center text-gray-600 max-w-md">{t("subtitle")}</p>
-      <Link
-        href="/activate"
-        className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-      >
-        {t("startActivation")}
-      </Link>
-      <p className="mt-4 text-sm text-gray-500">
-        <span>{t("usResidentsIntro")} </span>
-        <Link href="/activate/us" className="text-blue-600 hover:underline">
-          {t("usResidentsLink")}
-        </Link>
-        <span> {t("usResidentsDetail")}</span>
-        <span className="block mt-1">
-          <Link href="/activate" className="text-blue-600 hover:underline">
-            {t("physicalSimElsewhere")}
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+        <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+          </span>
+          Live
+        </p>
+        <h1 className="page-hero-title max-w-2xl text-white">{t("title")}</h1>
+        <p className="page-hero-subtitle max-w-md">{t("subtitle")}</p>
+        <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+          <Link href="/activate" className="btn-primary min-w-[200px] px-8 py-3 text-center">
+            {t("startActivation")}
           </Link>
-        </span>
-      </p>
-      <div className="mt-4 flex gap-4 text-sm text-gray-500">
-        <Link href="/login">{t("adminLogin")}</Link>
-      </div>
-    </main>
+          <Link href="/activate/us" className="btn-secondary min-w-[200px] px-8 py-3 text-center">
+            {t("usResidentsLink")}
+          </Link>
+        </div>
+        <p className="mt-10 max-w-lg text-center text-sm text-muted">
+          <span>{t("usResidentsIntro")} </span>
+          <Link href="/activate/us" className="link-accent">
+            {t("usResidentsLink")}
+          </Link>
+          <span> {t("usResidentsDetail")}</span>
+          <span className="mt-2 block">
+            <Link href="/activate" className="link-accent">
+              {t("physicalSimElsewhere")}
+            </Link>
+          </span>
+        </p>
+        <p className="mt-8 text-sm text-muted-dim">
+          <Link href="/login" className="transition hover:text-muted">
+            {t("adminLogin")}
+          </Link>
+        </p>
+      </main>
+      <footer className="border-t border-white/10 py-6 text-center text-[11px] uppercase tracking-widest text-muted-dim">
+        USALOCALSIM · Activation portal
+      </footer>
+    </div>
   );
 }

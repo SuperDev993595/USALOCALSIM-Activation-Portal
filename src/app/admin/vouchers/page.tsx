@@ -49,18 +49,16 @@ export default function AdminVouchersPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Import vouchers</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Add voucher codes (inactive). Max 5000 per request.
-      </p>
-      <form onSubmit={handleImport} className="mt-4 max-w-lg space-y-4">
+      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Import vouchers</h1>
+      <p className="mt-1 text-sm text-muted">Add voucher codes (inactive). Max 5000 per request.</p>
+      <form onSubmit={handleImport} className="ui-card mt-4 max-w-lg space-y-4 p-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Plan</label>
+          <label className="ui-label">Plan</label>
           <select
             value={planId}
             onChange={(e) => setPlanId(e.target.value)}
             required
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+            className="ui-select"
           >
             <option value="">Select plan</option>
             {plans.map((p) => (
@@ -71,41 +69,39 @@ export default function AdminVouchersPage() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Voucher type</label>
+          <label className="ui-label">Voucher type</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as "top_up" | "esim")}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900"
+            className="ui-select"
           >
             <option value="top_up">Top-up (physical SIM)</option>
             <option value="esim">eSIM</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Codes (one per line or comma-separated)</label>
+          <label className="ui-label">Codes (one per line or comma-separated)</label>
           <textarea
             value={codesText}
             onChange={(e) => setCodesText(e.target.value)}
             rows={8}
             placeholder="VOUCHER1&#10;VOUCHER2&#10;..."
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm text-gray-900"
+            className="ui-textarea"
           />
         </div>
         {result && (
-          <p className="text-sm text-green-600">
+          <p className="text-sm text-accent">
             Created: {result.created}, Skipped (already exist): {result.skipped}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="btn-primary">
           {loading ? "Importing…" : "Import"}
         </button>
       </form>
       <p className="mt-4">
-        <Link href="/admin" className="text-blue-600 hover:underline">← Queue</Link>
+        <Link href="/admin" className="link-accent text-sm">
+          ← Queue
+        </Link>
       </p>
     </div>
   );
