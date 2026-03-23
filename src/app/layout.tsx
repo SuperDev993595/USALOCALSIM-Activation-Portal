@@ -47,9 +47,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className={inter.variable}>
-      <body
-        className={`${inter.className} min-h-screen bg-surface-darkest bg-grid-tech bg-grid text-slate-100 antialiased`}
-      >
+      <body className={`${inter.className} min-h-screen text-slate-100 antialiased`}>
         <SessionProvider>
           <LocaleProvider
             locale={locale}

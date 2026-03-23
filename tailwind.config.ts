@@ -12,8 +12,8 @@ const config: Config = {
         surface: {
           darkest: "#05070a",
           DEFAULT: "#080c12",
-          card: "#0c1018",
-          elevated: "#121a24",
+          card: "#151f30",
+          elevated: "#1a2638",
         },
         muted: {
           DEFAULT: "#8e9fb1",
@@ -32,11 +32,12 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       backgroundImage: {
+        /* Kept for utilities; body grid uses globals.css :root vars for visibility */
         "grid-tech":
-          "linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px)",
+          "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)",
       },
       backgroundSize: {
-        grid: "48px 48px",
+        grid: "40px 40px",
       },
       boxShadow: {
         "accent-sm": "0 0 24px rgba(0, 230, 168, 0.2)",

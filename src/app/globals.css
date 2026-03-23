@@ -3,6 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --app-bg: #05070a;
+    /* Visible on dark backgrounds; pure white at very low alpha was nearly invisible */
+    --grid-line: rgba(255, 255, 255, 0.12);
+    --grid-size: 40px;
+  }
+
+  body {
+    background-color: var(--app-bg);
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    background-repeat: repeat;
+  }
+
   ::selection {
     @apply bg-accent/30 text-white;
   }
@@ -11,13 +26,15 @@
 @layer components {
   .ui-page {
     @apply min-h-screen text-slate-100;
-    background-color: theme("colors.surface.darkest");
-    background-image: theme("backgroundImage.grid-tech");
-    background-size: theme("backgroundSize.grid");
+    background-color: var(--app-bg);
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    background-repeat: repeat;
   }
 
   .ui-card {
-    @apply rounded-lg border border-white/10 bg-surface-card/95 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)];
+    @apply rounded-lg border border-white/[0.12] bg-surface-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)];
   }
 
   .ui-label {
@@ -62,7 +79,7 @@
   }
 
   .ui-table-wrap {
-    @apply overflow-x-auto rounded-lg border border-white/10 bg-surface-card/80;
+    @apply overflow-x-auto rounded-lg border border-white/[0.12] bg-surface-card/90;
   }
 
   .ui-table {
