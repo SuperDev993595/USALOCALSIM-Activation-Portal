@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
-import { iccidHasExistingActivation } from "@/lib/activation-dedupe";
+import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
 
 const ICCID_REGEX = /^\d{18,22}$/;
 
@@ -58,7 +58,8 @@ export async function GET(req: Request) {
     );
   }
 
-  if (hasIccid && (await iccidHasExistingActivation(iccid))) {
+  // Combo (ICCID + voucher): ICCID must not already be used.
+  if (hasIccid && hasVoucher && (await iccidHasExistingActivation(iccid))) {
     await recordFailedAttempt(key);
     return NextResponse.json(
       {
@@ -164,15 +165,49 @@ export async function GET(req: Request) {
   }
 
   // SIM only: hasIccid, no voucher
+  const nIccid = normalizeIccid(iccid);
+  const existing = await prisma.activationRequest.findMany({
+    where: { iccid: nIccid },
+    include: { plan: true },
+    orderBy: { createdAt: "desc" },
+  });
+  const tier = existing.length ? Math.max(...existing.map((r) => r.plan.priceCents)) : 0;
+  const pending = existing.find((r) => r.status === "pending") ?? null;
+  const completed = existing.find((r) => r.status === "completed") ?? null;
+
   const plans = await prisma.plan.findMany({
     where: { planType: "physical_sim", market: "global" },
     orderBy: { durationDays: "asc" },
   });
   const hardwareCost = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;
+  const upgradable = plans.filter((p) => tier === 0 || p.priceCents > tier);
   return NextResponse.json({
     scenario: "sim_only",
     iccid,
-    plans: plans.map((p) => ({
+    simState: {
+      tierPriceCents: tier,
+      pending: pending
+        ? {
+            id: pending.id,
+            status: pending.status,
+            planName: pending.plan.name,
+            dataAllowance: pending.plan.dataAllowance,
+            durationDays: pending.plan.durationDays,
+            voucherCode: pending.voucherCode,
+          }
+        : null,
+      completed: completed
+        ? {
+            id: completed.id,
+            status: completed.status,
+            planName: completed.plan.name,
+            dataAllowance: completed.plan.dataAllowance,
+            durationDays: completed.plan.durationDays,
+            voucherCode: completed.voucherCode,
+          }
+        : null,
+    },
+    plans: upgradable.map((p) => ({
       id: p.id,
       name: p.name,
       dataAllowance: p.dataAllowance,

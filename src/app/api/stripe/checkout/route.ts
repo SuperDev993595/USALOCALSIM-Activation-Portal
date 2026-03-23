@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
-import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
+import { assertSimOnlyPaidCheckoutAllowed, normalizeIccid } from "@/lib/activation-dedupe";
 
 const bodySchema = z.object({
   iccid: z.string().min(1),
@@ -30,14 +30,9 @@ export async function POST(req: Request) {
   if (!iccid) {
     return NextResponse.json({ error: "Invalid ICCID" }, { status: 400 });
   }
-  if (await iccidHasExistingActivation(iccid)) {
-    return NextResponse.json(
-      {
-        error:
-          "This SIM (ICCID) already has an activation request. If you already paid, contact support with your payment receipt.",
-      },
-      { status: 409 }
-    );
+  const gate = await assertSimOnlyPaidCheckoutAllowed(iccid, plan.priceCents);
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.error }, { status: 409 });
   }
 
   const hardwareCost = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;
@@ -66,7 +61,7 @@ export async function POST(req: Request) {
       },
     ],
     success_url: `${appUrl}/activate/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/activate/plan?iccid=${encodeURIComponent(iccid)}`,
+    cancel_url: `${appUrl}/activate/plan?iccid=${encodeURIComponent(iccid)}&email=${encodeURIComponent(body.email)}`,
     metadata: {
       iccid,
       planId: body.planId,

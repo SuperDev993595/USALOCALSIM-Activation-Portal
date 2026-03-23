@@ -35,7 +35,7 @@ export default function ActivatePage() {
         return;
       }
       if (data.scenario === "sim_only") {
-        router.push(`/activate/plan?iccid=${encodeURIComponent(iccid.trim())}`);
+        router.push(`/activate/checkout?iccid=${encodeURIComponent(iccid.trim().replace(/\s/g, ""))}`);
         return;
       }
       setScenario(data.scenario);
@@ -81,6 +81,7 @@ export default function ActivatePage() {
       <SiteHeader />
       <main className="flex flex-1 flex-col items-center px-6 py-12">
         <div className="w-full max-w-md">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
           <h1 className="page-hero-title">{t("title")}</h1>
           <p className="page-hero-subtitle">{t("subtitle")}</p>
 

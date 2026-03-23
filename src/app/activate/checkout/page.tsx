@@ -10,36 +10,26 @@ export default function CheckoutPage() {
   const t = useTranslations("checkout");
   const searchParams = useSearchParams();
   const iccid = searchParams.get("iccid") ?? "";
-  const planId = searchParams.get("planId") ?? "";
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ iccid, planId, email: email.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? t("paymentError"));
-        setLoading(false);
-        return;
-      }
-      if (data.url) window.location.href = data.url;
-      else setError(t("missingCheckoutUrl"));
-    } catch {
-      setError(t("genericError"));
+    if (!iccid.trim()) {
+      setError(t("missingParams"));
+      return;
     }
-    setLoading(false);
+    setLoading(true);
+    const q = new URLSearchParams({
+      iccid: iccid.trim().replace(/\s/g, ""),
+      email: email.trim(),
+    });
+    window.location.href = `/activate/plan?${q.toString()}`;
   }
 
-  if (!iccid || !planId) {
+  if (!iccid) {
     return (
       <div className="flex min-h-screen flex-col">
         <SiteHeader />
@@ -58,8 +48,10 @@ export default function CheckoutPage() {
       <SiteHeader />
       <main className="flex flex-1 flex-col items-center px-6 py-12">
         <div className="ui-card w-full max-w-sm p-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
           <h1 className="text-xl font-bold uppercase tracking-tight text-white">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
+          <p className="mt-2 font-mono text-xs text-muted-dim">{t("iccidLine", { iccid })}</p>
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div>
               <label htmlFor="email" className="ui-label">
@@ -76,15 +68,12 @@ export default function CheckoutPage() {
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
             <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? t("redirecting") : t("continueToPayment")}
+              {loading ? t("redirecting") : t("continueToPlans")}
             </button>
           </form>
           <p className="mt-4 text-center">
-            <Link
-              href={`/activate/plan?iccid=${encodeURIComponent(iccid)}`}
-              className="link-accent text-sm"
-            >
-              {t("backToPlans")}
+            <Link href="/activate" className="link-accent text-sm">
+              {t("backToActivation")}
             </Link>
           </p>
         </div>
