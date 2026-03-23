@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { useState, useEffect } from "react";
 
 type Plan = { id: string; name: string; planType: string; market: string };
@@ -48,61 +48,69 @@ export default function AdminVouchersPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Import vouchers</h1>
-      <p className="mt-1 text-sm text-muted">Add voucher codes (inactive). Max 5000 per request.</p>
-      <form onSubmit={handleImport} className="ui-card mt-4 max-w-lg space-y-4 p-6">
-        <div>
-          <label className="ui-label">Plan</label>
-          <select
-            value={planId}
-            onChange={(e) => setPlanId(e.target.value)}
-            required
-            className="ui-select"
-          >
-            <option value="">Select plan</option>
-            {plans.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.planType}, {p.market})
-              </option>
-            ))}
-          </select>
+    <div className="space-y-8">
+      <AdminPageHeader
+        title="Import vouchers"
+        description="Bulk-add voucher codes as inactive inventory. Paste up to 5000 codes per request—one per line or comma-separated."
+      />
+      <form
+        onSubmit={handleImport}
+        className="max-w-2xl space-y-0 overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
+      >
+        <div className="divide-y divide-white/[0.06] px-6 py-5 md:px-8 md:py-6">
+          <div className="pb-5 md:pb-6">
+            <label className="ui-label">Plan</label>
+            <select
+              value={planId}
+              onChange={(e) => setPlanId(e.target.value)}
+              required
+              className="ui-select"
+            >
+              <option value="">Select plan</option>
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.planType}, {p.market})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="py-5 md:py-6">
+            <label className="ui-label">Voucher type</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as "top_up" | "esim")}
+              className="ui-select"
+            >
+              <option value="top_up">Top-up (physical SIM)</option>
+              <option value="esim">eSIM</option>
+            </select>
+          </div>
+          <div className="pt-5 md:pt-6">
+            <label className="ui-label">Codes (one per line or comma-separated)</label>
+            <textarea
+              value={codesText}
+              onChange={(e) => setCodesText(e.target.value)}
+              rows={10}
+              placeholder="VOUCHER1&#10;VOUCHER2&#10;..."
+              className="ui-textarea min-h-[200px] rounded-xl"
+            />
+          </div>
         </div>
-        <div>
-          <label className="ui-label">Voucher type</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as "top_up" | "esim")}
-            className="ui-select"
-          >
-            <option value="top_up">Top-up (physical SIM)</option>
-            <option value="esim">eSIM</option>
-          </select>
+        <div className="flex flex-col gap-4 border-t border-white/[0.06] bg-black/20 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+          {result ? (
+            <p className="text-sm text-accent">
+              <span className="font-semibold text-accent-hover">{result.created}</span> created ·{" "}
+              <span className="text-muted">{result.skipped} skipped (duplicates)</span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted-dim">Codes are stored inactive until unlocked by a dealer.</p>
+          )}
+          <button type="submit" disabled={loading} className="btn-primary w-full shrink-0 md:w-auto md:min-w-[140px]">
+            {loading ? "Importing…" : "Import codes"}
+          </button>
         </div>
-        <div>
-          <label className="ui-label">Codes (one per line or comma-separated)</label>
-          <textarea
-            value={codesText}
-            onChange={(e) => setCodesText(e.target.value)}
-            rows={8}
-            placeholder="VOUCHER1&#10;VOUCHER2&#10;..."
-            className="ui-textarea"
-          />
-        </div>
-        {result && (
-          <p className="text-sm text-accent">
-            Created: {result.created}, Skipped (already exist): {result.skipped}
-          </p>
-        )}
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? "Importing…" : "Import"}
-        </button>
       </form>
-      <p className="mt-4">
-        <Link href="/admin" className="link-accent text-sm">
-          ← Queue
-        </Link>
-      </p>
+      <AdminPageFooter />
     </div>
   );
 }

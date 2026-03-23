@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { prisma } from "@/lib/db";
 import { AdminQueue } from "./AdminQueue";
 
@@ -10,11 +11,25 @@ export default async function AdminPage() {
     orderBy: { createdAt: "asc" },
   });
   return (
-    <div>
-      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Pending activations</h1>
-      <p className="mt-1 text-sm text-muted">
-        Complete each request after activating the line with the supplier.
-      </p>
+    <div className="space-y-8">
+      <AdminPageHeader
+        title="Pending activations"
+        description="Complete each request after you have activated the line with the supplier. The list refreshes every 30 seconds while this page is open."
+        meta={
+          <span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-muted backdrop-blur-sm">
+            <span
+              className="relative flex h-2 w-2"
+              aria-hidden
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent shadow-[0_0_10px_theme(colors.accent.DEFAULT)]" />
+            </span>
+            <span>
+              <strong className="font-semibold text-white">{pending.length}</strong> in queue
+            </span>
+          </span>
+        }
+      />
       <AdminQueue initial={pending} />
     </div>
   );

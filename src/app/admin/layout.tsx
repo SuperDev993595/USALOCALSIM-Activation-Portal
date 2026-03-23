@@ -15,7 +15,7 @@ export default async function AdminLayout({
   return (
     <>
       <AdminNav email={session.user.email ?? ""} />
-      <main className="mx-auto max-w-7xl p-4 md:p-6">{children}</main>
+      <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 md:px-6 md:py-10">{children}</main>
     </>
   );
 }

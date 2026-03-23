@@ -34,7 +34,7 @@
   }
 
   .ui-card {
-    @apply rounded-lg border border-white/[0.12] bg-surface-card shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)];
+    @apply rounded-lg border border-white/[0.16] bg-surface-elevated shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_16px_48px_-16px_rgba(0,0,0,0.65)];
   }
 
   .ui-label {
@@ -79,7 +79,7 @@
   }
 
   .ui-table-wrap {
-    @apply overflow-x-auto rounded-lg border border-white/[0.12] bg-surface-card/90;
+    @apply overflow-x-auto rounded-lg border border-white/[0.16] bg-surface-elevated shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)];
   }
 
   .ui-table {

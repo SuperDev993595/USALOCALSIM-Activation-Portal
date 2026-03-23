@@ -1,5 +1,5 @@
+import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { prisma } from "@/lib/db";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -11,34 +11,60 @@ export default async function AdminCompletedPage() {
     take: 100,
   });
   return (
-    <div>
-      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Completed activations</h1>
-      <p className="mt-1 text-sm text-muted">Last 100 completed requests.</p>
-      <div className="mt-4 space-y-2">
+    <div className="space-y-8">
+      <AdminPageHeader
+        title="Completed activations"
+        description="Most recent 100 completed requests, newest first. Use this list for quick lookups and audits."
+        meta={
+          <span className="rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-muted backdrop-blur-sm">
+            Showing <strong className="font-semibold text-white">{completed.length}</strong> records
+          </span>
+        }
+      />
+      <div className="space-y-3">
         {completed.length === 0 ? (
-          <p className="ui-card p-6 text-muted">None yet.</p>
+          <div className="rounded-2xl border border-dashed border-white/20 bg-surface-elevated px-6 py-14 text-center">
+            <p className="text-sm font-medium text-white">No completed activations yet</p>
+            <p className="mt-1 text-sm text-muted">Completed requests will appear here.</p>
+          </div>
         ) : (
           completed.map((r) => (
-            <div
+            <article
               key={r.id}
-              className="ui-card flex flex-wrap items-center gap-4 p-4 text-sm text-muted"
+              className="rounded-2xl border border-white/[0.14] bg-surface-elevated p-5 shadow-lg shadow-black/40 transition hover:border-white/[0.2] hover:bg-surface-card"
             >
-              <span className="font-medium text-white">{r.email}</span>
-              {r.iccid && <span>ICCID: {r.iccid}</span>}
-              {r.voucherCode && <span>Voucher: {r.voucherCode}</span>}
-              <span>{r.plan.name}</span>
-              <span className="text-muted-dim">
-                {r.completedAt ? new Date(r.completedAt).toLocaleString() : ""}
-              </span>
-            </div>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-2">
+                  <p className="truncate text-base font-semibold text-white">{r.email}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="badge badge-success">Completed</span>
+                    <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-muted">
+                      {r.plan.name}
+                    </span>
+                    {r.iccid ? (
+                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-xs text-white/90">
+                        ICCID {r.iccid}
+                      </span>
+                    ) : null}
+                    {r.voucherCode ? (
+                      <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-xs text-white/90">
+                        {r.voucherCode}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <time
+                  className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted-dim"
+                  dateTime={r.completedAt ? r.completedAt.toISOString() : undefined}
+                >
+                  {r.completedAt ? new Date(r.completedAt).toLocaleString() : "—"}
+                </time>
+              </div>
+            </article>
           ))
         )}
       </div>
-      <p className="mt-4">
-        <Link href="/admin" className="link-accent text-sm">
-          ← Queue
-        </Link>
-      </p>
+      <AdminPageFooter />
     </div>
   );
 }

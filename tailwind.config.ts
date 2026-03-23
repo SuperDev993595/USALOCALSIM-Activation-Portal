@@ -13,7 +13,8 @@ const config: Config = {
           darkest: "#05070a",
           DEFAULT: "#080c12",
           card: "#151f30",
-          elevated: "#1a2638",
+          /* Panels/cards: lighter than page bg (#05070a) for clear separation */
+          elevated: "#1e2d42",
         },
         muted: {
           DEFAULT: "#8e9fb1",
