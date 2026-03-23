@@ -1,14 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+
+type UnlockRow = {
+  id: string;
+  code: string;
+  status: string;
+  type: string;
+  planName: string;
+  activatedAt: string | null;
+};
 
 export default function DealerPage() {
   const [singleCode, setSingleCode] = useState("");
-  const [bulkCodes, setBulkCodes] = useState("");
+  const [bulkCount, setBulkCount] = useState("");
   const [singleLoading, setSingleLoading] = useState(false);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [inactiveCount, setInactiveCount] = useState(0);
+  const [recentLoading, setRecentLoading] = useState(true);
+  const [recentRows, setRecentRows] = useState<UnlockRow[]>([]);
+  const [bulkResultRows, setBulkResultRows] = useState<UnlockRow[]>([]);
+
+  const loadUnlockSnapshot = useCallback(async () => {
+    setRecentLoading(true);
+    try {
+      const res = await fetch("/api/dealer/unlock");
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage({ type: "err", text: data.error ?? "Could not load dealer unlock info." });
+        setRecentRows([]);
+        return;
+      }
+      setInactiveCount(typeof data.inactiveCount === "number" ? data.inactiveCount : 0);
+      setRecentRows(Array.isArray(data.recent) ? data.recent : []);
+    } catch {
+      setMessage({ type: "err", text: "Could not load dealer unlock info." });
+      setRecentRows([]);
+    } finally {
+      setRecentLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUnlockSnapshot();
+    const timer = window.setInterval(() => {
+      loadUnlockSnapshot();
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [loadUnlockSnapshot]);
 
   async function handleSingle(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +70,8 @@ export default function DealerPage() {
       if (res.ok) {
         setMessage({ type: "ok", text: `Unlocked: ${code}` });
         setSingleCode("");
+        setBulkResultRows([]);
+        await loadUnlockSnapshot();
       } else {
         setMessage({ type: "err", text: data.error ?? "Failed" });
       }
@@ -40,12 +83,13 @@ export default function DealerPage() {
 
   async function handleBulk(e: React.FormEvent) {
     e.preventDefault();
-    const codes = bulkCodes
-      .split(/[\n,]/)
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean);
-    if (codes.length === 0) {
-      setMessage({ type: "err", text: "Enter at least one code." });
+    const count = Number.parseInt(bulkCount, 10);
+    if (!Number.isInteger(count) || count <= 0) {
+      setMessage({ type: "err", text: "Enter a valid bulk count." });
+      return;
+    }
+    if (count > inactiveCount) {
+      setMessage({ type: "err", text: `Bulk count must be less than or equal to ${inactiveCount}.` });
       return;
     }
     setBulkLoading(true);
@@ -54,15 +98,17 @@ export default function DealerPage() {
       const res = await fetch("/api/dealer/unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codes }),
+        body: JSON.stringify({ bulkCount: count }),
       });
       const data = await res.json();
       if (res.ok) {
         setMessage({
           type: "ok",
-          text: `Unlocked: ${data.unlocked ?? 0}, Skipped: ${data.skipped ?? 0}`,
+          text: `Bulk activation complete. Unlocked: ${data.unlocked ?? 0}, Skipped: ${data.skipped ?? 0}`,
         });
-        setBulkCodes("");
+        setBulkCount("");
+        setBulkResultRows(Array.isArray(data.unlockedRows) ? data.unlockedRows : []);
+        await loadUnlockSnapshot();
       } else {
         setMessage({ type: "err", text: data.error ?? "Failed" });
       }
@@ -73,10 +119,10 @@ export default function DealerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg">
-      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Unlock vouchers</h1>
+    <div className="mx-auto max-w-5xl">
+      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Dealer activation</h1>
       <p className="mt-1 text-sm text-muted">
-        After selling a voucher, unlock it here so the customer can use it.
+        Use single unlock for one sold voucher, or bulk activation for partner batches.
       </p>
 
       {message && (
@@ -108,22 +154,104 @@ export default function DealerPage() {
       </div>
 
       <div className="ui-card mt-6 p-4">
-        <h2 className="font-semibold text-white">Bulk unlock</h2>
-        <form onSubmit={handleBulk} className="mt-2">
-          <textarea
-            value={bulkCodes}
-            onChange={(e) => setBulkCodes(e.target.value)}
-            rows={6}
-            placeholder="One code per line or comma-separated"
-            className="ui-textarea"
-          />
-          <button type="submit" disabled={bulkLoading} className="btn-primary mt-2">
-            {bulkLoading ? "Unlocking…" : "Unlock all"}
+        <h2 className="font-semibold text-white">Bulk activation</h2>
+        <p className="mt-1 text-xs text-muted-dim">
+          Remaining inactive vouchers:{" "}
+          <span className="font-semibold text-white/90">{inactiveCount}</span> (auto-refreshes every 30 seconds)
+        </p>
+        <form onSubmit={handleBulk} className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="ui-label !mt-0">Bulk count</label>
+            <input
+              type="number"
+              min={1}
+              max={Math.max(inactiveCount, 1)}
+              value={bulkCount}
+              onChange={(e) => setBulkCount(e.target.value)}
+              placeholder="e.g. 100"
+              className="ui-input !mt-1"
+            />
+          </div>
+          <button type="submit" disabled={bulkLoading || inactiveCount <= 0} className="btn-primary shrink-0">
+            {bulkLoading ? "Activating…" : "Bulk activate"}
           </button>
         </form>
+
+        {bulkResultRows.length > 0 ? (
+          <div className="mt-4 overflow-x-auto">
+            <p className="mb-2 text-xs text-muted-dim">Just unlocked vouchers</p>
+            <table className="ui-table min-w-full">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Type</th>
+                  <th>Plan</th>
+                  <th>Activated at</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bulkResultRows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="font-mono text-xs text-white/90">{row.code}</td>
+                    <td className="capitalize">{row.type}</td>
+                    <td className="text-xs text-muted">{row.planName}</td>
+                    <td className="text-xs text-muted">
+                      {row.activatedAt ? new Date(row.activatedAt).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </div>
 
-      <p className="mt-6">
+      <div className="ui-card mt-6 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-white">Recent unlocks</h2>
+          <button type="button" onClick={loadUnlockSnapshot} className="text-xs text-accent hover:text-accent-hover">
+            Refresh
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-muted-dim">
+          For full filters and usage status, open the dedicated tracking page.
+        </p>
+        {recentLoading ? (
+          <p className="mt-3 text-sm text-muted">Loading…</p>
+        ) : recentRows.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">No unlocked vouchers yet.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="ui-table min-w-full">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Plan</th>
+                  <th>Unlocked at</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentRows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="font-mono text-xs text-white/90">{row.code}</td>
+                    <td className="capitalize">{row.status}</td>
+                    <td className="text-xs text-muted">{row.planName}</td>
+                    <td className="text-xs text-muted">
+                      {row.activatedAt ? new Date(row.activatedAt).toLocaleString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-6 flex items-center gap-4">
+        <Link href="/dealer/tracking" className="link-accent text-sm">
+          Open full tracking →
+        </Link>
         <Link href="/" className="link-accent text-sm">
           ← Back to activation site
         </Link>
