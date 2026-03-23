@@ -1,7 +1,8 @@
 "use client";
 
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
-import { useState, useEffect } from "react";
+import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
+import { useState, useEffect, useCallback } from "react";
 
 type Plan = { id: string; name: string; planType: string; market: string };
 
@@ -13,12 +14,22 @@ export default function AdminVouchersPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ created: number; skipped: number } | null>(null);
 
-  useEffect(() => {
+  const loadPlans = useCallback(() => {
     fetch("/api/admin/plans")
       .then((res) => res.json())
       .then((data) => setPlans(Array.isArray(data) ? data : []))
       .catch(() => setPlans([]));
   }, []);
+
+  useEffect(() => {
+    loadPlans();
+  }, [loadPlans]);
+
+  useEffect(() => {
+    const onHeaderRefresh = () => loadPlans();
+    window.addEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
+    return () => window.removeEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
+  }, [loadPlans]);
 
   async function handleImport(e: React.FormEvent) {
     e.preventDefault();

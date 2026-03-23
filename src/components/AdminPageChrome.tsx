@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AdminPageRefreshButton } from "@/components/AdminPageRefreshButton";
 
 export function AdminPageHeader({
   eyebrow = "Admin",
@@ -23,10 +24,17 @@ export function AdminPageHeader({
         aria-hidden
       />
       <div className="relative">
-        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent/90">{eyebrow}</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
-        {meta ? <div className="mt-5 flex flex-wrap items-center gap-3">{meta}</div> : null}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent/90">{eyebrow}</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">{title}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
+            {meta ? <div className="mt-5 flex flex-wrap items-center gap-3">{meta}</div> : null}
+          </div>
+          <div className="flex shrink-0 justify-end sm:pt-1">
+            <AdminPageRefreshButton />
+          </div>
+        </div>
       </div>
     </header>
   );

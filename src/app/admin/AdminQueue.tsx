@@ -1,5 +1,6 @@
 "use client";
 
+import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect } from "react";
 
 type Plan = { id: string; name: string; dataAllowance: string; durationDays: number };
@@ -26,6 +27,18 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
       setItems(data.requests ?? []);
     }
   }
+
+  useEffect(() => {
+    setItems(initial);
+  }, [initial]);
+
+  useEffect(() => {
+    const onHeaderRefresh = () => {
+      void refresh();
+    };
+    window.addEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
+    return () => window.removeEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
+  }, []);
 
   useEffect(() => {
     const t = setInterval(refresh, 30000);

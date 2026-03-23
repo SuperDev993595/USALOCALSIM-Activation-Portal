@@ -1,7 +1,8 @@
 "use client";
 
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
-import { useState, useEffect } from "react";
+import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
+import { useState, useEffect, useCallback } from "react";
 
 type VoucherRow = {
   id: string;
@@ -37,7 +38,7 @@ export default function VoucherTrackingPage() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadVouchers = useCallback(() => {
     setLoading(true);
     const url = status ? `/api/admin/vouchers/tracking?status=${status}` : "/api/admin/vouchers/tracking";
     fetch(url)
@@ -46,6 +47,16 @@ export default function VoucherTrackingPage() {
       .catch(() => setVouchers([]))
       .finally(() => setLoading(false));
   }, [status]);
+
+  useEffect(() => {
+    loadVouchers();
+  }, [loadVouchers]);
+
+  useEffect(() => {
+    const onHeaderRefresh = () => loadVouchers();
+    window.addEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
+    return () => window.removeEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
+  }, [loadVouchers]);
 
   return (
     <div className="space-y-8">
