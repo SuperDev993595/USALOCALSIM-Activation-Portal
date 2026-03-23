@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const sections: {
   title: string;
@@ -76,10 +78,17 @@ export function AdminAppShell({
 }) {
   const pathname = usePathname() ?? "";
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  async function handleConfirmSignOut() {
+    setSigningOut(true);
+    await signOut({ callbackUrl: "/login" });
+  }
 
   const sidebarInner = (
     <>
@@ -139,12 +148,13 @@ export function AdminAppShell({
         <p className="truncate text-xs text-muted-dim" title={email}>
           {email}
         </p>
-        <Link
-          href="/api/auth/signout"
+        <button
+          type="button"
+          onClick={() => setShowSignOutConfirm(true)}
           className="mt-3 inline-flex text-xs font-medium uppercase tracking-wide text-red-400/90 hover:text-red-300"
         >
           Sign out
-        </Link>
+        </button>
       </div>
     </>
   );
@@ -211,6 +221,23 @@ export function AdminAppShell({
           {children}
         </main>
       </div>
+
+      <ConfirmDialog
+        open={showSignOutConfirm}
+        title="Sign out?"
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        variant="danger"
+        initialFocus="cancel"
+        loading={signingOut}
+        onCancel={() => {
+          if (signingOut) return;
+          setShowSignOutConfirm(false);
+        }}
+        onConfirm={handleConfirmSignOut}
+      >
+        Are you sure you want to sign out and exit your session?
+      </ConfirmDialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,25 +12,38 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
+  const callbackUrl = searchParams.get("callbackUrl");
   const urlError = searchParams.get("error");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await signIn("credentials", {
+    const signInOptions: {
+      email: string;
+      password: string;
+      redirect: false;
+      callbackUrl?: string;
+    } = {
       email,
       password,
       redirect: false,
-      callbackUrl,
-    });
+    };
+    if (callbackUrl) signInOptions.callbackUrl = callbackUrl;
+    const res = await signIn("credentials", signInOptions);
     setLoading(false);
     if (res?.error) {
       setError("Invalid email or password.");
       return;
     }
-    if (res?.url) window.location.href = res.url;
+    const session = await getSession();
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    if (role === "admin") {
+      window.location.href = callbackUrl ?? "/admin";
+      return;
+    }
+    // Dealers should always land on the dealer dashboard after sign-in.
+    window.location.href = "/dealer";
   }
 
   return (
