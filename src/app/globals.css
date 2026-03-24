@@ -5,8 +5,8 @@
 @layer base {
   :root {
     --app-bg: #05070a;
-    /* Visible on dark backgrounds; pure white at very low alpha was nearly invisible */
-    --grid-line: rgba(255, 255, 255, 0.12);
+    /* Softer grid lines for a less harsh dark UI */
+    --grid-line: rgba(255, 255, 255, 0.07);
     --grid-size: 40px;
   }
 
