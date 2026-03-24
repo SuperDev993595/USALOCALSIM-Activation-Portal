@@ -8,6 +8,9 @@
     /* Softer grid lines for a less harsh dark UI */
     --grid-line: rgba(255, 255, 255, 0.05);
     --grid-size: 40px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(148, 163, 184, 0.42);
+    --scrollbar-thumb-hover: rgba(148, 163, 184, 0.62);
   }
 
   body {
@@ -21,6 +24,34 @@
   ::selection {
     @apply bg-accent/30 text-white;
   }
+
+}
+
+.ui-main-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.ui-main-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.ui-main-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.ui-main-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease;
+}
+
+.ui-main-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 @layer components {

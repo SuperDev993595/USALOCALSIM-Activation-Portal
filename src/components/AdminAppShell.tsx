@@ -160,7 +160,7 @@ export function AdminAppShell({
   );
 
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-gradient-to-br from-[#070b14] via-[#0b1220] to-[#05070a]">
+    <div className="relative flex h-screen overflow-hidden bg-gradient-to-br from-[#070b14] via-[#0b1220] to-[#05070a]">
       <div
         className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent/10 blur-3xl"
         aria-hidden
@@ -194,7 +194,7 @@ export function AdminAppShell({
         {sidebarInner}
       </aside>
 
-      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-surface-darkest/90 px-4 backdrop-blur-md lg:px-6">
           <button
             type="button"
@@ -217,8 +217,8 @@ export function AdminAppShell({
           </Link>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-8 md:px-6 md:py-10">
-          {children}
+        <main className="ui-main-scrollbar min-h-0 w-full flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 md:px-6 md:py-10">{children}</div>
         </main>
       </div>
 

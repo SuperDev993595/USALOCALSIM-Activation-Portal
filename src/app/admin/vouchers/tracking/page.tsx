@@ -3,7 +3,7 @@
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 type VoucherRow = {
   id: string;
@@ -43,22 +43,47 @@ function TrashIcon({ className }: { className?: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
-  if (s === "redeemed") {
-    return <span className="badge badge-success whitespace-nowrap">Redeemed</span>;
-  }
-  if (s === "activated") {
-    return (
-      <span className="badge whitespace-nowrap border border-accent/35 bg-accent/12 text-accent-hover">
-        Activated
-      </span>
-    );
-  }
-  return <span className="badge badge-muted whitespace-nowrap">Inactive</span>;
+  const styleByStatus: Record<string, { badge: string; dot: string; label: string }> = {
+    redeemed: {
+      badge: "border-violet-400/65 bg-violet-500/25 text-violet-100 shadow-[0_0_0_1px_rgba(167,139,250,0.25)]",
+      dot: "bg-violet-300",
+      label: "Redeemed",
+    },
+    activated: {
+      badge: "border-emerald-300/80 bg-emerald-400/35 text-emerald-50 shadow-[0_0_0_1px_rgba(52,211,153,0.3)]",
+      dot: "bg-emerald-200",
+      label: "Activated",
+    },
+    inactive: {
+      badge: "border-rose-400/60 bg-rose-500/20 text-rose-100 shadow-[0_0_0_1px_rgba(251,113,133,0.2)]",
+      dot: "bg-rose-300",
+      label: "Inactive",
+    },
+  };
+  const style =
+    styleByStatus[s] ??
+    ({
+      badge: "border-amber-400/70 bg-amber-500/25 text-amber-100 shadow-[0_0_0_1px_rgba(251,191,36,0.2)]",
+      dot: "bg-amber-300",
+      label: status,
+    } as const);
+  return (
+    <span className={`badge inline-flex items-center gap-1.5 whitespace-nowrap border font-semibold ${style.badge}`}>
+      <span className={`h-2 w-2 rounded-full ${style.dot}`} aria-hidden />
+      {style.label}
+    </span>
+  );
 }
 
 export default function VoucherTrackingPage() {
   const [vouchers, setVouchers] = useState<VoucherRow[]>([]);
-  const [status, setStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [planTypeFilter, setPlanTypeFilter] = useState("");
+  const [codeFilter, setCodeFilter] = useState("");
+  const [unlockedByFilter, setUnlockedByFilter] = useState("");
+  const [redeemedByFilter, setRedeemedByFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<VoucherRow | null>(null);
@@ -66,13 +91,67 @@ export default function VoucherTrackingPage() {
 
   const loadVouchers = useCallback(() => {
     setLoading(true);
-    const url = status ? `/api/admin/vouchers/tracking?status=${status}` : "/api/admin/vouchers/tracking";
-    return fetch(url)
+    return fetch("/api/admin/vouchers/tracking")
       .then((res) => res.json())
       .then((data) => setVouchers(data.vouchers ?? []))
       .catch(() => setVouchers([]))
       .finally(() => setLoading(false));
-  }, [status]);
+  }, []);
+
+  const statusOptions = useMemo(
+    () =>
+      Array.from(new Set(vouchers.map((v) => v.status).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [vouchers],
+  );
+  const typeOptions = useMemo(
+    () => Array.from(new Set(vouchers.map((v) => v.type).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [vouchers],
+  );
+  const planOptions = useMemo(
+    () =>
+      Array.from(new Set(vouchers.map((v) => v.planName).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [vouchers],
+  );
+  const planTypeOptions = useMemo(
+    () =>
+      Array.from(new Set(vouchers.map((v) => v.planType).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [vouchers],
+  );
+
+  const filteredVouchers = useMemo(() => {
+    const codeNeedle = codeFilter.trim().toLowerCase();
+    const unlockedNeedle = unlockedByFilter.trim().toLowerCase();
+    const redeemedNeedle = redeemedByFilter.trim().toLowerCase();
+
+    return vouchers.filter((v) => {
+      if (statusFilter && v.status !== statusFilter) return false;
+      if (typeFilter && v.type !== typeFilter) return false;
+      if (planFilter && v.planName !== planFilter) return false;
+      if (planTypeFilter && v.planType !== planTypeFilter) return false;
+      if (codeNeedle && !v.code.toLowerCase().includes(codeNeedle)) return false;
+      if (unlockedNeedle) {
+        const unlockedBy = `${v.activatedByEmail ?? ""} ${v.activatedByName ?? ""}`.toLowerCase();
+        if (!unlockedBy.includes(unlockedNeedle)) return false;
+      }
+      if (redeemedNeedle && !(v.redeemedBy ?? "").toLowerCase().includes(redeemedNeedle)) return false;
+      return true;
+    });
+  }, [
+    vouchers,
+    statusFilter,
+    typeFilter,
+    planFilter,
+    planTypeFilter,
+    codeFilter,
+    unlockedByFilter,
+    redeemedByFilter,
+  ]);
 
   useEffect(() => {
     loadVouchers();
@@ -116,22 +195,115 @@ export default function VoucherTrackingPage() {
         description="See which dealer or admin unlocked each voucher. Redeemed rows include the customer identifier (email or ICCID) from activation. Inactive rows can be removed with the trash control (activated or redeemed codes cannot be deleted)."
       />
       <div className="flex flex-col gap-4 rounded-2xl border border-white/[0.14] bg-surface-elevated p-4 shadow-lg shadow-black/40 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div>
-          <label className="ui-label !mt-0 text-[10px] text-muted-dim">Filter</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="ui-select !mt-1 inline-block w-full min-w-[180px] max-w-xs rounded-xl py-2.5 sm:w-auto"
-          >
-            <option value="">All statuses</option>
-            <option value="inactive">Inactive</option>
-            <option value="activated">Activated</option>
-            <option value="redeemed">Redeemed</option>
-          </select>
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Code</label>
+            <input
+              value={codeFilter}
+              onChange={(e) => setCodeFilter(e.target.value)}
+              placeholder="Search voucher code"
+              className="ui-input !mt-1 h-11 rounded-xl"
+            />
+          </div>
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="ui-select !mt-1 h-11 rounded-xl"
+            >
+              <option value="">All statuses</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Type</label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="ui-select !mt-1 h-11 rounded-xl"
+            >
+              <option value="">All types</option>
+              {typeOptions.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Plan</label>
+            <select
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              className="ui-select !mt-1 h-11 rounded-xl"
+            >
+              <option value="">All plans</option>
+              {planOptions.map((plan) => (
+                <option key={plan} value={plan}>
+                  {plan}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Plan type</label>
+            <select
+              value={planTypeFilter}
+              onChange={(e) => setPlanTypeFilter(e.target.value)}
+              className="ui-select !mt-1 h-11 rounded-xl"
+            >
+              <option value="">All plan types</option>
+              {planTypeOptions.map((planType) => (
+                <option key={planType} value={planType}>
+                  {planType}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Unlocked by</label>
+            <input
+              value={unlockedByFilter}
+              onChange={(e) => setUnlockedByFilter(e.target.value)}
+              placeholder="Email or name"
+              className="ui-input !mt-1 h-11 rounded-xl"
+            />
+          </div>
+          <div>
+            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Redeemed by</label>
+            <input
+              value={redeemedByFilter}
+              onChange={(e) => setRedeemedByFilter(e.target.value)}
+              placeholder="Email or ICCID"
+              className="ui-input !mt-1 h-11 rounded-xl"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("");
+                setTypeFilter("");
+                setPlanFilter("");
+                setPlanTypeFilter("");
+                setCodeFilter("");
+                setUnlockedByFilter("");
+                setRedeemedByFilter("");
+              }}
+              className="ui-btn-ghost h-11 w-full rounded-xl text-xs uppercase tracking-wider"
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
         {!loading ? (
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-dim">
-            {vouchers.length} row{vouchers.length === 1 ? "" : "s"}
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-dim sm:pl-4">
+            {filteredVouchers.length} / {vouchers.length} row{vouchers.length === 1 ? "" : "s"}
           </p>
         ) : null}
       </div>
@@ -158,7 +330,7 @@ export default function VoucherTrackingPage() {
                 </tr>
               </thead>
               <tbody>
-                {vouchers.map((v) => (
+                {filteredVouchers.map((v) => (
                   <tr key={v.id}>
                     <td className="pl-5 font-mono text-sm text-white/95 md:pl-6">{v.code}</td>
                     <td>
@@ -209,7 +381,7 @@ export default function VoucherTrackingPage() {
               </tbody>
             </table>
           </div>
-          {vouchers.length === 0 ? (
+          {filteredVouchers.length === 0 ? (
             <p className="border-t border-white/[0.06] px-6 py-10 text-center text-sm text-muted">
               No vouchers match this filter.
             </p>
