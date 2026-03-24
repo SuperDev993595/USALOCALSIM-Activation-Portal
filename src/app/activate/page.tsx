@@ -94,9 +94,9 @@ export default function ActivatePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <SiteHeader />
-      <main className="flex flex-1 flex-col items-center px-6 py-12">
+      <main className="ui-main-scrollbar flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-12">
         <div className="w-full max-w-md">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
           <h1 className="page-hero-title">{t("title")}</h1>
