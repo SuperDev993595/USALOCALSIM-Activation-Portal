@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type Scenario = "combo" | "esim_voucher" | "sim_only" | null;
 
@@ -19,6 +20,8 @@ export default function ActivatePage() {
   const [planId, setPlanId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationDialogOpen, setValidationDialogOpen] = useState(false);
+  const [validationDialogMessage, setValidationDialogMessage] = useState("");
 
   async function handleValidate() {
     setError("");
@@ -30,7 +33,14 @@ export default function ActivatePage() {
       const res = await fetch(`/api/validate?${params}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Validation failed");
+        const msg = data.error ?? "Validation failed";
+        if (data.code === "ICCID_ALREADY_USED" || msg.toLowerCase().includes("iccid")) {
+          setValidationDialogMessage(msg);
+          setValidationDialogOpen(true);
+          setError("");
+        } else {
+          setError(msg);
+        }
         setLoading(false);
         return;
       }
@@ -65,7 +75,14 @@ export default function ActivatePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Submission failed");
+        const msg = data.error ?? "Submission failed";
+        if (res.status === 409 && msg.toLowerCase().includes("iccid")) {
+          setValidationDialogMessage(msg);
+          setValidationDialogOpen(true);
+          setError("");
+        } else {
+          setError(msg);
+        }
         setLoading(false);
         return;
       }
@@ -190,6 +207,18 @@ export default function ActivatePage() {
           </p>
         </div>
       </main>
+      <ConfirmDialog
+        open={validationDialogOpen}
+        title="ICCID validation required"
+        confirmLabel="OK"
+        cancelLabel="Close"
+        initialFocus="confirm"
+        onConfirm={() => setValidationDialogOpen(false)}
+        onCancel={() => setValidationDialogOpen(false)}
+      >
+        {validationDialogMessage ||
+          "The ICCID does not match an eligible SIM for this activation. Please verify your ICCID and try again."}
+      </ConfirmDialog>
     </div>
   );
 }

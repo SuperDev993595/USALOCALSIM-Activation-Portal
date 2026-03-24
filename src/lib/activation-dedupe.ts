@@ -62,3 +62,23 @@ export async function deletePendingActivationRequestsForIccid(
   });
   return res.count;
 }
+
+export async function isIccidOwnedByEmail(
+  iccid: string,
+  email: string,
+  db: Db = prisma
+): Promise<boolean> {
+  const n = normalizeIccid(iccid);
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!n || !normalizedEmail) return false;
+
+  const latest = await db.activationRequest.findFirst({
+    where: { iccid: n },
+    orderBy: { createdAt: "desc" },
+    select: { email: true },
+  });
+
+  // No prior owner on record yet -> allow as first-time ICCID.
+  if (!latest) return true;
+  return latest.email.trim().toLowerCase() === normalizedEmail;
+}

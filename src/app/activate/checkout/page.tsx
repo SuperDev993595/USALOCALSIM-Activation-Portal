@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
@@ -13,20 +14,51 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationDialogOpen, setValidationDialogOpen] = useState(false);
+  const [validationDialogMessage, setValidationDialogMessage] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!iccid.trim()) {
       setError(t("missingParams"));
       return;
     }
+    if (!email.trim()) return;
     setLoading(true);
-    const q = new URLSearchParams({
-      iccid: iccid.trim().replace(/\s/g, ""),
-      email: email.trim(),
-    });
-    window.location.href = `/activate/plan?${q.toString()}`;
+    try {
+      const normalizedIccid = iccid.trim().replace(/\s/g, "");
+      const normalizedEmail = email.trim();
+      const params = new URLSearchParams({
+        iccid: normalizedIccid,
+        email: normalizedEmail,
+      });
+      const res = await fetch(`/api/validate?${params.toString()}`);
+      const data = await res.json();
+      if (!res.ok) {
+        if (data?.code === "ICCID_NOT_OWNER" || String(data?.error ?? "").toLowerCase().includes("linked to another")) {
+          setValidationDialogMessage(
+            data?.error ??
+              "This ICCID is linked to another account email. Please use the original email for this SIM.",
+          );
+          setValidationDialogOpen(true);
+          setLoading(false);
+          return;
+        }
+        setError(data?.error ?? t("missingParams"));
+        setLoading(false);
+        return;
+      }
+
+      const q = new URLSearchParams({
+        iccid: normalizedIccid,
+        email: normalizedEmail,
+      });
+      window.location.href = `/activate/plan?${q.toString()}`;
+    } catch {
+      setError(t("missingParams"));
+      setLoading(false);
+    }
   }
 
   if (!iccid) {
@@ -78,6 +110,17 @@ export default function CheckoutPage() {
           </p>
         </div>
       </main>
+      <ConfirmDialog
+        open={validationDialogOpen}
+        title="ICCID ownership check failed"
+        confirmLabel="OK"
+        cancelLabel="Close"
+        initialFocus="confirm"
+        onConfirm={() => setValidationDialogOpen(false)}
+        onCancel={() => setValidationDialogOpen(false)}
+      >
+        {validationDialogMessage}
+      </ConfirmDialog>
     </div>
   );
 }

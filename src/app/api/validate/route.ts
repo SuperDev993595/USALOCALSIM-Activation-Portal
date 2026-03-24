@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
-import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
+import { iccidHasExistingActivation, isIccidOwnedByEmail, normalizeIccid } from "@/lib/activation-dedupe";
 
 const ICCID_REGEX = /^\d{18,22}$/;
 
 const querySchema = z.object({
   iccid: z.string().optional().transform((s) => s?.trim().replace(/\s/g, "") ?? ""),
   voucherCode: z.string().optional().transform((s) => s?.trim().toUpperCase() ?? ""),
+  email: z.string().optional().transform((s) => s?.trim() ?? ""),
   market: z.enum(["us", "global"]).optional().default("global"),
 });
 
@@ -26,12 +27,13 @@ export async function GET(req: Request) {
   const parsed = querySchema.safeParse({
     iccid: searchParams.get("iccid") ?? undefined,
     voucherCode: searchParams.get("voucherCode") ?? undefined,
+    email: searchParams.get("email") ?? undefined,
     market: (searchParams.get("market") as "us" | "global" | null) ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
-  const { iccid, voucherCode, market } = parsed.data;
+  const { iccid, voucherCode, email, market } = parsed.data;
 
   const hasIccid = iccid.length > 0;
   const hasVoucher = voucherCode.length > 0;
@@ -69,6 +71,22 @@ export async function GET(req: Request) {
       },
       { status: 409 }
     );
+  }
+
+  // SIM-only step 2 ownership check (when email is present).
+  if (hasIccid && !hasVoucher && email) {
+    const owned = await isIccidOwnedByEmail(iccid, email);
+    if (!owned) {
+      await recordFailedAttempt(key);
+      return NextResponse.json(
+        {
+          error:
+            "This ICCID is linked to another account email. Please use the email previously used for this SIM or contact support.",
+          code: "ICCID_NOT_OWNER",
+        },
+        { status: 409 }
+      );
+    }
   }
 
   let voucher: {

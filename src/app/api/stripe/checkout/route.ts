@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
-import { assertSimOnlyPaidCheckoutAllowed, normalizeIccid } from "@/lib/activation-dedupe";
+import { assertSimOnlyPaidCheckoutAllowed, isIccidOwnedByEmail, normalizeIccid } from "@/lib/activation-dedupe";
 
 const bodySchema = z.object({
   iccid: z.string().min(1),
@@ -33,6 +33,17 @@ export async function POST(req: Request) {
   const gate = await assertSimOnlyPaidCheckoutAllowed(iccid, plan.priceCents);
   if (!gate.ok) {
     return NextResponse.json({ error: gate.error }, { status: 409 });
+  }
+  const owned = await isIccidOwnedByEmail(iccid, body.email);
+  if (!owned) {
+    return NextResponse.json(
+      {
+        error:
+          "This ICCID is linked to another account email. Please use the original email for this SIM.",
+        code: "ICCID_NOT_OWNER",
+      },
+      { status: 409 }
+    );
   }
 
   const hardwareCost = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;

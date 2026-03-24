@@ -6,7 +6,7 @@
   :root {
     --app-bg: #05070a;
     /* Softer grid lines for a less harsh dark UI */
-    --grid-line: rgba(255, 255, 255, 0.07);
+    --grid-line: rgba(255, 255, 255, 0.05);
     --grid-size: 40px;
   }
 
