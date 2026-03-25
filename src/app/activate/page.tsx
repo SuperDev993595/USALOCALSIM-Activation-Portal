@@ -94,9 +94,9 @@ export default function ActivatePage() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="public-site flex h-screen flex-col overflow-hidden">
       <SiteHeader />
-      <main className="ui-main-scrollbar flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-12">
+      <main className="public-main ui-main-scrollbar flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-12">
         <div className="w-full max-w-md">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
           <h1 className="page-hero-title">{t("title")}</h1>
@@ -105,24 +105,24 @@ export default function ActivatePage() {
           <div className="ui-card mt-8 p-6">
             {step === "input" ? (
               <>
-                <ul className="mb-4 space-y-3 text-sm text-muted">
+                <ul className="mb-4 space-y-3 text-sm text-slate-600">
                   <li>
-                    <strong className="text-white">{t("option1Title")}</strong>
+                    <strong className="text-slate-900">{t("option1Title")}</strong>
                     <br />
-                    <span className="text-muted-dim">{t("option1Desc")}</span>
+                    <span className="text-slate-500">{t("option1Desc")}</span>
                   </li>
                   <li>
-                    <strong className="text-white">{t("option2Title")}</strong>
+                    <strong className="text-slate-900">{t("option2Title")}</strong>
                     <br />
-                    <span className="text-muted-dim">{t("option2Desc")}</span>
+                    <span className="text-slate-500">{t("option2Desc")}</span>
                   </li>
                   <li>
-                    <strong className="text-white">{t("option3Title")}</strong>
+                    <strong className="text-slate-900">{t("option3Title")}</strong>
                     <br />
-                    <span className="text-muted-dim">{t("option3Desc")}</span>
+                    <span className="text-slate-500">{t("option3Desc")}</span>
                   </li>
                 </ul>
-                <p className="mb-4 text-xs uppercase tracking-wide text-muted-dim">{t("optionHint")}</p>
+                <p className="mb-4 text-xs uppercase tracking-wide text-slate-500">{t("optionHint")}</p>
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="iccid" className="ui-label">

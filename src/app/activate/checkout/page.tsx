@@ -63,9 +63,9 @@ export default function CheckoutPage() {
 
   if (!iccid) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="public-site flex min-h-screen flex-col">
         <SiteHeader />
-        <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+        <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
           <p className="text-muted">{t("missingParams")}</p>
           <Link href="/activate" className="link-accent mt-4">
             {t("backToActivation")}
@@ -76,14 +76,14 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="public-site flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 flex-col items-center px-6 py-12">
+      <main className="public-main flex flex-1 flex-col items-center px-6 py-12">
         <div className="ui-card w-full max-w-sm p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
-          <h1 className="text-xl font-bold uppercase tracking-tight text-white">{t("title")}</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{t("stepLabel")}</p>
+          <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
-          <p className="mt-2 font-mono text-xs text-muted-dim">{t("iccidLine", { iccid })}</p>
+          <p className="mt-2 font-mono text-xs text-slate-500">{t("iccidLine", { iccid })}</p>
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div>
               <label htmlFor="email" className="ui-label">

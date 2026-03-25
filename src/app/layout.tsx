@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import type { AbstractIntlMessages } from "next-intl";
-import { Inter } from "next/font/google";
+import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import { LocaleProvider } from "@/components/LocaleProvider";
 import { locales, defaultLocale, type Locale } from "@/i18n/request";
 import en from "@/i18n/messages/en.json";
 import fr from "@/i18n/messages/fr.json";
+import de from "@/i18n/messages/de.json";
+import pt from "@/i18n/messages/pt.json";
 import ja from "@/i18n/messages/ja.json";
 import nl from "@/i18n/messages/nl.json";
 import zh from "@/i18n/messages/zh.json";
@@ -17,6 +19,8 @@ import hi from "@/i18n/messages/hi.json";
 const messagesMap: Record<Locale, AbstractIntlMessages> = {
   en: en as AbstractIntlMessages,
   fr: fr as AbstractIntlMessages,
+  de: de as AbstractIntlMessages,
+  pt: pt as AbstractIntlMessages,
   ja: ja as AbstractIntlMessages,
   nl: nl as AbstractIntlMessages,
   zh: zh as AbstractIntlMessages,
@@ -27,6 +31,13 @@ const messagesMap: Record<Locale, AbstractIntlMessages> = {
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-roboto",
   display: "swap",
 });
 
@@ -46,7 +57,7 @@ export default async function RootLayout({
   const messages = messagesMap[locale] ?? messagesMap.en;
 
   return (
-    <html lang={locale} className={inter.variable}>
+    <html lang={locale} className={`${inter.variable} ${roboto.variable}`}>
       <body className={`${inter.className} min-h-screen text-slate-100 antialiased`}>
         <SessionProvider>
           <LocaleProvider

@@ -1,4 +1,4 @@
-const locales = ["en", "fr", "ja", "nl", "zh", "es", "hi"] as const;
+const locales = ["en", "fr", "de", "pt", "nl", "zh", "es", "ja", "hi"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "en";
@@ -8,6 +8,9 @@ const countryToLocale: Record<string, Locale> = {
   US: "en",
   GB: "en",
   FR: "fr",
+  DE: "de",
+  PT: "pt",
+  BR: "pt",
   JP: "ja",
   NL: "nl",
   CN: "zh",
@@ -35,6 +38,8 @@ export function getLocaleFromAcceptLanguage(acceptLanguage: string | null): Loca
   }
   const langMap: Record<string, Locale> = {
     fr: "fr",
+    de: "de",
+    pt: "pt",
     ja: "ja",
     nl: "nl",
     zh: "zh",

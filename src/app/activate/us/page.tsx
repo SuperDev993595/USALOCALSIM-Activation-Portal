@@ -76,9 +76,9 @@ export default function ActivateUsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="public-site flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 flex-col items-center px-6 py-12">
+      <main className="public-main flex flex-1 flex-col items-center px-6 py-12">
         <div className="w-full max-w-md">
           <h1 className="page-hero-title">{t("title")}</h1>
           <p className="page-hero-subtitle">{t("subtitle")}</p>

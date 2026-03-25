@@ -5,8 +5,8 @@ export default function ActivateSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-col items-center justify-center px-6 py-16">
-          <p className="text-muted">…</p>
+        <div className="public-site public-main flex min-h-screen flex-col items-center justify-center px-6 py-16">
+          <p className="text-slate-600">…</p>
         </div>
       }
     >

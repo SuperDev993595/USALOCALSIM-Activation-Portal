@@ -170,7 +170,7 @@ export function AdminAppShell({
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.05),transparent_38%),radial-gradient(circle_at_80%_85%,rgba(52,211,153,0.08),transparent_36%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.05),transparent_38%),radial-gradient(circle_at_80%_85%,rgba(37,99,235,0.10),transparent_36%)]"
         aria-hidden
       />
       {/* Mobile overlay */}

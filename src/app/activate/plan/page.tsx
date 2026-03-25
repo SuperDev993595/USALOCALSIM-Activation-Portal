@@ -122,9 +122,9 @@ export default function ActivatePlanPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="public-site flex min-h-screen flex-col">
         <SiteHeader />
-        <main className="flex flex-1 items-center justify-center px-6 py-16">
+        <main className="public-main flex flex-1 items-center justify-center px-6 py-16">
           <p className="text-muted">{t("loading")}</p>
         </main>
       </div>
@@ -133,9 +133,9 @@ export default function ActivatePlanPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="public-site flex min-h-screen flex-col">
         <SiteHeader />
-        <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+        <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
           <p className="text-center text-red-400">{error}</p>
           <Link href="/activate" className="link-accent mt-4">
             {t("backToActivation")}
@@ -150,9 +150,9 @@ export default function ActivatePlanPage() {
 
   if (!plans.length) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="public-site flex min-h-screen flex-col">
         <SiteHeader />
-        <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+        <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
           <p className="max-w-md text-center text-muted">
             {simState && simState.tierPriceCents > 0 ? t("noUpgradePlans") : t("noPlans")}
           </p>
@@ -173,19 +173,19 @@ export default function ActivatePlanPage() {
 
   return (
     <>
-    <div className="flex min-h-screen flex-col">
+    <div className="public-site flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 flex-col px-6 py-12">
+      <main className="public-main flex flex-1 flex-col px-6 py-12">
         <div className="mx-auto w-full max-w-md">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-white">{t("title")}</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{t("stepLabel")}</p>
+          <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">{t("title")}</h1>
           <p className="mt-2 text-sm text-muted">{t("subtitle")}</p>
-          <p className="mt-2 font-mono text-xs text-muted-dim">{t("iccidLine", { iccid })}</p>
-          <p className="mt-1 text-xs text-muted-dim">{t("emailLine", { email })}</p>
+          <p className="mt-2 font-mono text-xs text-slate-500">{t("iccidLine", { iccid })}</p>
+          <p className="mt-1 text-xs text-slate-500">{t("emailLine", { email })}</p>
 
           {hasStatus && simState && (
             <div
-              className="mt-6 space-y-3 rounded-lg border-2 border-emerald-500/50 bg-emerald-950 p-4 text-left shadow-[0_10px_40px_-12px_rgba(16,185,129,0.45),inset_0_1px_0_0_rgba(52,211,153,0.15)] ring-2 ring-emerald-400/25"
+              className="mt-6 space-y-3 rounded-lg border-2 border-emerald-300/60 bg-emerald-50 p-4 text-left shadow-[0_10px_30px_-15px_rgba(16,185,129,0.25)] ring-1 ring-emerald-200/80"
               role="region"
               aria-label={t("currentStatusTitle")}
             >
@@ -200,35 +200,35 @@ export default function ActivatePlanPage() {
                   </svg>
                 </span>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200/90">{t("currentStatusTitle")}</p>
-                  <p className="mt-1 text-xs leading-snug text-emerald-100/70">{t("currentStatusHint")}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">{t("currentStatusTitle")}</p>
+                  <p className="mt-1 text-xs leading-snug text-emerald-700/80">{t("currentStatusHint")}</p>
                 </div>
               </div>
               {simState.pending && (
                 <div className="pt-1">
                   <p className="text-xs font-semibold uppercase tracking-wide text-amber-300/95">{t("pendingLabel")}</p>
-                  <p className="mt-1 text-sm font-medium text-white">{simState.pending.planName}</p>
-                  <p className="text-xs text-emerald-100/65">
+                  <p className="mt-1 text-sm font-medium text-slate-900">{simState.pending.planName}</p>
+                  <p className="text-xs text-emerald-800/85">
                     {simState.pending.dataAllowance} · {simState.pending.durationDays} {t("daysSuffix")}
                   </p>
-                  <p className="mt-1 font-mono text-[11px] text-emerald-200/50">{t("voucherLine", { code: simState.pending.voucherCode ?? "—" })}</p>
+                  <p className="mt-1 font-mono text-[11px] text-emerald-700/80">{t("voucherLine", { code: simState.pending.voucherCode ?? "—" })}</p>
                 </div>
               )}
               {simState.completed && (
                 <div className={simState.pending ? "border-t border-emerald-500/20 pt-3" : "pt-1"}>
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300/95">{t("completedLabel")}</p>
-                  <p className="mt-1 text-sm font-medium text-white">{simState.completed.planName}</p>
-                  <p className="text-xs text-emerald-100/65">
+                  <p className="mt-1 text-sm font-medium text-slate-900">{simState.completed.planName}</p>
+                  <p className="text-xs text-emerald-800/85">
                     {simState.completed.dataAllowance} · {simState.completed.durationDays} {t("daysSuffix")}
                   </p>
-                  <p className="mt-1 font-mono text-[11px] text-emerald-200/50">{t("voucherLine", { code: simState.completed.voucherCode ?? "—" })}</p>
+                  <p className="mt-1 font-mono text-[11px] text-emerald-700/80">{t("voucherLine", { code: simState.completed.voucherCode ?? "—" })}</p>
                 </div>
               )}
             </div>
           )}
 
           {hasStatus && (
-            <p className="mb-3 mt-8 text-[10px] font-bold uppercase tracking-[0.2em] text-white/90">{t("plansSectionLabel")}</p>
+            <p className="mb-3 mt-8 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-700">{t("plansSectionLabel")}</p>
           )}
 
           <div className={`space-y-3 ${hasStatus ? "" : "mt-8"}`}>
@@ -251,14 +251,14 @@ export default function ActivatePlanPage() {
                       Popular
                     </span>
                   )}
-                  <div className="font-semibold text-white">{plan.name}</div>
+                  <div className="font-semibold text-slate-900">{plan.name}</div>
                   <div className="text-sm text-muted">
                     {plan.dataAllowance} · {plan.durationDays} days
                   </div>
                   <div className="mt-2 text-lg font-bold text-accent">
                     ${(plan.priceCents / 100).toFixed(2)}
                     {plan.originalPriceCents > plan.priceCents && (
-                      <span className="ml-2 text-sm font-normal text-muted-dim line-through">
+                      <span className="ml-2 text-sm font-normal text-slate-500 line-through">
                         ${(plan.originalPriceCents / 100).toFixed(2)}
                       </span>
                     )}
@@ -295,7 +295,7 @@ export default function ActivatePlanPage() {
           aria-modal="true"
           aria-labelledby="plan-confirm-title"
           aria-describedby="plan-confirm-desc"
-          className="relative z-10 w-full max-w-md rounded-2xl border border-white/[0.14] bg-gradient-to-b from-surface-elevated to-surface-card p-6 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)] ring-1 ring-white/10"
+          className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_-25px_rgba(15,23,42,0.35)] ring-1 ring-slate-100"
         >
           <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-accent/35 bg-accent/10 text-accent">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -307,7 +307,7 @@ export default function ActivatePlanPage() {
             id="plan-confirm-title"
             ref={confirmTitleRef}
             tabIndex={-1}
-            className="text-lg font-bold tracking-tight text-white outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated"
+            className="text-lg font-bold tracking-tight text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
             {t("confirmExistingTitle")}
           </h2>

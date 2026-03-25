@@ -7,9 +7,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 export default function HomePage() {
   const t = useTranslations("home");
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="public-site flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+      <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
         <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40" />
@@ -17,7 +17,7 @@ export default function HomePage() {
           </span>
           Live
         </p>
-        <h1 className="page-hero-title max-w-2xl text-white">{t("title")}</h1>
+        <h1 className="page-hero-title max-w-2xl text-slate-900">{t("title")}</h1>
         <p className="page-hero-subtitle max-w-md">{t("subtitle")}</p>
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
           <Link href="/activate" className="btn-primary min-w-[200px] px-8 py-3 text-center">
@@ -45,7 +45,7 @@ export default function HomePage() {
           </Link>
         </p>
       </main>
-      <footer className="border-t border-white/10 py-6 text-center text-[11px] uppercase tracking-widest text-muted-dim">
+      <footer className="public-main border-t border-slate-200 bg-white/70 py-6 text-center text-[11px] uppercase tracking-widest text-slate-700 backdrop-blur-sm">
         USALOCALSIM · Activation portal
       </footer>
     </div>
