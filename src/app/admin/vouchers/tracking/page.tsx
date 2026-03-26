@@ -319,9 +319,9 @@ export default function VoucherTrackingPage() {
           <div className="h-32 animate-pulse rounded-none bg-white/[0.06]" />
         </div>
       ) : (
-        <div className="admin-panel w-full max-w-full overflow-hidden shadow-[0_24px_80px_-30px_rgba(0,0,0,0.7)]">
-          <div className="w-full max-w-full overflow-x-auto">
-            <table className="ui-table w-full">
+        <div className="admin-panel w-full max-w-full overflow-hidden">
+          <div className="admin-table-wrap w-full max-w-full">
+            <table className="admin-table">
               <thead>
                 <tr>
                   <th className="pl-5 md:pl-6">Code</th>

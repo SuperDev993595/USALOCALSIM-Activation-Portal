@@ -364,10 +364,10 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
         ) : users.length === 0 ? (
           <p className="px-6 py-8 text-sm text-muted md:px-8">No users yet.</p>
         ) : (
-          <div className="overflow-x-auto border-t border-slate-200">
-            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+          <div className="admin-table-wrap">
+            <table className="admin-table min-w-[640px]">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <tr>
                   <th className="px-4 py-3 md:px-6">Email</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Role</th>
@@ -380,9 +380,9 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
                 {users.map((u) => {
                   const isSelf = u.id === currentUserId;
                   return (
-                    <tr key={u.id} className="border-b border-slate-100 align-top transition hover:bg-slate-50/80">
+                    <tr key={u.id}>
                       <td className="px-4 py-4 text-slate-600 md:px-6">
-                        <div className="font-medium text-slate-900">{u.email ?? "—"}</div>
+                        <div className="admin-table-text-strong">{u.email ?? "—"}</div>
                         {isSelf ? (
                           <span className="mt-1 inline-block text-[10px] font-semibold uppercase tracking-wider text-accent">
                             You

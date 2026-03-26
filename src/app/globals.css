@@ -282,6 +282,34 @@
     @apply border-slate-200 bg-slate-50 text-slate-600;
   }
 
+  .admin-table-wrap {
+    @apply overflow-x-auto border-t border-slate-200;
+  }
+
+  .admin-table {
+    @apply w-full min-w-[720px] border-collapse text-left text-sm;
+  }
+
+  .admin-table thead tr {
+    @apply border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
+  }
+
+  .admin-table th {
+    @apply px-4 py-3;
+  }
+
+  .admin-table td {
+    @apply px-4 py-4 align-top text-slate-600;
+  }
+
+  .admin-table tbody tr {
+    @apply border-b border-slate-100 transition hover:bg-slate-50/80;
+  }
+
+  .admin-table .admin-table-text-strong {
+    @apply font-medium text-slate-900;
+  }
+
   .ui-btn-ghost {
     @apply inline-flex items-center justify-center border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-45;
   }

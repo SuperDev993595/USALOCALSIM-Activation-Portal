@@ -14,6 +14,25 @@ type PlanRow = {
   market: string;
 };
 
+function EditIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
 const emptyCreate = {
   name: "",
   dataAllowance: "",
@@ -240,7 +259,7 @@ export function AdminPlansClient() {
         </form>
       </section>
 
-      <section className="admin-panel overflow-x-auto">
+      <section className="admin-panel">
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">All plans</h2>
           <p className="admin-panel-head-desc">{loading ? "Loading…" : `${plans.length} plan(s)`}</p>
@@ -250,7 +269,8 @@ export function AdminPlansClient() {
         ) : plans.length === 0 ? (
           <p className="p-6 text-sm text-slate-600">No plans yet. Add one above.</p>
         ) : (
-          <table className="ui-table w-full min-w-[720px]">
+          <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
               <tr>
                 <th className="pl-5 md:pl-6">Name</th>
@@ -365,9 +385,11 @@ export function AdminPlansClient() {
                       <button
                         type="button"
                         onClick={() => startEdit(p)}
-                        className="btn-secondary rounded-none px-3 py-1.5 text-xs"
+                        title={`Edit ${p.name}`}
+                        aria-label={`Edit ${p.name}`}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
                       >
-                        Edit
+                        <EditIcon className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
@@ -375,6 +397,7 @@ export function AdminPlansClient() {
               )}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
