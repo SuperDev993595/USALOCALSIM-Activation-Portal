@@ -16,26 +16,30 @@ export function AdminPageHeader({
   rightActions?: ReactNode;
 }) {
   return (
-    <header className="relative overflow-hidden rounded-2xl border border-white/[0.14] bg-gradient-to-br from-surface-elevated via-surface-card to-surface-elevated p-6 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.65)] md:p-8">
+    <header className="admin-panel relative overflow-hidden rounded-2xl p-0 md:rounded-[1.25rem]">
       <div
-        className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-accent/[0.07] blur-3xl"
+        className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-accent/[0.06] blur-3xl"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-brand-purple/10 blur-3xl"
+        className="pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-brand-purple/[0.07] blur-3xl"
         aria-hidden
       />
-      <div className="relative">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+      <div className="relative border-l-[3px] border-accent bg-gradient-to-br from-white via-slate-50/80 to-white p-6 md:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent/90">{eyebrow}</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white md:text-3xl">{title}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{description}</p>
-            {meta ? <div className="mt-5 flex flex-wrap items-center gap-3">{meta}</div> : null}
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{eyebrow}</p>
+            <h1 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-900 md:text-[1.75rem] md:leading-tight">
+              {title}
+            </h1>
+            <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-slate-600">{description}</p>
+            {meta ? <div className="mt-6 flex flex-wrap items-center gap-3">{meta}</div> : null}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-5 sm:pt-1">
-            <AdminPageRefreshButton />
-            {rightActions}
+          <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:items-end sm:pt-1">
+            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:flex-col sm:items-end">
+              <AdminPageRefreshButton />
+              {rightActions}
+            </div>
           </div>
         </div>
       </div>
@@ -51,10 +55,10 @@ export function AdminPageFooter({
   label?: string;
 }) {
   return (
-    <footer className="mt-12 border-t border-white/[0.06] pt-8">
+    <footer className="mt-14 border-t border-slate-200 pt-8">
       <Link
         href={href}
-        className="group inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted transition hover:text-accent"
+        className="group inline-flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm transition hover:border-accent/35 hover:text-accent"
       >
         <span className="transition group-hover:-translate-x-0.5" aria-hidden>
           ←

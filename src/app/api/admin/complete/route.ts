@@ -30,8 +30,8 @@ export async function POST(req: Request) {
   if (!request) {
     return NextResponse.json({ error: "Request not found" }, { status: 404 });
   }
-  if (request.status !== "pending") {
-    return NextResponse.json({ error: "Already completed" }, { status: 400 });
+  if (request.status !== "scheduled") {
+    return NextResponse.json({ error: "Already active" }, { status: 400 });
   }
 
   const qrTrimmed = body.esimQrPayload?.trim();
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   await prisma.activationRequest.update({
     where: { id: body.requestId },
     data: {
-      status: "completed",
+      status: "active",
       completedAt: new Date(),
       completedById: session.user.id,
       esimQrPayload: esimQrPayload ?? null,

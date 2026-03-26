@@ -11,6 +11,7 @@ export default function ActivateUsPage() {
   const router = useRouter();
   const [voucherCode, setVoucherCode] = useState("");
   const [email, setEmail] = useState("");
+  const [travelDate, setTravelDate] = useState("");
   const [step, setStep] = useState<"input" | "email">("input");
   const [planId, setPlanId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,6 +61,7 @@ export default function ActivateUsPage() {
           email: email.trim(),
           voucherCode: voucherCode.trim().toUpperCase(),
           planId,
+          travelDate,
         }),
       });
       const data = await res.json();
@@ -68,7 +70,11 @@ export default function ActivateUsPage() {
         setLoading(false);
         return;
       }
-      router.push("/activate/success");
+      router.push(
+        `/activate/success?scheduled=1&travelDate=${encodeURIComponent(travelDate)}&request_id=${encodeURIComponent(
+          data.requestId
+        )}`
+      );
     } catch {
       setError(t("genericError"));
     }
@@ -99,7 +105,7 @@ export default function ActivateUsPage() {
                     className="ui-input"
                   />
                 </div>
-                {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+                {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <button
                   type="button"
                   onClick={handleValidate}
@@ -125,7 +131,20 @@ export default function ActivateUsPage() {
                     className="ui-input"
                   />
                 </div>
-                {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+                <div className="mt-4">
+                  <label htmlFor="travelDate" className="ui-label">
+                    Travel date
+                  </label>
+                  <input
+                    id="travelDate"
+                    type="date"
+                    required
+                    value={travelDate}
+                    onChange={(e) => setTravelDate(e.target.value)}
+                    className="ui-input"
+                  />
+                </div>
+                {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
                 <div className="mt-4 flex gap-2">
                   <button
                     type="button"

@@ -45,6 +45,12 @@ export async function POST(req: Request) {
   const iccid = iccidRaw ? normalizeIccid(iccidRaw) : null;
   const planId = session.metadata?.planId ?? null;
   const email = session.customer_email ?? session.customer_details?.email ?? "";
+  const travelDateRaw = session.metadata?.travelDate;
+  const travelDate =
+    travelDateRaw && !Number.isNaN(new Date(travelDateRaw).getTime()) ? new Date(travelDateRaw) : null;
+  const hasPartnerSim = session.metadata?.hasPartnerSim === "1";
+  const hardwareDeductionCents = Number(session.metadata?.hardwareDeductionCents ?? 0) || 0;
+  const shippingDeductionCents = Number(session.metadata?.shippingDeductionCents ?? 0) || 0;
 
   if (!planId || !email) {
     return NextResponse.json({ error: "Missing planId or email in session" }, { status: 400 });
@@ -61,8 +67,12 @@ export async function POST(req: Request) {
         email,
         scenario: "sim_only",
         amountPaidCents: session.amount_total ?? 0,
+        travelDate,
+        hasPartnerSim,
+        hardwareDeductionCents,
+        shippingDeductionCents,
         stripePaymentId: paymentId,
-        status: "pending",
+        status: "scheduled",
       },
     });
   });

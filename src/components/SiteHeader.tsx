@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 const languageOptions = [
@@ -16,8 +16,9 @@ const languageOptions = [
 
 export function SiteHeader() {
   const pathname = usePathname() ?? "";
+  const searchParams = useSearchParams();
+  const flow = searchParams.get("flow");
   const locale = useLocale();
-  const tHome = useTranslations("home");
   const [openLangMenu, setOpenLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const selectedLanguage = languageOptions.find((o) => o.locale === locale) ?? languageOptions[0];
@@ -28,14 +29,40 @@ export function SiteHeader() {
     de: "Startseite",
     pt: "Inicio",
   };
+  const redeemLabelByLocale: Record<string, string> = {
+    en: "Redeem",
+    nl: "Redeem",
+    fr: "Redeem",
+    de: "Redeem",
+    pt: "Redeem",
+  };
+  const buyPlanLabelByLocale: Record<string, string> = {
+    en: "Buy Plan",
+    nl: "Buy Plan",
+    fr: "Buy Plan",
+    de: "Buy Plan",
+    pt: "Buy Plan",
+  };
+  const usEsimLabelByLocale: Record<string, string> = {
+    en: "US eSIM",
+    nl: "US eSIM",
+    fr: "US eSIM",
+    de: "US eSIM",
+    pt: "US eSIM",
+  };
   const nav = [
-    { href: "/", label: homeLabelByLocale[locale] ?? "Home", match: (p: string) => p === "/" },
+    { href: "/", label: homeLabelByLocale[locale] ?? "Home", match: (p: string, f: string | null) => p === "/" && !f },
     {
-      href: "/activate",
-      label: tHome("startActivation"),
-      match: (p: string) => p.startsWith("/activate") && !p.startsWith("/activate/us"),
+      href: "/activate/redeem",
+      label: redeemLabelByLocale[locale] ?? "Redeem",
+      match: (p: string) => p.startsWith("/activate/redeem"),
     },
-    { href: "/activate/us", label: tHome("usResidentsLink"), match: (p: string) => p.startsWith("/activate/us") },
+    {
+      href: "/activate/buy-plan",
+      label: buyPlanLabelByLocale[locale] ?? "Buy Plan",
+      match: (p: string) => p.startsWith("/activate/buy-plan"),
+    },
+    { href: "/activate/us", label: usEsimLabelByLocale[locale] ?? "US eSIM", match: (p: string) => p.startsWith("/activate/us") },
   ];
 
   useEffect(() => {
@@ -98,7 +125,7 @@ export function SiteHeader() {
 
           <nav className="hidden items-center font-roboto text-[18px] font-normal text-slate-800 md:flex">
             {nav.map((item, idx) => {
-              const active = item.match(pathname);
+              const active = item.match(pathname, flow);
               return (
                 <div key={item.href} className="flex items-center">
                   <Link

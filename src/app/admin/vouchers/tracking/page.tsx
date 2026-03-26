@@ -45,26 +45,26 @@ function StatusBadge({ status }: { status: string }) {
   const s = status.toLowerCase();
   const styleByStatus: Record<string, { badge: string; dot: string; label: string }> = {
     redeemed: {
-      badge: "border-violet-400/65 bg-violet-500/25 text-violet-100 shadow-[0_0_0_1px_rgba(167,139,250,0.25)]",
-      dot: "bg-violet-300",
+      badge: "border-violet-300 bg-violet-50 text-violet-900",
+      dot: "bg-violet-500",
       label: "Redeemed",
     },
     activated: {
-      badge: "border-emerald-300/80 bg-emerald-400/35 text-emerald-50 shadow-[0_0_0_1px_rgba(52,211,153,0.3)]",
-      dot: "bg-emerald-200",
+      badge: "border-emerald-300 bg-emerald-50 text-emerald-900",
+      dot: "bg-emerald-600",
       label: "Activated",
     },
     inactive: {
-      badge: "border-rose-400/60 bg-rose-500/20 text-rose-100 shadow-[0_0_0_1px_rgba(251,113,133,0.2)]",
-      dot: "bg-rose-300",
+      badge: "border-rose-300 bg-rose-50 text-rose-900",
+      dot: "bg-rose-500",
       label: "Inactive",
     },
   };
   const style =
     styleByStatus[s] ??
     ({
-      badge: "border-amber-400/70 bg-amber-500/25 text-amber-100 shadow-[0_0_0_1px_rgba(251,191,36,0.2)]",
-      dot: "bg-amber-300",
+      badge: "border-amber-300 bg-amber-50 text-amber-900",
+      dot: "bg-amber-500",
       label: status,
     } as const);
   return (
@@ -189,12 +189,17 @@ export default function VoucherTrackingPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <AdminPageHeader
         title="Voucher tracking"
         description="See which dealer or admin unlocked each voucher. Redeemed rows include the customer identifier (email or ICCID) from activation. Inactive rows can be removed with the trash control (activated or redeemed codes cannot be deleted)."
       />
-      <div className="flex flex-col gap-4 rounded-2xl border border-white/[0.14] bg-surface-elevated p-4 shadow-lg shadow-black/40 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="admin-panel">
+        <div className="admin-panel-head">
+          <h2 className="admin-panel-head-title">Filters</h2>
+          <p className="admin-panel-head-desc">Narrow the list by code, status, plan, or who unlocked / redeemed.</p>
+        </div>
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 md:p-5">
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="ui-label !mt-0 text-[10px] text-muted-dim">Code</label>
@@ -302,18 +307,19 @@ export default function VoucherTrackingPage() {
           </div>
         </div>
         {!loading ? (
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-dim sm:pl-4">
+          <p className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-slate-600 sm:text-left">
             {filteredVouchers.length} / {vouchers.length} row{vouchers.length === 1 ? "" : "s"}
           </p>
         ) : null}
+        </div>
       </div>
       {loading ? (
-        <div className="space-y-3 rounded-2xl border border-white/[0.12] bg-surface-elevated p-6">
+        <div className="admin-panel space-y-3 p-6">
           <div className="h-4 w-1/3 animate-pulse rounded-md bg-white/10" />
           <div className="h-32 animate-pulse rounded-xl bg-white/[0.06]" />
         </div>
       ) : (
-        <div className="w-full max-w-full overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated shadow-[0_24px_80px_-30px_rgba(0,0,0,0.7)]">
+        <div className="admin-panel w-full max-w-full overflow-hidden shadow-[0_24px_80px_-30px_rgba(0,0,0,0.7)]">
           <div className="w-full max-w-full overflow-x-auto">
             <table className="ui-table w-full">
               <thead>
@@ -332,12 +338,12 @@ export default function VoucherTrackingPage() {
               <tbody>
                 {filteredVouchers.map((v) => (
                   <tr key={v.id}>
-                    <td className="pl-5 font-mono text-sm text-white/95 md:pl-6">{v.code}</td>
+                    <td className="pl-5 font-mono text-sm text-slate-900 md:pl-6">{v.code}</td>
                     <td>
                       <StatusBadge status={v.status} />
                     </td>
                     <td>
-                      <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 text-xs capitalize text-muted">
+                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs capitalize text-slate-600">
                         {v.type}
                       </span>
                     </td>
@@ -345,17 +351,17 @@ export default function VoucherTrackingPage() {
                       {v.planName}
                     </td>
                     <td>
-                      <span className="text-sm text-white/90">{v.activatedByEmail ?? "—"}</span>
+                      <span className="text-sm text-slate-900">{v.activatedByEmail ?? "—"}</span>
                       {v.activatedAt ? (
-                        <span className="mt-0.5 block text-xs text-muted-dim">
+                        <span className="mt-0.5 block text-xs text-slate-500">
                           {new Date(v.activatedAt).toLocaleString()}
                         </span>
                       ) : null}
                     </td>
                     <td className="pr-5 md:pr-6">
-                      <span className="text-sm text-white/90">{v.redeemedBy ?? "—"}</span>
+                      <span className="text-sm text-slate-900">{v.redeemedBy ?? "—"}</span>
                       {v.redeemedAt ? (
-                        <span className="mt-0.5 block text-xs text-muted-dim">
+                        <span className="mt-0.5 block text-xs text-slate-500">
                           {new Date(v.redeemedAt).toLocaleString()}
                         </span>
                       ) : null}
@@ -368,7 +374,7 @@ export default function VoucherTrackingPage() {
                           disabled={deletingId === v.id || pendingDelete?.id === v.id}
                           title="Remove inactive voucher"
                           aria-label={`Remove inactive voucher ${v.code}`}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-500/25 text-red-400/90 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-40"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
                         >
                           <TrashIcon className={`h-4 w-4 ${deletingId === v.id ? "animate-pulse" : ""}`} />
                         </button>
@@ -382,7 +388,7 @@ export default function VoucherTrackingPage() {
             </table>
           </div>
           {filteredVouchers.length === 0 ? (
-            <p className="border-t border-white/[0.06] px-6 py-10 text-center text-sm text-muted">
+            <p className="border-t border-slate-200 px-6 py-10 text-center text-sm text-slate-600">
               No vouchers match this filter.
             </p>
           ) : null}
@@ -408,7 +414,7 @@ export default function VoucherTrackingPage() {
         {pendingDelete ? (
           <>
             This permanently deletes code{" "}
-            <span className="font-mono font-semibold text-white/95">{pendingDelete.code}</span> from
+            <span className="font-mono font-semibold text-slate-900">{pendingDelete.code}</span> from
             inventory. Activated or redeemed vouchers cannot be removed this way.
           </>
         ) : null}

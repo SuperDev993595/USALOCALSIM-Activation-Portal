@@ -9,11 +9,13 @@ const ICCID_REGEX = /^\d{18,22}$/;
 
 const bodySchema = z
   .object({
-    scenario: z.enum(["combo", "esim_voucher"]),
+    scenario: z.enum(["combo", "esim_voucher", "voucher_sim"]),
     email: z.string().email(),
     iccid: z.string().optional(),
     voucherCode: z.string().min(1),
     planId: z.string().min(1),
+    travelDate: z.string().min(1),
+    hasPartnerSim: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.scenario !== "combo") return;
@@ -63,6 +65,11 @@ export async function POST(req: Request) {
 
   const comboIccid =
     body.scenario === "combo" ? normalizeIccid(body.iccid ?? "") : null;
+  const travelDate = new Date(body.travelDate);
+  if (Number.isNaN(travelDate.getTime())) {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "Invalid travel date" }, { status: 400 });
+  }
 
   const voucherCodeUpper = body.voucherCode.trim().toUpperCase();
   const redeemedBy =
@@ -101,7 +108,9 @@ export async function POST(req: Request) {
           iccid: comboIccid,
           voucherCode: voucherCodeUpper,
           voucherId: voucher.id,
-          status: "pending",
+          status: "scheduled",
+          travelDate,
+          hasPartnerSim: body.hasPartnerSim ?? false,
         },
       });
     });
@@ -134,6 +143,8 @@ export async function POST(req: Request) {
         email: body.email,
         voucherCode: voucherCodeUpper,
         iccid: comboIccid,
+        travelDate: travelDate.toISOString(),
+        hasPartnerSim: body.hasPartnerSim ?? false,
         ip,
         userAgent,
       }),

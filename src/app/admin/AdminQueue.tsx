@@ -12,6 +12,10 @@ type Item = {
   scenario: string;
   amountPaidCents: number;
   createdAt: string | Date;
+  travelDate?: string | Date | null;
+  hasPartnerSim?: boolean;
+  hardwareDeductionCents?: number;
+  shippingDeductionCents?: number;
   plan: Plan;
 };
 
@@ -19,6 +23,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   const [items, setItems] = useState<Item[]>(initial);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [esimQrPayload, setEsimQrPayload] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState<{ type: "warn"; message: string } | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/admin/queue");
@@ -46,6 +51,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   }, []);
 
   async function handleComplete(id: string) {
+    setNotice(null);
     setLoading((s) => ({ ...s, [id]: true }));
     try {
       const item = items.find((x) => x.id === id);
@@ -56,8 +62,18 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ requestId: id, esimQrPayload: qr }),
       });
-      if (res.ok) await refresh();
-      else alert((await res.json()).error ?? "Failed");
+      const data = (await res.json().catch(() => ({}))) as { error?: string; emailWarning?: string };
+      if (!res.ok) {
+        alert(typeof data.error === "string" ? data.error : "Failed");
+        return;
+      }
+      await refresh();
+      if (typeof data.emailWarning === "string" && data.emailWarning.trim()) {
+        setNotice({
+          type: "warn",
+          message: `Marked active, but the confirmation email may not have sent: ${data.emailWarning}`,
+        });
+      }
     } finally {
       setLoading((s) => ({ ...s, [id]: false }));
     }
@@ -65,80 +81,144 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/20 bg-surface-elevated px-6 py-14 text-center">
-        <p className="text-sm font-medium text-white">Queue is clear</p>
-        <p className="mt-1 text-sm text-muted">New activation requests will show up here automatically.</p>
+      <div className="admin-callout admin-callout-muted flex-col items-center justify-center py-12 text-center sm:py-14">
+        <p className="text-sm font-semibold text-slate-900">Queue is clear</p>
+        <p className="mt-1 max-w-sm text-sm text-slate-600">New activation requests will show up here automatically.</p>
       </div>
     );
   }
 
+  const today = new Date();
+  // Compare using UTC date parts so "due today" doesn't shift across timezones.
+  const todayISO = today.toISOString().slice(0, 10);
+  const dueToday = items.filter((r) => {
+    if (!r.travelDate) return false;
+    return new Date(r.travelDate).toISOString().slice(0, 10) === todayISO;
+  });
+
   return (
-    <div className="space-y-4">
-      {items.map((r) => (
-        <article
-          key={r.id}
-          className="group relative overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated p-5 shadow-lg shadow-black/40 transition hover:border-accent/35 hover:bg-surface-card md:p-6"
+    <div className="space-y-4 pt-1">
+      {notice ? (
+        <div
+          className="flex items-start justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          role="status"
         >
-          <div
-            className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-accent/[0.04] blur-2xl transition group-hover:bg-accent/[0.08]"
-            aria-hidden
-          />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0 flex-1 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="badge border border-amber-400/35 bg-amber-400/10 text-amber-200/90">Pending</span>
-                <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-muted-dim">
-                  {r.scenario.replace(/_/g, " ")}
-                </span>
-              </div>
-              <p className="break-all text-lg font-semibold tracking-tight text-white">{r.email}</p>
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-lg border border-white/10 bg-black/25 px-2.5 py-1 text-xs text-muted">
-                  {r.plan.name}
-                </span>
-                <span className="rounded-lg border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent-hover">
-                  ${(r.amountPaidCents / 100).toFixed(2)}
-                </span>
-                {r.iccid ? (
-                  <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-xs text-white/90">
-                    {r.iccid}
-                  </span>
-                ) : null}
-                {r.voucherCode ? (
-                  <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-xs text-white/90">
-                    {r.voucherCode}
-                  </span>
-                ) : null}
-              </div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-dim">
-                Submitted {new Date(r.createdAt).toLocaleString()}
-              </p>
-              {r.scenario === "esim_voucher" && (
-                <label className="block text-xs text-muted">
-                  <span className="font-semibold uppercase tracking-wider text-white/80">eSIM QR / LPA (optional)</span>
-                  <textarea
-                    value={esimQrPayload[r.id] ?? ""}
-                    onChange={(e) =>
-                      setEsimQrPayload((s) => ({ ...s, [r.id]: e.target.value }))
-                    }
-                    rows={2}
-                    placeholder="Paste LPA or provisioning string for the customer email"
-                    className="ui-textarea mt-2 rounded-xl text-xs"
-                  />
-                </label>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => handleComplete(r.id)}
-              disabled={loading[r.id]}
-              className="btn-primary h-11 w-full shrink-0 px-6 shadow-accent-sm lg:w-auto lg:self-start"
-            >
-              {loading[r.id] ? "Completing…" : "Mark complete"}
-            </button>
+          <p>{notice.message}</p>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="shrink-0 rounded-lg border border-amber-400/50 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900 hover:bg-amber-100"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+      {dueToday.length > 0 && (
+        <div className="admin-callout admin-callout-emerald">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-300 bg-white text-sm font-bold text-emerald-800 shadow-sm">
+            {dueToday.length}
+          </span>
+          <div>
+            <p className="font-semibold text-emerald-900">Due today</p>
+            <p className="text-xs text-emerald-800/90">
+              {dueToday.length} activation{dueToday.length === 1 ? "" : "s"} with travel date matching today&apos;s date.
+            </p>
           </div>
-        </article>
-      ))}
+        </div>
+      )}
+      {items.map((r) => {
+        const hw = r.hardwareDeductionCents ?? 0;
+        const sh = r.shippingDeductionCents ?? 0;
+        const partner = Boolean(r.hasPartnerSim);
+        const showAdjustments = partner || hw > 0 || sh > 0;
+        return (
+          <article
+            key={r.id}
+            className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.15)] transition hover:border-accent/25 md:p-6"
+          >
+            <div
+              className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-accent/[0.04] blur-2xl transition group-hover:bg-accent/[0.07]"
+              aria-hidden
+            />
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="badge border border-amber-300/80 bg-amber-50 text-amber-900">Scheduled</span>
+                  <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-500">
+                    {r.scenario.replace(/_/g, " ")}
+                  </span>
+                  {partner ? (
+                    <span className="rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
+                      Partner SIM declared
+                    </span>
+                  ) : null}
+                </div>
+                <p className="break-all text-lg font-semibold tracking-tight text-slate-900">{r.email}</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
+                    {r.plan.name}
+                  </span>
+                  <span className="rounded-lg border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                    Paid ${(r.amountPaidCents / 100).toFixed(2)}
+                  </span>
+                  {r.iccid ? (
+                    <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                      {r.iccid}
+                    </span>
+                  ) : null}
+                  {r.voucherCode ? (
+                    <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                      {r.voucherCode}
+                    </span>
+                  ) : null}
+                </div>
+                {showAdjustments ? (
+                  <p className="text-xs text-slate-600">
+                    <span className="font-semibold text-slate-800">Checkout adjustments: </span>
+                    Hardware −${(hw / 100).toFixed(2)}
+                    {" · "}
+                    {partner ? (
+                      <>Shipping waived: $0.00</>
+                    ) : sh > 0 ? (
+                      <>Shipping −${(sh / 100).toFixed(2)}</>
+                    ) : (
+                      <>Shipping −$0.00</>
+                    )}
+                  </p>
+                ) : null}
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Submitted {new Date(r.createdAt).toLocaleString()}
+                </p>
+                <p className="text-xs font-medium uppercase tracking-wider text-emerald-800">
+                  Travel date {r.travelDate ? new Date(r.travelDate).toLocaleDateString() : "—"}
+                </p>
+                {r.scenario === "esim_voucher" && (
+                  <label className="block text-xs text-slate-600">
+                    <span className="font-semibold uppercase tracking-wider text-slate-800">eSIM QR / LPA (optional)</span>
+                    <textarea
+                      value={esimQrPayload[r.id] ?? ""}
+                      onChange={(e) =>
+                        setEsimQrPayload((s) => ({ ...s, [r.id]: e.target.value }))
+                      }
+                      rows={2}
+                      placeholder="Paste LPA or provisioning string for the customer email"
+                      className="ui-textarea mt-2 rounded-xl text-xs"
+                    />
+                  </label>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleComplete(r.id)}
+                disabled={loading[r.id]}
+                className="btn-primary h-11 w-full shrink-0 rounded-xl px-6 shadow-accent-sm lg:w-auto lg:self-start"
+              >
+                {loading[r.id] ? "Activating…" : "Mark as Active"}
+              </button>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }

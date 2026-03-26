@@ -107,8 +107,12 @@ model ActivationRequest {
   planId           String
   plan             Plan     @relation(fields: [planId], references: [id])
   amountPaidCents  Int      @default(0)
+  travelDate       DateTime?
+  hasPartnerSim    Boolean  @default(false)
+  hardwareDeductionCents Int @default(0)
+  shippingDeductionCents Int @default(0)
   stripePaymentId  String?
-  status           String   // "pending" | "completed"
+  status           String   // "scheduled" | "active"
   completedAt      DateTime?
   completedById    String?
   createdAt        DateTime @default(now())
@@ -117,6 +121,12 @@ model ActivationRequest {
   esimQrPayload    String?  @db.Text // LPA/SMDP+ string or QR payload for eSIM delivery email
 
   @@index([iccid])
+}
+
+model SimHardwareCostByMarket {
+  market    String   @id // "global" | "us"
+  cents     Int
+  updatedAt DateTime @updatedAt
 }
 
 model AuditLog {

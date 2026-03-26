@@ -3,12 +3,44 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 
 export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const requestId = url.searchParams.get("request_id");
+  if (requestId) {
+    const activation = await prisma.activationRequest.findUnique({
+      where: { id: requestId },
+      include: { plan: true },
+    });
+    if (!activation) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+    return NextResponse.json({
+      paid: true,
+      processing: false,
+      activation: {
+        id: activation.id,
+        iccid: activation.iccid,
+        voucherCode: activation.voucherCode,
+        email: activation.email,
+        status: activation.status,
+        scenario: activation.scenario,
+        travelDate: activation.travelDate,
+        plan: {
+          name: activation.plan.name,
+          dataAllowance: activation.plan.dataAllowance,
+          durationDays: activation.plan.durationDays,
+        },
+        amountPaidCents: activation.amountPaidCents,
+      },
+      checkoutEmail: activation.email,
+    });
+  }
+
   if (!stripe) {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
   }
-  const sessionId = new URL(req.url).searchParams.get("session_id");
+  const sessionId = url.searchParams.get("session_id");
   if (!sessionId) {
-    return NextResponse.json({ error: "session_id required" }, { status: 400 });
+    return NextResponse.json({ error: "session_id or request_id required" }, { status: 400 });
   }
 
   const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -33,6 +65,7 @@ export async function GET(req: Request) {
           email: activation.email,
           status: activation.status,
           scenario: activation.scenario,
+          travelDate: activation.travelDate,
           plan: {
             name: activation.plan.name,
             dataAllowance: activation.plan.dataAllowance,

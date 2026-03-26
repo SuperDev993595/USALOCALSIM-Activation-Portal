@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
-import { assertSimOnlyPaidCheckoutAllowed, isIccidOwnedByEmail, normalizeIccid } from "@/lib/activation-dedupe";
+import { getSimHardwareCostCentsForMarket } from "@/lib/sim-cost";
 
 const bodySchema = z.object({
-  iccid: z.string().min(1),
   planId: z.string().min(1),
   email: z.string().email(),
+  travelDate: z.string().min(1),
+  hasPartnerSim: z.boolean().optional().default(false),
 });
 
 export async function POST(req: Request) {
@@ -18,36 +19,21 @@ export async function POST(req: Request) {
   try {
     body = bodySchema.parse(await req.json());
   } catch {
-    return NextResponse.json({ error: "Invalid request: iccid, planId, email required" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request: planId, email, travelDate required" }, { status: 400 });
   }
 
   const plan = await prisma.plan.findUnique({ where: { id: body.planId } });
   if (!plan || plan.planType !== "physical_sim") {
     return NextResponse.json({ error: "Plan not found" }, { status: 404 });
   }
-
-  const iccid = normalizeIccid(body.iccid);
-  if (!iccid) {
-    return NextResponse.json({ error: "Invalid ICCID" }, { status: 400 });
-  }
-  const gate = await assertSimOnlyPaidCheckoutAllowed(iccid, plan.priceCents);
-  if (!gate.ok) {
-    return NextResponse.json({ error: gate.error }, { status: 409 });
-  }
-  const owned = await isIccidOwnedByEmail(iccid, body.email);
-  if (!owned) {
-    return NextResponse.json(
-      {
-        error:
-          "This ICCID is linked to another account email. Please use the original email for this SIM.",
-        code: "ICCID_NOT_OWNER",
-      },
-      { status: 409 }
-    );
+  const travelDate = new Date(body.travelDate);
+  if (Number.isNaN(travelDate.getTime())) {
+    return NextResponse.json({ error: "Invalid travelDate" }, { status: 400 });
   }
 
-  const hardwareCost = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;
-  const amountCents = Math.max(0, plan.priceCents - hardwareCost);
+  const hardwareCost = await getSimHardwareCostCentsForMarket(plan.market);
+  const hardwareDeductionCents = body.hasPartnerSim ? hardwareCost : 0;
+  const amountCents = Math.max(0, plan.priceCents - hardwareDeductionCents);
   if (amountCents === 0) {
     return NextResponse.json({ error: "This plan has no remaining balance. Use the voucher flow instead." }, { status: 400 });
   }
@@ -64,7 +50,7 @@ export async function POST(req: Request) {
           currency: "usd",
           product_data: {
             name: plan.name,
-            description: `${plan.dataAllowance} data, ${plan.durationDays} days (SIM Only – hardware discounted)`,
+            description: `${plan.dataAllowance} data, ${plan.durationDays} days`,
           },
           unit_amount: amountCents,
         },
@@ -72,11 +58,14 @@ export async function POST(req: Request) {
       },
     ],
     success_url: `${appUrl}/activate/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/activate/plan?iccid=${encodeURIComponent(iccid)}&email=${encodeURIComponent(body.email)}`,
+    cancel_url: `${appUrl}/activate`,
     metadata: {
-      iccid,
       planId: body.planId,
       scenario: "sim_only",
+      travelDate: travelDate.toISOString(),
+      hasPartnerSim: body.hasPartnerSim ? "1" : "0",
+      hardwareDeductionCents: String(hardwareDeductionCents),
+      shippingDeductionCents: "0",
     },
   });
 

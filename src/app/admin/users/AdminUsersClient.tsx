@@ -342,32 +342,32 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
   const editingUserEdit = editingUser ? edits[editingUser.id] ?? emptyEditable(editingUser) : null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <AdminPageHeader
         title="User management"
         description="Manage account details from the table. Create new accounts from the header action, edit from row actions, and delete users only after email code verification."
         rightActions={
-          <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary">
+          <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary rounded-xl">
             Create account
           </button>
         }
       />
 
-      <section className="overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated">
-        <div className="border-b border-white/[0.06] px-4 py-3 md:px-6">
-          {saveError ? <p className="mb-2 text-sm text-red-400">{saveError}</p> : null}
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Accounts</h2>
-          <p className="mt-0.5 text-xs text-muted">Dealers use the dealer panel; admins use this console.</p>
+      <section className="admin-panel">
+        <div className="admin-panel-head">
+          {saveError ? <p className="mb-3 text-sm font-medium text-red-600">{saveError}</p> : null}
+          <h2 className="admin-panel-head-title">Accounts</h2>
+          <p className="admin-panel-head-desc">Dealers use the dealer panel; admins use this console.</p>
         </div>
         {loading ? (
-          <p className="p-6 text-sm text-muted">Loading…</p>
+          <p className="px-6 py-8 text-sm text-muted md:px-8">Loading…</p>
         ) : users.length === 0 ? (
-          <p className="p-6 text-sm text-muted">No users yet.</p>
+          <p className="px-6 py-8 text-sm text-muted md:px-8">No users yet.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border-t border-slate-200">
             <table className="w-full min-w-[640px] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-dim">
+                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   <th className="px-4 py-3 md:px-6">Email</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Role</th>
@@ -380,9 +380,9 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
                 {users.map((u) => {
                   const isSelf = u.id === currentUserId;
                   return (
-                    <tr key={u.id} className="border-b border-white/[0.06] align-top">
-                      <td className="px-4 py-4 text-muted md:px-6">
-                        <div className="font-medium text-white">{u.email ?? "—"}</div>
+                    <tr key={u.id} className="border-b border-slate-100 align-top transition hover:bg-slate-50/80">
+                      <td className="px-4 py-4 text-slate-600 md:px-6">
+                        <div className="font-medium text-slate-900">{u.email ?? "—"}</div>
                         {isSelf ? (
                           <span className="mt-1 inline-block text-[10px] font-semibold uppercase tracking-wider text-accent">
                             You
@@ -390,7 +390,7 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
                         ) : null}
                       </td>
                       <td className="px-4 py-4 text-muted">{u.name?.trim() || "—"}</td>
-                      <td className="px-4 py-4 text-white">{u.role === "admin" ? "Admin" : "Dealer"}</td>
+                      <td className="px-4 py-4 text-slate-900">{u.role === "admin" ? "Admin" : "Dealer"}</td>
                       <td className="px-4 py-4 text-muted">{u.dealerId?.trim() || "—"}</td>
                       <td className="px-4 py-4">
                         {u.role === "admin" ? <span className="text-xs text-muted-dim">Protected</span> : u.disabled ? "Disabled" : "Active"}
@@ -555,7 +555,7 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
                   type="checkbox"
                   checked={editingUserEdit.disabled}
                   onChange={(e) => updateEdit(editingUser.id, { disabled: e.target.checked })}
-                  className="rounded border-white/20 bg-surface-darkest"
+                  className="rounded border-slate-300 accent-accent"
                 />
                 Disabled
               </label>

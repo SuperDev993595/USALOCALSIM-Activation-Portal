@@ -14,7 +14,13 @@ const sections: {
     title: "Activation",
     links: [
       { href: "/admin", label: "Queue", active: (p) => p === "/admin" },
-      { href: "/admin/completed", label: "Completed", active: (p) => p.startsWith("/admin/completed") },
+      { href: "/admin/completed", label: "Active", active: (p) => p.startsWith("/admin/completed") },
+    ],
+  },
+  {
+    title: "Catalog",
+    links: [
+      { href: "/admin/plans", label: "Plans", active: (p) => p.startsWith("/admin/plans") },
     ],
   },
   {
@@ -90,47 +96,51 @@ export function AdminAppShell({
     await signOut({ callbackUrl: "/login" });
   }
 
+  function navLinkClass(active: boolean) {
+    return active
+      ? "flex rounded-xl border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent"
+      : "flex rounded-xl border border-transparent px-3 py-2.5 text-sm text-slate-600 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900";
+  }
+
   const sidebarInner = (
     <>
-      <div className="border-b border-white/[0.08] px-4 py-5">
+      <div className="relative z-10 border-b border-slate-200 px-4 py-5">
         <Link
           href="/"
-          className="flex items-center gap-2.5 font-semibold tracking-tight text-white transition hover:opacity-90"
+          className="flex items-center gap-3 font-semibold tracking-tight text-slate-900 transition hover:opacity-90"
           onClick={() => setMobileNavOpen(false)}
         >
           <span
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded border border-accent/35 bg-accent/10 text-[10px] font-bold uppercase text-accent"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/35 bg-accent/10 text-[10px] font-bold uppercase text-accent"
             aria-hidden
           >
             US
           </span>
           <span className="min-w-0 text-sm leading-tight">
             USALOCAL<span className="text-accent">SIM</span>
-            <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-dim">
+            <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
               Admin console
             </span>
           </span>
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Admin">
+      <nav className="ui-main-scrollbar relative z-10 flex-1 overflow-y-auto px-3 py-4" aria-label="Admin">
         {sections.map((section) => (
-          <div key={section.title} className="mb-6 last:mb-0">
-            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-dim">
-              {section.title}
+          <div key={section.title} className="mb-7 last:mb-0">
+            <p className="mb-2.5 flex items-center gap-2 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" aria-hidden />
+              <span className="shrink-0">{section.title}</span>
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" aria-hidden />
             </p>
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {section.links.map((l) => {
                 const active = l.active(pathname);
                 return (
                   <li key={l.href}>
                     <Link
                       href={l.href}
-                      className={
-                        active
-                          ? "flex rounded-lg border border-accent/25 bg-accent/[0.12] px-3 py-2.5 text-sm font-medium text-accent-hover"
-                          : "flex rounded-lg px-3 py-2.5 text-sm text-muted transition hover:bg-white/[0.05] hover:text-white"
-                      }
+                      className={navLinkClass(active)}
                       aria-current={active ? "page" : undefined}
                       onClick={() => setMobileNavOpen(false)}
                     >
@@ -144,81 +154,79 @@ export function AdminAppShell({
         ))}
       </nav>
 
-      <div className="border-t border-white/[0.08] p-4">
-        <p className="truncate text-xs text-muted-dim" title={email}>
-          {email}
-        </p>
-        <button
-          type="button"
-          onClick={() => setShowSignOutConfirm(true)}
-          className="mt-3 inline-flex text-xs font-medium uppercase tracking-wide text-red-400/90 hover:text-red-300"
-        >
-          Sign out
-        </button>
+      <div className="relative z-10 border-t border-slate-200 p-4">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p className="truncate text-xs font-medium text-slate-900" title={email}>
+            {email}
+          </p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-wider text-slate-500">Signed in</p>
+          <button
+            type="button"
+            onClick={() => setShowSignOutConfirm(true)}
+            className="mt-3 w-full rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:border-red-300 hover:bg-red-100"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </>
   );
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-gradient-to-br from-[#070b14] via-[#0b1220] to-[#05070a]">
-      <div
-        className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent/10 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -right-20 top-1/3 h-80 w-80 rounded-full bg-brand-purple/12 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.05),transparent_38%),radial-gradient(circle_at_80%_85%,rgba(37,99,235,0.10),transparent_36%)]"
-        aria-hidden
-      />
-      {/* Mobile overlay */}
+    <div className="public-site relative flex h-screen overflow-hidden">
       {mobileNavOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-black/65 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] lg:hidden"
           aria-label="Close menu"
           onClick={() => setMobileNavOpen(false)}
         />
       ) : null}
 
-      {/* Sidebar: drawer on mobile, column on lg */}
       <aside
         id="admin-sidebar"
         className={
-          "fixed inset-y-0 left-0 z-50 flex w-[min(280px,88vw)] flex-col border-r border-white/[0.08] bg-surface-darkest shadow-[8px_0_40px_-12px_rgba(0,0,0,0.85)] transition-transform duration-200 ease-out lg:static lg:z-0 lg:w-64 lg:shrink-0 lg:translate-x-0 lg:shadow-none " +
+          "fixed inset-y-0 left-0 z-50 flex w-[min(280px,88vw)] flex-col border-r border-slate-200 bg-white/95 shadow-[4px_0_24px_-8px_rgba(15,23,42,0.12)] backdrop-blur-md transition-transform duration-200 ease-out lg:static lg:z-0 lg:w-[17rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none " +
           (mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")
         }
       >
         {sidebarInner}
       </aside>
 
-      <div className="relative z-10 flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-surface-darkest/90 px-4 backdrop-blur-md lg:px-6">
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="relative z-20 flex h-[3.25rem] shrink-0 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md lg:px-6">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.12] text-muted transition hover:border-white/20 hover:text-white lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-600 transition hover:border-accent/40 hover:text-accent lg:hidden"
             aria-expanded={mobileNavOpen}
             aria-controls="admin-sidebar"
             onClick={() => setMobileNavOpen((o) => !o)}
           >
             <MenuIcon open={mobileNavOpen} />
           </button>
-          <span className="text-sm font-semibold uppercase tracking-wide text-white lg:hidden">Admin</span>
-          <span className="hidden min-w-0 flex-1 truncate text-xs text-muted-dim lg:inline">
-            Signed in as <span className="text-muted">{email}</span>
+          <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 lg:hidden">
+            <span className="rounded-md border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
+              Admin
+            </span>
+          </span>
+          <span className="hidden min-w-0 flex-1 items-center gap-2 truncate text-xs text-slate-500 lg:inline">
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+              Session
+            </span>
+            <span className="truncate">
+              Signed in as <span className="font-medium text-slate-900">{email}</span>
+            </span>
           </span>
           <Link
             href="/"
-            className="ml-auto shrink-0 text-xs font-medium text-muted transition hover:text-accent"
+            className="btn-secondary ml-auto h-9 shrink-0 rounded-xl px-3 py-0 text-xs font-semibold"
           >
             View site
           </Link>
         </header>
 
-        <main className="ui-main-scrollbar min-h-0 w-full flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 md:px-6 md:py-10">{children}</div>
+        <main className="public-main ui-main-scrollbar relative min-h-0 w-full flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 md:px-7 md:py-11">{children}</div>
         </main>
       </div>
 

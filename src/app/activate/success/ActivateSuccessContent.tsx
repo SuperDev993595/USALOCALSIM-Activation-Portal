@@ -26,29 +26,37 @@ type StatusResponse = {
 
 export function ActivateSuccessContent() {
   const t = useTranslations("success");
-  const sessionId = useSearchParams().get("session_id");
+  const params = useSearchParams();
+  const sessionId = params.get("session_id");
+  const requestId = params.get("request_id");
+  const scheduled = params.get("scheduled") === "1";
+  const travelDate = params.get("travelDate");
   const [data, setData] = useState<StatusResponse | null>(null);
-  const [loading, setLoading] = useState(!!sessionId);
+  const [loading, setLoading] = useState(!!sessionId || !!requestId);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId && !requestId) {
       setLoading(false);
       return;
     }
-    const sid = sessionId;
+    const key = sessionId ?? requestId ?? "";
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 45;
+    const maxAttempts = 120;
 
     async function poll() {
       try {
-        const res = await fetch(`/api/activate/status?session_id=${encodeURIComponent(sid)}`);
+        const qs = sessionId
+          ? `session_id=${encodeURIComponent(key)}`
+          : `request_id=${encodeURIComponent(key)}`;
+        const res = await fetch(`/api/activate/status?${qs}`);
         const json = (await res.json()) as StatusResponse;
         if (cancelled) return;
         setData(json);
-        if (json.processing && attempts < maxAttempts) {
+        const shouldContinue = json.processing || json.activation?.status !== "active";
+        if (shouldContinue && attempts < maxAttempts) {
           attempts += 1;
-          window.setTimeout(poll, 1000);
+          window.setTimeout(poll, 5000);
         } else {
           setLoading(false);
         }
@@ -61,9 +69,9 @@ export function ActivateSuccessContent() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, requestId]);
 
-  if (!sessionId) {
+  if (!sessionId && !scheduled) {
     return (
       <div className="public-site flex min-h-screen flex-col">
         <SiteHeader />
@@ -97,6 +105,7 @@ export function ActivateSuccessContent() {
   }
 
   const act = data?.activation;
+  const normalizedStatus = act?.status === "active" ? "active" : "scheduled";
 
   return (
     <div className="public-site flex min-h-screen flex-col">
@@ -106,11 +115,17 @@ export function ActivateSuccessContent() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-2xl text-accent">
             ✓
           </div>
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">{t("titlePaid")}</h1>
-          <p className="mt-4 leading-relaxed text-muted">{t("messagePaid")}</p>
+          <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">
+            {normalizedStatus === "active" ? "Your SIM is now Active" : "Payment Confirmed"}
+          </h1>
+          <p className="mt-4 leading-relaxed text-muted">
+            {normalizedStatus === "active"
+              ? "Your activation is live and ready to use."
+              : `Your activation is scheduled${travelDate ? ` for ${travelDate}` : ""}.`}
+          </p>
 
           {data?.processing && (
-            <p className="mt-4 text-sm text-amber-400/90">{t("stillProcessing")}</p>
+            <p className="mt-4 text-sm text-amber-800">{t("stillProcessing")}</p>
           )}
 
           {act && (
@@ -128,7 +143,7 @@ export function ActivateSuccessContent() {
               <p className="text-muted">
                 {t("statusLabel")}:{" "}
                 <span className="text-slate-900">
-                  {act.status === "completed" ? t("statusCompleted") : t("statusPending")}
+                  {act.status === "active" ? t("statusCompleted") : t("statusPending")}
                 </span>
               </p>
               {act.amountPaidCents > 0 && (

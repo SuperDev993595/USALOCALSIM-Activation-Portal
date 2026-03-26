@@ -8,9 +8,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const requests = await prisma.activationRequest.findMany({
-    where: { status: "pending" },
+    where: { status: "scheduled" },
     include: { plan: true },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ travelDate: "asc" }, { createdAt: "asc" }],
   });
   return NextResponse.json({ requests });
 }

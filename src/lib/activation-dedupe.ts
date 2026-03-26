@@ -58,7 +58,7 @@ export async function deletePendingActivationRequestsForIccid(
   const n = normalizeIccid(iccid);
   if (!n) return 0;
   const res = await db.activationRequest.deleteMany({
-    where: { iccid: n, status: "pending" },
+    where: { iccid: n, status: "scheduled" },
   });
   return res.count;
 }

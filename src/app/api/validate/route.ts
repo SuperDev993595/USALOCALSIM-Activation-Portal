@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { iccidHasExistingActivation, isIccidOwnedByEmail, normalizeIccid } from "@/lib/activation-dedupe";
+import { getSimHardwareCostCentsForMarket } from "@/lib/sim-cost";
 
 const ICCID_REGEX = /^\d{18,22}$/;
 
@@ -11,6 +12,11 @@ const querySchema = z.object({
   voucherCode: z.string().optional().transform((s) => s?.trim().toUpperCase() ?? ""),
   email: z.string().optional().transform((s) => s?.trim() ?? ""),
   market: z.enum(["us", "global"]).optional().default("global"),
+  mode: z.enum(["plans"]).optional(),
+  hasPartnerSim: z
+    .string()
+    .optional()
+    .transform((s) => s === "1" || s === "true"),
 });
 
 export async function GET(req: Request) {
@@ -29,11 +35,13 @@ export async function GET(req: Request) {
     voucherCode: searchParams.get("voucherCode") ?? undefined,
     email: searchParams.get("email") ?? undefined,
     market: (searchParams.get("market") as "us" | "global" | null) ?? undefined,
+    mode: (searchParams.get("mode") as "plans" | null) ?? undefined,
+    hasPartnerSim: searchParams.get("hasPartnerSim") ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
-  const { iccid, voucherCode, email, market } = parsed.data;
+  const { iccid, voucherCode, email, market, mode, hasPartnerSim } = parsed.data;
 
   const hasIccid = iccid.length > 0;
   const hasVoucher = voucherCode.length > 0;
@@ -43,6 +51,31 @@ export async function GET(req: Request) {
       { error: "US eSIM activation uses your voucher code only. For a physical SIM, use international activation." },
       { status: 400 }
     );
+  }
+
+  if (mode === "plans") {
+    const marketParam = searchParams.get("market")?.toLowerCase() ?? "global";
+    const market: "global" | "us" = marketParam === "us" ? "us" : "global";
+    const plans = await prisma.plan.findMany({
+      where: { planType: "physical_sim", market },
+      orderBy: { durationDays: "asc" },
+    });
+    const hardwareCost = await getSimHardwareCostCentsForMarket(market);
+    return NextResponse.json({
+      scenario: "sim_only",
+      plans: plans.map((p) => {
+        const discounted = hasPartnerSim ? Math.max(0, p.priceCents - hardwareCost) : p.priceCents;
+        return {
+          id: p.id,
+          name: p.name,
+          dataAllowance: p.dataAllowance,
+          market: p.market,
+          durationDays: p.durationDays,
+          priceCents: discounted,
+          originalPriceCents: p.priceCents,
+        };
+      }),
+    });
   }
 
   if (!hasIccid && !hasVoucher) {
@@ -163,14 +196,9 @@ export async function GET(req: Request) {
   }
 
   if (hasVoucher && !hasIccid) {
-    if (voucher!.type !== "esim") {
-      return NextResponse.json(
-        { error: "This voucher is for physical SIM top-up. Enter your ICCID as well." },
-        { status: 400 }
-      );
-    }
+    const scenario = voucher!.type === "esim" ? "esim_voucher" : "voucher_sim";
     return NextResponse.json({
-      scenario: "esim_voucher",
+      scenario,
       voucherCode,
       plan: {
         id: voucher!.plan.id,
@@ -190,14 +218,16 @@ export async function GET(req: Request) {
     orderBy: { createdAt: "desc" },
   });
   const tier = existing.length ? Math.max(...existing.map((r) => r.plan.priceCents)) : 0;
-  const pending = existing.find((r) => r.status === "pending") ?? null;
-  const completed = existing.find((r) => r.status === "completed") ?? null;
+  const pending = existing.find((r) => r.status === "scheduled") ?? null;
+  const completed = existing.find((r) => r.status === "active") ?? null;
 
   const plans = await prisma.plan.findMany({
     where: { planType: "physical_sim", market: "global" },
     orderBy: { durationDays: "asc" },
   });
-  const hardwareCost = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;
+  const hardwareGlobal = await getSimHardwareCostCentsForMarket("global");
+  const hardwareUs = await getSimHardwareCostCentsForMarket("us");
+  const hardwareFor = (m: string) => (m === "us" ? hardwareUs : hardwareGlobal);
   const upgradable = plans.filter((p) => tier === 0 || p.priceCents > tier);
   return NextResponse.json({
     scenario: "sim_only",
@@ -225,13 +255,16 @@ export async function GET(req: Request) {
           }
         : null,
     },
-    plans: upgradable.map((p) => ({
-      id: p.id,
-      name: p.name,
-      dataAllowance: p.dataAllowance,
-      durationDays: p.durationDays,
-      priceCents: Math.max(0, p.priceCents - hardwareCost),
-      originalPriceCents: p.priceCents,
-    })),
+    plans: upgradable.map((p) => {
+      const hardwareCost = hardwareFor(p.market);
+      return {
+        id: p.id,
+        name: p.name,
+        dataAllowance: p.dataAllowance,
+        durationDays: p.durationDays,
+        priceCents: Math.max(0, p.priceCents - hardwareCost),
+        originalPriceCents: p.priceCents,
+      };
+    }),
   });
 }

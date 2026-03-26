@@ -120,6 +120,35 @@
     @apply text-slate-500;
   }
 
+  .public-site .ui-table-wrap {
+    @apply overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-[0_12px_28px_-12px_rgba(15,23,42,0.12)];
+  }
+
+  .public-site .ui-table {
+    @apply min-w-full divide-y divide-slate-200 text-sm;
+  }
+
+  .public-site .ui-table thead {
+    @apply bg-slate-100;
+  }
+
+  .public-site .ui-table th {
+    @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600;
+  }
+
+  .public-site .ui-table td {
+    @apply px-3 py-2 text-slate-600;
+  }
+
+  .public-site .ui-table tbody tr {
+    @apply border-t border-slate-100 transition hover:bg-slate-50/80;
+  }
+
+  .public-site .ui-table td strong,
+  .public-site .ui-table .font-mono {
+    @apply text-slate-900;
+  }
+
   .ui-page {
     @apply min-h-screen text-slate-100;
     background-color: var(--app-bg);
@@ -212,6 +241,39 @@
   }
 
   .badge-muted {
-    @apply border border-white/15 bg-white/5 text-muted;
+    @apply border border-slate-200 bg-slate-100 text-slate-600;
+  }
+
+  /* Admin console — light theme (matches public-site) */
+  .admin-panel {
+    @apply overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)];
+  }
+
+  .admin-panel-head {
+    @apply border-b border-slate-200 bg-slate-50/95 px-5 py-3.5 md:px-6;
+  }
+
+  .admin-panel-head-title {
+    @apply text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500;
+  }
+
+  .admin-panel-head-desc {
+    @apply mt-1 max-w-2xl text-xs leading-relaxed text-slate-600;
+  }
+
+  .admin-callout {
+    @apply flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 text-sm;
+  }
+
+  .admin-callout-emerald {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-900;
+  }
+
+  .admin-callout-muted {
+    @apply border-slate-200 bg-slate-50 text-slate-600;
+  }
+
+  .ui-btn-ghost {
+    @apply inline-flex items-center justify-center border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-45;
   }
 }

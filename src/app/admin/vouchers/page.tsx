@@ -59,16 +59,20 @@ export default function AdminVouchersPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <AdminPageHeader
         title="Import vouchers"
         description="Bulk-add voucher codes as inactive inventory. Paste up to 5000 codes per request—one per line or comma-separated."
       />
       <form
         onSubmit={handleImport}
-        className="max-w-2xl space-y-0 overflow-hidden rounded-2xl border border-white/[0.14] bg-surface-elevated shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
+        className="admin-panel max-w-2xl space-y-0 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
       >
-        <div className="divide-y divide-white/[0.06] px-6 py-5 md:px-8 md:py-6">
+        <div className="admin-panel-head">
+          <h2 className="admin-panel-head-title">Import batch</h2>
+          <p className="admin-panel-head-desc">Choose plan and type, then paste codes. Duplicates in the database are skipped.</p>
+        </div>
+        <div className="divide-y divide-slate-100 px-6 py-5 md:px-8 md:py-6">
           <div className="pb-5 md:pb-6">
             <label className="ui-label">Plan</label>
             <select
@@ -107,7 +111,7 @@ export default function AdminVouchersPage() {
             />
           </div>
         </div>
-        <div className="flex flex-col gap-4 border-t border-white/[0.06] bg-black/20 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+        <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/90 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
           {result ? (
             <p className="text-sm text-accent">
               <span className="font-semibold text-accent-hover">{result.created}</span> created ·{" "}

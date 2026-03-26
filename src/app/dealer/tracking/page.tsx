@@ -61,14 +61,14 @@ export default function DealerTrackingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold uppercase tracking-tight text-white">Dealer tracking</h1>
-        <p className="mt-1 text-sm text-muted">Filter unlocked vouchers from your account.</p>
+        <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">Dealer tracking</h1>
+        <p className="mt-1 text-sm text-slate-600">Filter unlocked vouchers from your account.</p>
       </div>
 
-      <div className="ui-card p-4">
+      <div className="ui-card rounded-xl p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-dim">Default view: today&apos;s unlocked vouchers.</p>
-          <button type="button" onClick={loadRows} className="btn-primary px-3 py-1.5 text-xs">
+          <p className="text-xs text-slate-500">Default view: today&apos;s unlocked vouchers.</p>
+          <button type="button" onClick={loadRows} className="btn-primary rounded-lg px-3 py-1.5 text-xs">
             {loading ? "Refreshing…" : "Refresh"}
           </button>
         </div>
@@ -111,11 +111,11 @@ export default function DealerTrackingPage() {
         </div>
       </div>
 
-      <div className="ui-card overflow-hidden p-0">
+      <div className="ui-card overflow-hidden rounded-xl p-0">
         {loading ? (
-          <p className="p-4 text-sm text-muted">Loading…</p>
+          <p className="p-4 text-sm text-slate-600">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="p-4 text-sm text-muted">No vouchers found for current filters.</p>
+          <p className="p-4 text-sm text-slate-600">No vouchers found for current filters.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="ui-table min-w-full">
@@ -132,7 +132,7 @@ export default function DealerTrackingPage() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td className="font-mono text-xs text-white/90">{row.code}</td>
+                    <td className="font-mono text-xs">{row.code}</td>
                     <td className="capitalize">{row.status}</td>
                     <td className="capitalize">{row.type}</td>
                     <td className="text-xs text-muted">{row.planName}</td>

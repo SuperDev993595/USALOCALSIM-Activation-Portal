@@ -19,9 +19,9 @@ export default async function DealerLayout({
   }
   if (role !== "admin" && role !== "dealer") redirect("/login?callbackUrl=/dealer");
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="public-site flex h-screen flex-col overflow-hidden">
       <DealerNav email={session.user.email ?? ""} />
-      <main className="ui-main-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <main className="public-main ui-main-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-7xl p-4 md:p-6">{children}</div>
       </main>
     </div>

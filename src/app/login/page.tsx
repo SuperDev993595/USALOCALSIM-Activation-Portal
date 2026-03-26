@@ -47,11 +47,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="public-site flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
-        <div className="ui-card w-full max-w-sm p-6">
-          <h1 className="text-xl font-bold uppercase tracking-tight text-white">Sign in</h1>
+      <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
+        <div className="ui-card w-full max-w-sm rounded-xl border border-slate-200 p-6 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.18)]">
+          <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">Sign in</h1>
           <p className="mt-1 text-sm text-muted">Admin or Dealer access</p>
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div>
@@ -83,12 +83,12 @@ export default function LoginPage() {
               />
             </div>
             {urlError === "AccountDisabled" && (
-              <p className="text-sm text-amber-400/95">
+              <p className="text-sm text-amber-800">
                 This account has been disabled. Contact an administrator if you need access.
               </p>
             )}
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" disabled={loading} className="btn-primary w-full">
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button type="submit" disabled={loading} className="btn-primary w-full rounded-xl">
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>

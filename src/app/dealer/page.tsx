@@ -120,8 +120,8 @@ export default function DealerPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-xl font-bold uppercase tracking-tight text-white">Dealer activation</h1>
-      <p className="mt-1 text-sm text-muted">
+      <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">Dealer activation</h1>
+      <p className="mt-1 text-sm text-slate-600">
         Use single unlock for one sold voucher, or bulk activation for partner batches.
       </p>
 
@@ -129,16 +129,16 @@ export default function DealerPage() {
         <p
           className={`mt-4 rounded-md border px-3 py-3 text-sm ${
             message.type === "ok"
-              ? "border-accent/40 bg-accent/10 text-accent"
-              : "border-red-500/40 bg-red-500/10 text-red-300"
+              ? "border-accent/35 bg-accent/10 text-accent"
+              : "border-red-200 bg-red-50 text-red-800"
           }`}
         >
           {message.text}
         </p>
       )}
 
-      <div className="ui-card mt-6 p-4">
-        <h2 className="font-semibold text-white">Single unlock</h2>
+      <div className="ui-card mt-6 rounded-xl p-4">
+        <h2 className="font-semibold text-slate-900">Single unlock</h2>
         <form onSubmit={handleSingle} className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
@@ -147,17 +147,17 @@ export default function DealerPage() {
             placeholder="Voucher code"
             className="ui-input !mt-0 flex-1"
           />
-          <button type="submit" disabled={singleLoading} className="btn-primary shrink-0">
+          <button type="submit" disabled={singleLoading} className="btn-primary shrink-0 rounded-xl">
             {singleLoading ? "…" : "Unlock"}
           </button>
         </form>
       </div>
 
-      <div className="ui-card mt-6 p-4">
-        <h2 className="font-semibold text-white">Bulk activation</h2>
-        <p className="mt-1 text-xs text-muted-dim">
+      <div className="ui-card mt-6 rounded-xl p-4">
+        <h2 className="font-semibold text-slate-900">Bulk activation</h2>
+        <p className="mt-1 text-xs text-slate-500">
           Remaining inactive vouchers:{" "}
-          <span className="font-semibold text-white/90">{inactiveCount}</span> (auto-refreshes every 30 seconds)
+          <span className="font-semibold text-slate-900">{inactiveCount}</span> (auto-refreshes every 30 seconds)
         </p>
         <form onSubmit={handleBulk} className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
           <div className="flex-1">
@@ -172,14 +172,15 @@ export default function DealerPage() {
               className="ui-input !mt-1"
             />
           </div>
-          <button type="submit" disabled={bulkLoading || inactiveCount <= 0} className="btn-primary shrink-0">
+          <button type="submit" disabled={bulkLoading || inactiveCount <= 0} className="btn-primary shrink-0 rounded-xl">
             {bulkLoading ? "Activating…" : "Bulk activate"}
           </button>
         </form>
 
         {bulkResultRows.length > 0 ? (
-          <div className="mt-4 overflow-x-auto">
-            <p className="mb-2 text-xs text-muted-dim">Just unlocked vouchers</p>
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <p className="mb-2 text-xs text-slate-500">Just unlocked vouchers</p>
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
             <table className="ui-table min-w-full">
               <thead>
                 <tr>
@@ -192,7 +193,7 @@ export default function DealerPage() {
               <tbody>
                 {bulkResultRows.map((row) => (
                   <tr key={row.id}>
-                    <td className="font-mono text-xs text-white/90">{row.code}</td>
+                    <td className="font-mono text-xs">{row.code}</td>
                     <td className="capitalize">{row.type}</td>
                     <td className="text-xs text-muted">{row.planName}</td>
                     <td className="text-xs text-muted">
@@ -202,26 +203,27 @@ export default function DealerPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         ) : null}
       </div>
 
-      <div className="ui-card mt-6 p-4">
+      <div className="ui-card mt-6 rounded-xl p-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-semibold text-white">Recent unlocks</h2>
-          <button type="button" onClick={loadUnlockSnapshot} className="text-xs text-accent hover:text-accent-hover">
+          <h2 className="font-semibold text-slate-900">Recent unlocks</h2>
+          <button type="button" onClick={loadUnlockSnapshot} className="text-xs font-semibold text-accent hover:text-accent-hover">
             Refresh
           </button>
         </div>
-        <p className="mt-1 text-xs text-muted-dim">
+        <p className="mt-1 text-xs text-slate-500">
           For full filters and usage status, open the dedicated tracking page.
         </p>
         {recentLoading ? (
-          <p className="mt-3 text-sm text-muted">Loading…</p>
+          <p className="mt-3 text-sm text-slate-600">Loading…</p>
         ) : recentRows.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">No unlocked vouchers yet.</p>
+          <p className="mt-3 text-sm text-slate-600">No unlocked vouchers yet.</p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
+          <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200">
             <table className="ui-table min-w-full">
               <thead>
                 <tr>
@@ -234,7 +236,7 @@ export default function DealerPage() {
               <tbody>
                 {recentRows.map((row) => (
                   <tr key={row.id}>
-                    <td className="font-mono text-xs text-white/90">{row.code}</td>
+                    <td className="font-mono text-xs">{row.code}</td>
                     <td className="capitalize">{row.status}</td>
                     <td className="text-xs text-muted">{row.planName}</td>
                     <td className="text-xs text-muted">

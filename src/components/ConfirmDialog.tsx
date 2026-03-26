@@ -64,14 +64,14 @@ export function ConfirmDialog({
 
   const confirmClass =
     variant === "danger"
-      ? "inline-flex min-w-[100px] items-center justify-center rounded-xl border border-red-500/45 bg-red-500/15 px-4 py-2.5 text-sm font-semibold text-red-100 shadow-sm transition hover:border-red-400/60 hover:bg-red-500/25 disabled:pointer-events-none disabled:opacity-50"
-      : "btn-primary min-w-[100px]";
+      ? "inline-flex min-w-[100px] items-center justify-center rounded-xl border border-red-600 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-red-700 hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+      : "btn-primary min-w-[100px] rounded-xl";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <button
         type="button"
-        className="absolute inset-0 bg-black/65 backdrop-blur-[6px]"
+        className="absolute inset-0 bg-slate-900/45 backdrop-blur-[4px]"
         aria-label="Dismiss"
         onClick={onCancel}
         disabled={loading}
@@ -81,17 +81,17 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-desc"
-        className="relative z-10 w-full max-w-md rounded-2xl border border-white/[0.14] bg-gradient-to-br from-surface-elevated via-surface-card to-surface-elevated p-6 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)]"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_24px_64px_-12px_rgba(15,23,42,0.35)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="confirm-dialog-title" className="text-lg font-semibold tracking-tight text-white">
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold tracking-tight text-slate-900">
           {title}
         </h2>
-        <div id="confirm-dialog-desc" className="mt-3 text-sm leading-relaxed text-muted">
+        <div id="confirm-dialog-desc" className="mt-3 text-sm leading-relaxed text-slate-600">
           {children}
         </div>
         {error ? (
-          <p className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
             {error}
           </p>
         ) : null}
@@ -101,7 +101,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="btn-secondary min-w-[100px]"
+            className="inline-flex min-w-[100px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
           >
             {cancelLabel}
           </button>
