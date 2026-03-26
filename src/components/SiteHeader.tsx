@@ -43,13 +43,6 @@ export function SiteHeader() {
     de: "Buy Plan",
     pt: "Buy Plan",
   };
-  const usEsimLabelByLocale: Record<string, string> = {
-    en: "US eSIM",
-    nl: "US eSIM",
-    fr: "US eSIM",
-    de: "US eSIM",
-    pt: "US eSIM",
-  };
   const nav = [
     { href: "/", label: homeLabelByLocale[locale] ?? "Home", match: (p: string, f: string | null) => p === "/" && !f },
     {
@@ -62,7 +55,6 @@ export function SiteHeader() {
       label: buyPlanLabelByLocale[locale] ?? "Buy Plan",
       match: (p: string) => p.startsWith("/activate/buy-plan"),
     },
-    { href: "/activate/us", label: usEsimLabelByLocale[locale] ?? "US eSIM", match: (p: string) => p.startsWith("/activate/us") },
   ];
 
   useEffect(() => {

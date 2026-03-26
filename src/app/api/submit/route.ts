@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   });
   if (!voucher || voucher.planId !== body.planId) {
     await recordFailedAttempt(key);
-    return NextResponse.json({ error: "Voucher or plan invalid" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid voucher, please check again." }, { status: 400 });
   }
   if (voucher.status !== "activated") {
     await recordFailedAttempt(key);

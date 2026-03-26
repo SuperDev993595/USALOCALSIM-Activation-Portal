@@ -24,6 +24,8 @@ type VoucherPlan = {
 type Flow = "voucher" | "plan";
 type VoucherKind = "sim" | "esim";
 
+const ICCID_REGEX = /^\d{18,22}$/;
+
 export function ActivateFlowClient({ flow }: { flow: Flow }) {
   const t = useTranslations("activate");
   const router = useRouter();
@@ -32,6 +34,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
   const [email, setEmail] = useState("");
   const [travelDate, setTravelDate] = useState("");
   const [hasPartnerSim, setHasPartnerSim] = useState(false);
+  const [iccid, setIccid] = useState("");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
@@ -142,6 +145,11 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       setError("Plan, email, and travel date are required.");
       return;
     }
+    const iccidNorm = iccid.trim().replace(/\s/g, "");
+    if (iccidNorm && !ICCID_REGEX.test(iccidNorm)) {
+      setError("Invalid ICCID. Use 18–22 digits from your SIM card.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -152,6 +160,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
           email: email.trim(),
           travelDate,
           hasPartnerSim,
+          ...(iccidNorm ? { iccid: iccidNorm } : {}),
         }),
       });
       const data = await res.json();
@@ -236,7 +245,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                   <div className="rounded-md border border-accent/35 bg-accent/10 p-3 text-sm">
                     <p className="font-semibold text-slate-900">{voucherPlan.name}</p>
                     <p className="text-slate-600">{voucherPlan.dataAllowance} · {voucherPlan.durationDays} days</p>
-                    <p className="text-slate-600">Amount due: $0.00</p>
+                    <p className="text-slate-600">Prepaid with your voucher — no checkout charge.</p>
                   </div>
                 )}
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -249,7 +258,9 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     <input id="travelDate-v" type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="ui-input" required />
                   </div>
                 </div>
-                <p className="text-xs text-slate-500">Amount due: $0.00. Activation will be scheduled for your travel date.</p>
+                <p className="text-xs text-slate-500">
+                  No payment required. Activation will be scheduled for your travel date.
+                </p>
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <button type="submit" className="btn-primary w-full" disabled={loading || !voucherPlan}>
                   {loading ? "Submitting..." : "Schedule activation"}
@@ -302,6 +313,24 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     <label htmlFor="travelDate-p" className="ui-label">Travel date</label>
                     <input id="travelDate-p" type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="ui-input" required />
                   </div>
+                </div>
+                <div>
+                  <label htmlFor="iccid-p" className="ui-label">
+                    SIM ICCID <span className="font-normal text-slate-500">(optional)</span>
+                  </label>
+                  <input
+                    id="iccid-p"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="18–22 digits, if you have your SIM number"
+                    value={iccid}
+                    onChange={(e) => setIccid(e.target.value)}
+                    className="ui-input font-mono text-sm"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    If you provide it, we attach this SIM to your activation. Leave blank if you do not have the number yet.
+                  </p>
                 </div>
                 {selectedPlan && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">

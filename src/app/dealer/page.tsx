@@ -250,12 +250,12 @@ export default function DealerPage() {
         )}
       </div>
 
-      <p className="mt-6 flex items-center gap-4">
-        <Link href="/dealer/tracking" className="link-accent text-sm">
-          Open full tracking →
-        </Link>
+      <p className="mt-6 flex w-full items-center justify-between gap-4">
         <Link href="/" className="link-accent text-sm">
           ← Back to activation site
+        </Link>
+        <Link href="/dealer/tracking" className="link-accent text-sm">
+          Open full tracking →
         </Link>
       </p>
     </div>

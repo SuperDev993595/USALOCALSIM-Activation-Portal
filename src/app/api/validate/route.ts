@@ -145,7 +145,7 @@ export async function GET(req: Request) {
     if (!voucher) {
       await recordFailedAttempt(key);
       return NextResponse.json(
-        { error: "Voucher code not found." },
+        { error: "Invalid voucher, please check again." },
         { status: 404 }
       );
     }
