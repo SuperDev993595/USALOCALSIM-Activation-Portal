@@ -33,6 +33,43 @@ function EditIcon({ className }: { className?: string }) {
   );
 }
 
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <line x1="18" x2="6" y1="6" y2="18" />
+      <line x1="6" x2="18" y1="6" y2="18" />
+    </svg>
+  );
+}
+
 const emptyCreate = {
   name: "",
   dataAllowance: "",
@@ -358,17 +395,21 @@ export function AdminPlansClient() {
                           type="button"
                           onClick={saveEdit}
                           disabled={savingId === p.id}
-                          className="btn-primary rounded-none px-3 py-1.5 text-xs"
+                          title={`Save ${p.name}`}
+                          aria-label={`Save ${p.name}`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-emerald-300 bg-emerald-50 text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-100 hover:text-emerald-800 disabled:opacity-45"
                         >
-                          {savingId === p.id ? "Saving…" : "Save"}
+                          <CheckIcon className={`h-4 w-4 ${savingId === p.id ? "animate-pulse" : ""}`} />
                         </button>
                         <button
                           type="button"
                           onClick={cancelEdit}
                           disabled={savingId === p.id}
-                          className="btn-secondary rounded-none px-3 py-1.5 text-xs"
+                          title={`Cancel editing ${p.name}`}
+                          aria-label={`Cancel editing ${p.name}`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-45"
                         >
-                          Cancel
+                          <XIcon className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
