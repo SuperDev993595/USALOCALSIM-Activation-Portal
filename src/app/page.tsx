@@ -22,7 +22,7 @@ export default function HomePage() {
           Choose your flow below. Email and travel date are required for every request, and your activation is scheduled for your trip date.
         </p>
 
-        <div className="mt-10 grid w-full max-w-4xl gap-4 md:grid-cols-3">
+        <div className="mt-10 grid w-full max-w-4xl gap-4 md:grid-cols-2">
           <Link
             href="/activate/redeem"
             className="ui-card group block rounded-xl border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
@@ -43,18 +43,6 @@ export default function HomePage() {
             <h2 className="mt-2 text-lg font-semibold text-slate-900">Buy Data Plan</h2>
             <p className="mt-2 text-sm text-muted">
               If you already have a partner SIM, select the toggle to waive hardware and shipping at checkout.
-            </p>
-            <p className="mt-4 text-sm font-semibold text-accent group-hover:translate-x-0.5 transition">Continue →</p>
-          </Link>
-
-          <Link
-            href="/activate/us"
-            className="ui-card group block rounded-xl border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">US Residents</p>
-            <h2 className="mt-2 text-lg font-semibold text-slate-900">{t("usResidentsLink")}</h2>
-            <p className="mt-2 text-sm text-muted">
-              Dedicated US eSIM voucher activation with the same scheduled-activation workflow.
             </p>
             <p className="mt-4 text-sm font-semibold text-accent group-hover:translate-x-0.5 transition">Continue →</p>
           </Link>
