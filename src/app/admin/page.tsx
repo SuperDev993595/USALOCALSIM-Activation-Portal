@@ -1,7 +1,6 @@
 import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { prisma } from "@/lib/db";
 import { AdminQueue } from "./AdminQueue";
-import { AdminSimCostSettings } from "./AdminSimCostSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -31,17 +30,6 @@ export default async function AdminPage() {
           </span>
         }
       />
-      <section className="admin-panel">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">Pricing &amp; hardware</h2>
-          <p className="admin-panel-head-desc">
-            Default and optional global / US hardware deduction when customers check &quot;I already have a SIM&quot; on Buy Plan.
-          </p>
-        </div>
-        <div className="p-5 md:p-6">
-          <AdminSimCostSettings />
-        </div>
-      </section>
       <section className="admin-panel">
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">Activation queue</h2>

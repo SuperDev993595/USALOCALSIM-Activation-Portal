@@ -21,6 +21,11 @@ const sections: {
     title: "Catalog",
     links: [
       { href: "/admin/plans", label: "Plans", active: (p) => p.startsWith("/admin/plans") },
+      {
+        href: "/admin/sim-cost",
+        label: "Pricing & hardware",
+        active: (p) => p.startsWith("/admin/sim-cost"),
+      },
     ],
   },
   {
