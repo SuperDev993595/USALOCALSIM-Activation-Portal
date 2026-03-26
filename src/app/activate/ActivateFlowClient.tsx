@@ -28,6 +28,7 @@ const ICCID_REGEX = /^\d{18,22}$/;
 
 export function ActivateFlowClient({ flow }: { flow: Flow }) {
   const t = useTranslations("activate");
+  const tf = useTranslations("activate.flow");
   const router = useRouter();
   const [voucherKind, setVoucherKind] = useState<VoucherKind>("sim");
   const [voucherCode, setVoucherCode] = useState("");
@@ -49,11 +50,11 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
     void fetch(`/api/plans/public?hasPartnerSim=${hasPartnerSim ? "1" : "0"}`)
       .then(async (res) => {
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.error ?? "Unable to load plans");
+        if (!res.ok) throw new Error(data?.error ?? tf("unableLoadPlans"));
         setPlans(Array.isArray(data.plans) ? data.plans : []);
       })
-      .catch(() => setError("Failed to load plans. Please refresh."));
-  }, [flow, hasPartnerSim]);
+      .catch(() => setError(tf("loadPlansFailed")));
+  }, [flow, hasPartnerSim, tf]);
 
   useEffect(() => {
     setVoucherPlan(null);
@@ -64,7 +65,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
   async function validateVoucher() {
     setError("");
     if (!voucherCode.trim()) {
-      setError("Enter voucher code first.");
+      setError(tf("enterVoucherFirst"));
       return;
     }
     setLoading(true);
@@ -73,17 +74,13 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       const validate = await fetch(`/api/validate?voucherCode=${encodeURIComponent(code)}`);
       const validData = await validate.json();
       if (!validate.ok) {
-        setError(validData.error ?? "Voucher validation failed");
+        setError(validData.error ?? tf("validationFailed"));
         setLoading(false);
         return;
       }
       const expectedScenario = voucherKind === "esim" ? "esim_voucher" : "voucher_sim";
       if (validData.scenario !== expectedScenario) {
-        setError(
-          voucherKind === "esim"
-            ? "This is not an eSIM voucher."
-            : "This is not a physical SIM voucher."
-        );
+        setError(voucherKind === "esim" ? tf("notEsimVoucher") : tf("notPhysicalVoucher"));
         setLoading(false);
         return;
       }
@@ -91,7 +88,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       setValidatedScenario(validData.scenario);
       setValidatedForCode(code);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(tf("genericError"));
     }
     setLoading(false);
   }
@@ -100,12 +97,12 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
     e.preventDefault();
     setError("");
     if (!voucherCode.trim() || !email.trim() || !travelDate) {
-      setError("Voucher code, email, and travel date are required.");
+      setError(tf("voucherFieldsRequired"));
       return;
     }
     const normalizedCode = voucherCode.trim().toUpperCase();
     if (!voucherPlan || !validatedScenario || validatedForCode !== normalizedCode) {
-      setError("Please validate the voucher first.");
+      setError(tf("validateFirst"));
       return;
     }
     setLoading(true);
@@ -123,7 +120,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Submission failed");
+        setError(data.error ?? tf("submitFailed"));
         setLoading(false);
         return;
       }
@@ -133,7 +130,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
         )}`
       );
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(tf("genericError"));
     }
     setLoading(false);
   }
@@ -142,12 +139,12 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
     e.preventDefault();
     setError("");
     if (!email.trim() || !travelDate || !selectedPlanId) {
-      setError("Plan, email, and travel date are required.");
+      setError(tf("planFieldsRequired"));
       return;
     }
     const iccidNorm = iccid.trim().replace(/\s/g, "");
     if (iccidNorm && !ICCID_REGEX.test(iccidNorm)) {
-      setError("Invalid ICCID. Use 18–22 digits from your SIM card.");
+      setError(tf("invalidIccid"));
       return;
     }
     setLoading(true);
@@ -165,7 +162,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Unable to start checkout.");
+        setError(data.error ?? tf("checkoutFailed"));
         setLoading(false);
         return;
       }
@@ -173,9 +170,9 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
         window.location.href = data.url;
         return;
       }
-      setError("Missing checkout URL.");
+      setError(tf("missingCheckoutUrl"));
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(tf("genericError"));
       setLoading(false);
     }
   }
@@ -186,18 +183,16 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       <main className="public-main ui-main-scrollbar flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-12">
         <div className="w-full max-w-2xl">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
-          <h1 className="page-hero-title">{flow === "voucher" ? "Redeem Voucher" : "Buy Plan"}</h1>
+          <h1 className="page-hero-title">{flow === "voucher" ? tf("titleRedeem") : tf("titleBuy")}</h1>
           <p className="page-hero-subtitle">
-            {flow === "voucher"
-              ? "Validate your voucher and schedule activation."
-              : "Choose a plan, set your travel date, and continue to payment."}
+            {flow === "voucher" ? tf("subtitleRedeem") : tf("subtitleBuy")}
           </p>
 
           <div className="ui-card mt-8 p-6">
             {flow === "voucher" ? (
               <form className="space-y-4" onSubmit={submitVoucher}>
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Voucher type</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">{tf("voucherType")}</p>
                   <div className="grid gap-2 sm:grid-cols-2">
                   <button
                     type="button"
@@ -210,7 +205,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     }`}
                   >
                     <span className="flex items-center justify-between">
-                      <span>Physical SIM voucher</span>
+                      <span>{tf("physicalSimVoucher")}</span>
                       {voucherKind === "sim" ? <span aria-hidden>✓</span> : null}
                     </span>
                   </button>
@@ -225,55 +220,58 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     }`}
                   >
                     <span className="flex items-center justify-between">
-                      <span>eSIM voucher</span>
+                      <span>{tf("esimVoucher")}</span>
                       {voucherKind === "esim" ? <span aria-hidden>✓</span> : null}
                     </span>
                   </button>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Selected: <span className="font-semibold text-slate-700">{voucherKind === "sim" ? "Physical SIM voucher" : "eSIM voucher"}</span>
+                  {tf("selectedPrefix")}{" "}
+                  <span className="font-semibold text-slate-700">
+                    {voucherKind === "sim" ? tf("physicalSimVoucher") : tf("esimVoucher")}
+                  </span>
                 </p>
                 </div>
                 <div>
-                  <label htmlFor="voucher" className="ui-label">Voucher code</label>
+                  <label htmlFor="voucher" className="ui-label">{tf("voucherCode")}</label>
                   <input id="voucher" type="text" value={voucherCode} onChange={(e) => setVoucherCode(e.target.value)} className="ui-input" />
                 </div>
                 <button type="button" className="btn-secondary w-full" onClick={validateVoucher} disabled={loading}>
-                  {loading ? "Checking..." : "Validate voucher"}
+                  {loading ? tf("validateChecking") : tf("validateVoucher")}
                 </button>
                 {voucherPlan && (
                   <div className="rounded-md border border-accent/35 bg-accent/10 p-3 text-sm">
                     <p className="font-semibold text-slate-900">{voucherPlan.name}</p>
-                    <p className="text-slate-600">{voucherPlan.dataAllowance} · {voucherPlan.durationDays} days</p>
-                    <p className="text-slate-600">Prepaid with your voucher — no checkout charge.</p>
+                    <p className="text-slate-600">
+                      {voucherPlan.dataAllowance} · {voucherPlan.durationDays} {tf("daysSuffix")}
+                    </p>
+                    <p className="text-slate-600">{tf("prepaidNoCharge")}</p>
                   </div>
                 )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="email-v" className="ui-label">Email</label>
+                    <label htmlFor="email-v" className="ui-label">{t("emailLabel")}</label>
                     <input id="email-v" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="ui-input" required />
                   </div>
                   <div>
-                    <label htmlFor="travelDate-v" className="ui-label">Travel date</label>
+                    <label htmlFor="travelDate-v" className="ui-label">{tf("travelDate")}</label>
                     <input id="travelDate-v" type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="ui-input" required />
                   </div>
                 </div>
-                <p className="text-xs text-slate-500">
-                  No payment required. Activation will be scheduled for your travel date.
-                </p>
+                <p className="text-xs text-slate-500">{tf("noPaymentFooter")}</p>
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <button type="submit" className="btn-primary w-full" disabled={loading || !voucherPlan}>
-                  {loading ? "Submitting..." : "Schedule activation"}
+                  {loading ? tf("scheduleSubmitting") : tf("scheduleActivation")}
                 </button>
               </form>
             ) : (
               <form className="space-y-4" onSubmit={submitPaidPlan}>
                 <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                   <input type="checkbox" checked={hasPartnerSim} onChange={(e) => setHasPartnerSim(e.target.checked)} />
-                  I already have a SIM card from a partner.
+                  {tf("partnerSimCheckbox")}
                 </label>
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Select plan</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">{tf("selectPlan")}</p>
                   <div className="space-y-2">
                   {plans.map((plan) => (
                     <button
@@ -291,73 +289,76 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                         <span className={selectedPlanId === plan.id ? "font-semibold text-slate-900" : "text-slate-900"}>{plan.name}</span>
                         <span className="font-semibold">${(plan.priceCents / 100).toFixed(2)}</span>
                       </div>
-                      <p className="text-xs text-slate-500">{plan.dataAllowance} · {plan.durationDays} days</p>
-                      {selectedPlanId === plan.id ? <p className="mt-1 text-xs font-semibold text-accent">Selected ✓</p> : null}
+                      <p className="text-xs text-slate-500">
+                        {plan.dataAllowance} · {plan.durationDays} {tf("daysSuffix")}
+                      </p>
+                      {selectedPlanId === plan.id ? <p className="mt-1 text-xs font-semibold text-accent">{tf("selectedRow")}</p> : null}
                     </button>
                   ))}
                 </div>
                 {selectedPlan ? (
                   <p className="text-xs text-slate-500">
-                    Selected plan: <span className="font-semibold text-slate-700">{selectedPlan.name}</span>
+                    {tf("selectedPlanPrefix")} <span className="font-semibold text-slate-700">{selectedPlan.name}</span>
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-500">Select one plan to continue.</p>
+                  <p className="text-xs text-slate-500">{tf("selectOnePlan")}</p>
                 )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="email-p" className="ui-label">Email</label>
+                    <label htmlFor="email-p" className="ui-label">{t("emailLabel")}</label>
                     <input id="email-p" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="ui-input" required />
                   </div>
                   <div>
-                    <label htmlFor="travelDate-p" className="ui-label">Travel date</label>
+                    <label htmlFor="travelDate-p" className="ui-label">{tf("travelDate")}</label>
                     <input id="travelDate-p" type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="ui-input" required />
                   </div>
                 </div>
                 <div>
                   <label htmlFor="iccid-p" className="ui-label">
-                    SIM ICCID <span className="font-normal text-slate-500">(optional)</span>
+                    {tf("iccidLabel")} <span className="font-normal text-slate-500">{tf("iccidOptional")}</span>
                   </label>
                   <input
                     id="iccid-p"
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
-                    placeholder="18–22 digits, if you have your SIM number"
+                    placeholder={tf("iccidPlaceholder")}
                     value={iccid}
                     onChange={(e) => setIccid(e.target.value)}
                     className="ui-input font-mono text-sm"
                   />
-                  <p className="mt-1 text-xs text-slate-500">
-                    If you provide it, we attach this SIM to your activation. Leave blank if you do not have the number yet.
-                  </p>
+                  <p className="mt-1 text-xs text-slate-500">{tf("iccidHint")}</p>
                 </div>
                 {selectedPlan && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                    <p className="mb-1 font-semibold text-slate-900">Order summary</p>
-                    <p className="flex justify-between"><span>Service plan</span><span>${(selectedPlan.originalPriceCents / 100).toFixed(2)}</span></p>
+                    <p className="mb-1 font-semibold text-slate-900">{tf("orderSummary")}</p>
+                    <p className="flex justify-between"><span>{tf("lineServicePlan")}</span><span>${(selectedPlan.originalPriceCents / 100).toFixed(2)}</span></p>
                     <p className="flex justify-between">
-                      <span>{hasPartnerSim ? "Pre-paid SIM CARD" : "SIM hardware deduction"}</span>
+                      <span>{hasPartnerSim ? tf("linePrepaidSim") : tf("lineHardwareDeduction")}</span>
                       <span>-${((selectedPlan.originalPriceCents - selectedPlan.priceCents) / 100).toFixed(2)}</span>
                     </p>
-                    <p className="flex justify-between"><span>Shipping</span><span>{hasPartnerSim ? "$0.00 (Waived)" : "$0.00"}</span></p>
+                    <p className="flex justify-between">
+                      <span>{tf("lineShipping")}</span>
+                      <span>{hasPartnerSim ? tf("lineShippingWaived") : tf("lineShippingStandard")}</span>
+                    </p>
                     <p className="mt-1 flex justify-between font-semibold text-slate-900">
-                      <span>Total</span>
+                      <span>{tf("lineTotal")}</span>
                       <span>${(selectedPlan.priceCents / 100).toFixed(2)}</span>
                     </p>
                   </div>
                 )}
                 {hasPartnerSim && selectedPlan && (
                   <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                    <p>Pre-paid SIM CARD applied</p>
-                    <p>Shipping waived: $0.00</p>
-                    <p>Shipping step skipped.</p>
-                    <p>Service plan total: ${(selectedPlan.priceCents / 100).toFixed(2)}</p>
+                    <p>{tf("partnerAppliedTitle")}</p>
+                    <p>{tf("partnerAppliedShip")}</p>
+                    <p>{tf("partnerAppliedSkip")}</p>
+                    <p>{tf("partnerAppliedTotal", { amount: `$${(selectedPlan.priceCents / 100).toFixed(2)}` })}</p>
                   </div>
                 )}
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 <button type="submit" className="btn-primary w-full" disabled={loading || !selectedPlanId}>
-                  {loading ? "Redirecting..." : "Continue to payment"}
+                  {loading ? tf("redirecting") : tf("continuePayment")}
                 </button>
               </form>
             )}

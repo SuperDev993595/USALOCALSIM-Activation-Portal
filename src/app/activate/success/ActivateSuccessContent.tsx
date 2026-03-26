@@ -52,8 +52,17 @@ export function ActivateSuccessContent() {
         const res = await fetch(`/api/activate/status?${qs}`);
         const json = (await res.json()) as StatusResponse;
         if (cancelled) return;
+        if (!res.ok) {
+          setData(null);
+          setLoading(false);
+          return;
+        }
         setData(json);
-        const shouldContinue = json.processing || json.activation?.status !== "active";
+        // Stripe: keep polling only until webhook creates the row (processing) or we time out.
+        // Voucher / request_id: row exists immediately — do not wait for admin "active".
+        const waitingForStripeRecord =
+          Boolean(sessionId) && json.paid && !json.activation;
+        const shouldContinue = json.processing || waitingForStripeRecord;
         if (shouldContinue && attempts < maxAttempts) {
           attempts += 1;
           window.setTimeout(poll, 5000);
@@ -70,6 +79,43 @@ export function ActivateSuccessContent() {
       cancelled = true;
     };
   }, [sessionId, requestId]);
+
+  // After the main confirmation UI is shown, keep polling while still "scheduled" so admin activation updates the headline without a full-screen loader.
+  useEffect(() => {
+    if (loading) return;
+    const key = sessionId ?? requestId ?? "";
+    if (!key) return;
+    const act = data?.activation;
+    if (!act || act.status === "active") return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 120;
+
+    async function tick() {
+      try {
+        const qs = sessionId
+          ? `session_id=${encodeURIComponent(key)}`
+          : `request_id=${encodeURIComponent(key)}`;
+        const res = await fetch(`/api/activate/status?${qs}`);
+        const json = (await res.json()) as StatusResponse;
+        if (cancelled || !res.ok) return;
+        setData(json);
+        attempts += 1;
+        if (json.activation?.status !== "active" && attempts < maxAttempts) {
+          window.setTimeout(tick, 5000);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const t = window.setTimeout(tick, 5000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [loading, sessionId, requestId, data?.activation?.status, data?.activation?.id]);
 
   if (!sessionId && !scheduled) {
     return (
@@ -97,7 +143,9 @@ export function ActivateSuccessContent() {
         <SiteHeader />
         <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
           <div className="ui-card max-w-lg p-8 text-center">
-            <p className="text-muted">{t("processingLine")}</p>
+            <p className="text-muted">
+              {sessionId ? t("processingLinePaid") : t("processingLineSchedule")}
+            </p>
           </div>
         </main>
       </div>
@@ -116,12 +164,14 @@ export function ActivateSuccessContent() {
             ✓
           </div>
           <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">
-            {normalizedStatus === "active" ? "Your SIM is now Active" : "Payment Confirmed"}
+            {normalizedStatus === "active" ? t("headlineActive") : t("headlineScheduled")}
           </h1>
           <p className="mt-4 leading-relaxed text-muted">
             {normalizedStatus === "active"
-              ? "Your activation is live and ready to use."
-              : `Your activation is scheduled${travelDate ? ` for ${travelDate}` : ""}.`}
+              ? t("bodyActive")
+              : travelDate
+                ? t("bodyScheduledFor", { travelDate })
+                : t("bodyScheduled")}
           </p>
 
           {data?.processing && (

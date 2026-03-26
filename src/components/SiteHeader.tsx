@@ -3,56 +3,44 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+type HeaderLocale = "en" | "nl" | "fr" | "de" | "pt";
 
 const languageOptions = [
-  { locale: "en", label: "English", flagAlt: "en", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/en-us.svg" },
-  { locale: "nl", label: "Dutch", flagAlt: "nl", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/nl.svg" },
-  { locale: "fr", label: "French", flagAlt: "fr", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/fr.svg" },
-  { locale: "de", label: "German", flagAlt: "de", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/de.svg" },
-  { locale: "pt", label: "Portuguese", flagAlt: "pt", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/pt.svg" },
+  { locale: "en", flagAlt: "en", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/en-us.svg", key: "langEn" },
+  { locale: "nl", flagAlt: "nl", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/nl.svg", key: "langNl" },
+  { locale: "fr", flagAlt: "fr", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/fr.svg", key: "langFr" },
+  { locale: "de", flagAlt: "de", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/de.svg", key: "langDe" },
+  { locale: "pt", flagAlt: "pt", flagSrc: "/wp-content/plugins/gtranslate/flags/svg/pt.svg", key: "langPt" },
 ] as const;
 
 export function SiteHeader() {
   const pathname = usePathname() ?? "";
   const searchParams = useSearchParams();
   const flow = searchParams.get("flow");
-  const locale = useLocale();
+  const locale = useLocale() as HeaderLocale;
+  const th = useTranslations("header");
   const [openLangMenu, setOpenLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
-  const selectedLanguage = languageOptions.find((o) => o.locale === locale) ?? languageOptions[0];
-  const homeLabelByLocale: Record<string, string> = {
-    en: "Home",
-    nl: "Home",
-    fr: "Accueil",
-    de: "Startseite",
-    pt: "Inicio",
-  };
-  const redeemLabelByLocale: Record<string, string> = {
-    en: "Redeem",
-    nl: "Redeem",
-    fr: "Redeem",
-    de: "Redeem",
-    pt: "Redeem",
-  };
-  const buyPlanLabelByLocale: Record<string, string> = {
-    en: "Buy Plan",
-    nl: "Buy Plan",
-    fr: "Buy Plan",
-    de: "Buy Plan",
-    pt: "Buy Plan",
-  };
+
+  const localizedLanguageOptions = languageOptions.map((option) => ({
+    ...option,
+    label: th(option.key),
+  }));
+  const selectedLanguage =
+    localizedLanguageOptions.find((o) => o.locale === locale) ?? localizedLanguageOptions[0];
+
   const nav = [
-    { href: "/", label: homeLabelByLocale[locale] ?? "Home", match: (p: string, f: string | null) => p === "/" && !f },
+    { href: "/", label: th("navHome"), match: (p: string, f: string | null) => p === "/" && !f },
     {
       href: "/activate/redeem",
-      label: redeemLabelByLocale[locale] ?? "Redeem",
+      label: th("navRedeem"),
       match: (p: string) => p.startsWith("/activate/redeem"),
     },
     {
       href: "/activate/buy-plan",
-      label: buyPlanLabelByLocale[locale] ?? "Buy Plan",
+      label: th("navBuyPlan"),
       match: (p: string) => p.startsWith("/activate/buy-plan"),
     },
   ];
@@ -146,11 +134,11 @@ export function SiteHeader() {
               <button
                 type="button"
                 className="inline-flex h-10 items-center gap-2 rounded-none border border-[#00104E] bg-[#f7f7f7] px-3 text-[12px] text-slate-600"
-                aria-label="Language selector"
+                aria-label={th("langAria")}
                 aria-expanded={openLangMenu}
                 onClick={() => setOpenLangMenu((v) => !v)}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element -- match usalocalsim.com flag markup */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- use static country flags */}
                 <img src={selectedLanguage.flagSrc} width={24} height={24} alt={selectedLanguage.flagAlt} />
                 <span className="text-[12px]">{selectedLanguage.label}</span>
                 <span className="ml-2 text-slate-500" aria-hidden>
@@ -159,7 +147,7 @@ export function SiteHeader() {
               </button>
               {openLangMenu ? (
                 <div className="absolute right-0 z-50 mt-0 w-[170px] border border-[#00104E] bg-white py-1 shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
-                  {languageOptions
+                  {localizedLanguageOptions
                     .filter((option) => option.locale !== selectedLanguage.locale)
                     .map((option) => (
                       <button
@@ -168,7 +156,7 @@ export function SiteHeader() {
                         onClick={() => handleLocaleChange(option.locale)}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-slate-900 hover:bg-slate-100"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- match usalocalsim.com flag markup */}
+                        {/* eslint-disable-next-line @next/next/no-img-element -- use static country flags */}
                         <img src={option.flagSrc} width={24} height={24} alt={option.flagAlt} />
                         {option.label}
                       </button>
