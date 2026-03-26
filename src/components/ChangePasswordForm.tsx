@@ -88,7 +88,7 @@ export function ChangePasswordForm({ variant = "admin" }: { variant?: "admin" | 
             type="button"
             onClick={requestCode}
             disabled={requestLoading}
-            className="btn-primary mt-4 w-full rounded-xl"
+            className={`btn-primary mt-4 w-full ${pub ? "rounded-xl" : "rounded-none"}`}
           >
             {requestLoading ? "Sending…" : sent ? "Resend code" : "Send verification code"}
           </button>
@@ -156,7 +156,11 @@ export function ChangePasswordForm({ variant = "admin" }: { variant?: "admin" | 
           {success ? (
             <p className="mt-4 text-sm text-accent">Your password was updated. Use it next time you sign in.</p>
           ) : null}
-          <button type="submit" disabled={confirmLoading} className="btn-primary mt-6 w-full rounded-xl">
+          <button
+            type="submit"
+            disabled={confirmLoading}
+            className={`btn-primary mt-6 w-full ${pub ? "rounded-xl" : "rounded-none"}`}
+          >
             {confirmLoading ? "Updating…" : "Update password"}
           </button>
         </div>

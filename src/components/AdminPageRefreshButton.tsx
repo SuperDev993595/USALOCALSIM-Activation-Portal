@@ -45,7 +45,7 @@ export function AdminPageRefreshButton({ className = "" }: { className?: string 
       disabled={isPending}
       title="Refresh"
       aria-label="Refresh data"
-      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-accent/40 hover:bg-accent/5 hover:text-accent disabled:pointer-events-none disabled:opacity-50 ${className}`.trim()}
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-accent/40 hover:bg-accent/5 hover:text-accent disabled:pointer-events-none disabled:opacity-50 ${className}`.trim()}
     >
       <RefreshIcon className={`h-5 w-5 ${isPending ? "animate-spin" : ""}`} />
     </button>

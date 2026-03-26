@@ -107,7 +107,7 @@ export default function AdminVouchersPage() {
               onChange={(e) => setCodesText(e.target.value)}
               rows={10}
               placeholder="VOUCHER1&#10;VOUCHER2&#10;..."
-              className="ui-textarea min-h-[200px] rounded-xl"
+              className="ui-textarea min-h-[200px] rounded-none"
             />
           </div>
         </div>

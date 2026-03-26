@@ -198,7 +198,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     type="button"
                     onClick={() => setVoucherKind("sim")}
                     aria-pressed={voucherKind === "sim"}
-                    className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                    className={`rounded-none border px-3 py-2 text-left text-sm transition ${
                       voucherKind === "sim"
                         ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/30"
                         : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
@@ -213,7 +213,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     type="button"
                     onClick={() => setVoucherKind("esim")}
                     aria-pressed={voucherKind === "esim"}
-                    className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                    className={`rounded-none border px-3 py-2 text-left text-sm transition ${
                       voucherKind === "esim"
                         ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/30"
                         : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
@@ -240,7 +240,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                   {loading ? tf("validateChecking") : tf("validateVoucher")}
                 </button>
                 {voucherPlan && (
-                  <div className="rounded-md border border-accent/35 bg-accent/10 p-3 text-sm">
+                  <div className="rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
                     <p className="font-semibold text-slate-900">{voucherPlan.name}</p>
                     <p className="text-slate-600">
                       {voucherPlan.dataAllowance} · {voucherPlan.durationDays} {tf("daysSuffix")}
@@ -279,7 +279,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                       type="button"
                       onClick={() => setSelectedPlanId(plan.id)}
                       aria-pressed={selectedPlanId === plan.id}
-                      className={`w-full rounded-lg border p-3 text-left transition ${
+                      className={`w-full rounded-none border p-3 text-left transition ${
                         selectedPlanId === plan.id
                           ? "border-accent bg-accent/10 ring-1 ring-accent/30"
                           : "border-slate-300 bg-white hover:border-slate-400"
@@ -331,7 +331,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                   <p className="mt-1 text-xs text-slate-500">{tf("iccidHint")}</p>
                 </div>
                 {selectedPlan && (
-                  <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                  <div className="rounded-none border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                     <p className="mb-1 font-semibold text-slate-900">{tf("orderSummary")}</p>
                     <p className="flex justify-between"><span>{tf("lineServicePlan")}</span><span>${(selectedPlan.originalPriceCents / 100).toFixed(2)}</span></p>
                     <p className="flex justify-between">
@@ -349,7 +349,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                   </div>
                 )}
                 {hasPartnerSim && selectedPlan && (
-                  <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <div className="rounded-none border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                     <p>{tf("partnerAppliedTitle")}</p>
                     <p>{tf("partnerAppliedShip")}</p>
                     <p>{tf("partnerAppliedSkip")}</p>

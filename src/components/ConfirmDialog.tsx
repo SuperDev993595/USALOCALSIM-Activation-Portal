@@ -64,8 +64,8 @@ export function ConfirmDialog({
 
   const confirmClass =
     variant === "danger"
-      ? "inline-flex min-w-[100px] items-center justify-center rounded-xl border border-red-600 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-red-700 hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
-      : "btn-primary min-w-[100px] rounded-xl";
+      ? "inline-flex min-w-[100px] items-center justify-center rounded-none border border-red-600 bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-red-700 hover:bg-red-700 disabled:pointer-events-none disabled:opacity-50"
+      : "btn-primary min-w-[100px] rounded-none";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -81,7 +81,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-desc"
-        className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_24px_64px_-12px_rgba(15,23,42,0.35)]"
+        className="relative z-10 w-full max-w-md rounded-none border border-slate-200/90 bg-white p-6 shadow-[0_24px_64px_-12px_rgba(15,23,42,0.35)]"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="confirm-dialog-title" className="text-lg font-semibold tracking-tight text-slate-900">
@@ -91,7 +91,7 @@ export function ConfirmDialog({
           {children}
         </div>
         {error ? (
-          <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p className="mt-4 rounded-none border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
             {error}
           </p>
         ) : null}
@@ -101,7 +101,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="inline-flex min-w-[100px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex min-w-[100px] items-center justify-center rounded-none border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
           >
             {cancelLabel}
           </button>

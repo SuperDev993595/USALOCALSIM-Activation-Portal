@@ -103,8 +103,8 @@ export function AdminAppShell({
 
   function navLinkClass(active: boolean) {
     return active
-      ? "flex rounded-xl border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent"
-      : "flex rounded-xl border border-transparent px-3 py-2.5 text-sm text-slate-600 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900";
+      ? "flex rounded-none border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent"
+      : "flex rounded-none border border-transparent px-3 py-2.5 text-sm text-slate-600 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900";
   }
 
   const sidebarInner = (
@@ -116,7 +116,7 @@ export function AdminAppShell({
           onClick={() => setMobileNavOpen(false)}
         >
           <span
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-accent/35 bg-accent/10 text-[10px] font-bold uppercase text-accent"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-accent/35 bg-accent/10 text-[10px] font-bold uppercase text-accent"
             aria-hidden
           >
             US
@@ -160,7 +160,7 @@ export function AdminAppShell({
       </nav>
 
       <div className="relative z-10 border-t border-slate-200 p-4">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="rounded-none border border-slate-200 bg-slate-50 p-3">
           <p className="truncate text-xs font-medium text-slate-900" title={email}>
             {email}
           </p>
@@ -168,7 +168,7 @@ export function AdminAppShell({
           <button
             type="button"
             onClick={() => setShowSignOutConfirm(true)}
-            className="mt-3 w-full rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:border-red-300 hover:bg-red-100"
+            className="mt-3 w-full rounded-none border border-red-200 bg-red-50 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:border-red-300 hover:bg-red-100"
           >
             Sign out
           </button>
@@ -202,7 +202,7 @@ export function AdminAppShell({
         <header className="relative z-20 flex h-[3.25rem] shrink-0 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md lg:px-6">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-600 transition hover:border-accent/40 hover:text-accent lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-600 transition hover:border-accent/40 hover:text-accent lg:hidden"
             aria-expanded={mobileNavOpen}
             aria-controls="admin-sidebar"
             onClick={() => setMobileNavOpen((o) => !o)}
@@ -210,12 +210,12 @@ export function AdminAppShell({
             <MenuIcon open={mobileNavOpen} />
           </button>
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 lg:hidden">
-            <span className="rounded-md border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
+            <span className="rounded-none border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
               Admin
             </span>
           </span>
           <span className="hidden min-w-0 flex-1 items-center gap-2 truncate text-xs text-slate-500 lg:inline">
-            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            <span className="rounded-none border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
               Session
             </span>
             <span className="truncate">
@@ -224,7 +224,7 @@ export function AdminAppShell({
           </span>
           <Link
             href="/"
-            className="btn-secondary ml-auto h-9 shrink-0 rounded-xl px-3 py-0 text-xs font-semibold"
+            className="btn-secondary ml-auto h-9 shrink-0 rounded-none px-3 py-0 text-xs font-semibold"
           >
             View site
           </Link>

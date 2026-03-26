@@ -100,14 +100,14 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
     <div className="space-y-4 pt-1">
       {notice ? (
         <div
-          className="flex items-start justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          className="flex items-start justify-between gap-3 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           role="status"
         >
           <p>{notice.message}</p>
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="shrink-0 rounded-lg border border-amber-400/50 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900 hover:bg-amber-100"
+            className="shrink-0 rounded-none border border-amber-400/50 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900 hover:bg-amber-100"
           >
             Dismiss
           </button>
@@ -115,7 +115,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
       ) : null}
       {dueToday.length > 0 && (
         <div className="admin-callout admin-callout-emerald">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-300 bg-white text-sm font-bold text-emerald-800 shadow-sm">
+          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-none border border-emerald-300 bg-white text-sm font-bold text-emerald-800 shadow-sm">
             {dueToday.length}
           </span>
           <div>
@@ -134,7 +134,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
         return (
           <article
             key={r.id}
-            className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.15)] transition hover:border-accent/25 md:p-6"
+            className="group relative overflow-hidden rounded-none border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.15)] transition hover:border-accent/25 md:p-6"
           >
             <div
               className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-accent/[0.04] blur-2xl transition group-hover:bg-accent/[0.07]"
@@ -144,30 +144,30 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
               <div className="min-w-0 flex-1 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="badge border border-amber-300/80 bg-amber-50 text-amber-900">Scheduled</span>
-                  <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-500">
+                  <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-500">
                     {r.scenario.replace(/_/g, " ")}
                   </span>
                   {partner ? (
-                    <span className="rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
+                    <span className="rounded-none border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
                       Partner SIM declared
                     </span>
                   ) : null}
                 </div>
                 <p className="break-all text-lg font-semibold tracking-tight text-slate-900">{r.email}</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
+                  <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
                     {r.plan.name}
                   </span>
-                  <span className="rounded-lg border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                  <span className="rounded-none border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
                     Paid ${(r.amountPaidCents / 100).toFixed(2)}
                   </span>
                   {r.iccid ? (
-                    <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                    <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
                       {r.iccid}
                     </span>
                   ) : null}
                   {r.voucherCode ? (
-                    <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                    <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
                       {r.voucherCode}
                     </span>
                   ) : null}
@@ -202,7 +202,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                       }
                       rows={2}
                       placeholder="Paste LPA or provisioning string for the customer email"
-                      className="ui-textarea mt-2 rounded-xl text-xs"
+                      className="ui-textarea mt-2 rounded-none text-xs"
                     />
                   </label>
                 )}
@@ -211,7 +211,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                 type="button"
                 onClick={() => handleComplete(r.id)}
                 disabled={loading[r.id]}
-                className="btn-primary h-11 w-full shrink-0 rounded-xl px-6 shadow-accent-sm lg:w-auto lg:self-start"
+                className="btn-primary h-11 w-full shrink-0 rounded-none px-6 lg:w-auto lg:self-start"
               >
                 {loading[r.id] ? "Activating…" : "Mark as Active"}
               </button>

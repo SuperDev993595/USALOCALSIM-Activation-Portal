@@ -16,7 +16,7 @@ export default async function AdminPage() {
         title="Scheduled activations"
         description="Activate requests due today first. The queue is sorted by travel date and refreshes every 30 seconds."
         meta={
-          <span className="inline-flex items-center gap-2.5 rounded-xl border border-accent/25 bg-accent/10 px-3.5 py-2 text-xs text-slate-600">
+          <span className="inline-flex items-center gap-2.5 rounded-none border border-accent/25 bg-accent/10 px-3.5 py-2 text-xs text-slate-600">
             <span
               className="relative flex h-2 w-2"
               aria-hidden

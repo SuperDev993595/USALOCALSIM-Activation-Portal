@@ -16,7 +16,7 @@ export function AdminPageHeader({
   rightActions?: ReactNode;
 }) {
   return (
-    <header className="admin-panel relative overflow-hidden rounded-2xl p-0 md:rounded-[1.25rem]">
+    <header className="admin-panel relative overflow-hidden rounded-none p-0">
       <div
         className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-accent/[0.06] blur-3xl"
         aria-hidden
@@ -58,7 +58,7 @@ export function AdminPageFooter({
     <footer className="mt-14 border-t border-slate-200 pt-8">
       <Link
         href={href}
-        className="group inline-flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm transition hover:border-accent/35 hover:text-accent"
+        className="group inline-flex items-center gap-2.5 rounded-none border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm transition hover:border-accent/35 hover:text-accent"
       >
         <span className="transition group-hover:-translate-x-0.5" aria-hidden>
           ←

@@ -80,7 +80,7 @@ export function AdminSimCostSettings() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 md:p-5">
+    <div className="rounded-none border border-slate-200 bg-slate-50/80 p-4 md:p-5">
       <p className="text-xs text-slate-600">
         Partner-SIM checkout subtracts this hardware amount from the plan price. Per-market overrides apply to <code className="rounded bg-slate-100 px-1">global</code> and{" "}
         <code className="rounded bg-slate-100 px-1">us</code> catalog plans; leave an override blank to fall back to the default.
@@ -97,7 +97,7 @@ export function AdminSimCostSettings() {
             min={0}
             value={fallbackCents}
             onChange={(e) => setFallbackCents(e.target.value)}
-            className="ui-input !mt-2 w-full max-w-[220px] rounded-xl"
+            className="ui-input !mt-2 w-full max-w-[220px] rounded-none"
           />
         </div>
         <div className="min-w-0">
@@ -112,7 +112,7 @@ export function AdminSimCostSettings() {
             placeholder="Fallback"
             value={globalCents}
             onChange={(e) => setGlobalCents(e.target.value)}
-            className="ui-input !mt-2 w-full max-w-[220px] rounded-xl"
+            className="ui-input !mt-2 w-full max-w-[220px] rounded-none"
           />
         </div>
         <div className="min-w-0">
@@ -127,12 +127,12 @@ export function AdminSimCostSettings() {
             placeholder="Fallback"
             value={usCents}
             onChange={(e) => setUsCents(e.target.value)}
-            className="ui-input !mt-2 w-full max-w-[220px] rounded-xl"
+            className="ui-input !mt-2 w-full max-w-[220px] rounded-none"
           />
         </div>
       </div>
       <div className="mt-4 flex justify-end">
-        <button type="button" onClick={save} disabled={loading} className="btn-primary h-11 min-w-[120px] rounded-xl">
+        <button type="button" onClick={save} disabled={loading} className="btn-primary h-11 min-w-[120px] rounded-none">
           {loading ? "Saving…" : "Save"}
         </button>
       </div>

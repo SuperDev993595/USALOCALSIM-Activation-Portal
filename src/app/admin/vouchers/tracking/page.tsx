@@ -207,7 +207,7 @@ export default function VoucherTrackingPage() {
               value={codeFilter}
               onChange={(e) => setCodeFilter(e.target.value)}
               placeholder="Search voucher code"
-              className="ui-input !mt-1 h-11 rounded-xl"
+              className="ui-input !mt-1 h-11 rounded-none"
             />
           </div>
           <div>
@@ -215,7 +215,7 @@ export default function VoucherTrackingPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-xl"
+              className="ui-select !mt-1 h-11 rounded-none"
             >
               <option value="">All statuses</option>
               {statusOptions.map((status) => (
@@ -230,7 +230,7 @@ export default function VoucherTrackingPage() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-xl"
+              className="ui-select !mt-1 h-11 rounded-none"
             >
               <option value="">All types</option>
               {typeOptions.map((type) => (
@@ -245,7 +245,7 @@ export default function VoucherTrackingPage() {
             <select
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-xl"
+              className="ui-select !mt-1 h-11 rounded-none"
             >
               <option value="">All plans</option>
               {planOptions.map((plan) => (
@@ -260,7 +260,7 @@ export default function VoucherTrackingPage() {
             <select
               value={planTypeFilter}
               onChange={(e) => setPlanTypeFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-xl"
+              className="ui-select !mt-1 h-11 rounded-none"
             >
               <option value="">All plan types</option>
               {planTypeOptions.map((planType) => (
@@ -276,7 +276,7 @@ export default function VoucherTrackingPage() {
               value={unlockedByFilter}
               onChange={(e) => setUnlockedByFilter(e.target.value)}
               placeholder="Email or name"
-              className="ui-input !mt-1 h-11 rounded-xl"
+              className="ui-input !mt-1 h-11 rounded-none"
             />
           </div>
           <div>
@@ -285,7 +285,7 @@ export default function VoucherTrackingPage() {
               value={redeemedByFilter}
               onChange={(e) => setRedeemedByFilter(e.target.value)}
               placeholder="Email or ICCID"
-              className="ui-input !mt-1 h-11 rounded-xl"
+              className="ui-input !mt-1 h-11 rounded-none"
             />
           </div>
           <div className="flex items-end">
@@ -300,14 +300,14 @@ export default function VoucherTrackingPage() {
                 setUnlockedByFilter("");
                 setRedeemedByFilter("");
               }}
-              className="ui-btn-ghost h-11 w-full rounded-xl text-xs uppercase tracking-wider"
+              className="ui-btn-ghost h-11 w-full rounded-none text-xs uppercase tracking-wider"
             >
               Clear filters
             </button>
           </div>
         </div>
         {!loading ? (
-          <p className="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-slate-600 sm:text-left">
+          <p className="shrink-0 rounded-none border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-slate-600 sm:text-left">
             {filteredVouchers.length} / {vouchers.length} row{vouchers.length === 1 ? "" : "s"}
           </p>
         ) : null}
@@ -315,8 +315,8 @@ export default function VoucherTrackingPage() {
       </div>
       {loading ? (
         <div className="admin-panel space-y-3 p-6">
-          <div className="h-4 w-1/3 animate-pulse rounded-md bg-white/10" />
-          <div className="h-32 animate-pulse rounded-xl bg-white/[0.06]" />
+          <div className="h-4 w-1/3 animate-pulse rounded-none bg-white/10" />
+          <div className="h-32 animate-pulse rounded-none bg-white/[0.06]" />
         </div>
       ) : (
         <div className="admin-panel w-full max-w-full overflow-hidden shadow-[0_24px_80px_-30px_rgba(0,0,0,0.7)]">
@@ -343,7 +343,7 @@ export default function VoucherTrackingPage() {
                       <StatusBadge status={v.status} />
                     </td>
                     <td>
-                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs capitalize text-slate-600">
+                      <span className="rounded-none border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs capitalize text-slate-600">
                         {v.type}
                       </span>
                     </td>
@@ -374,7 +374,7 @@ export default function VoucherTrackingPage() {
                           disabled={deletingId === v.id || pendingDelete?.id === v.id}
                           title="Remove inactive voucher"
                           aria-label={`Remove inactive voucher ${v.code}`}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-red-200 text-red-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
                         >
                           <TrashIcon className={`h-4 w-4 ${deletingId === v.id ? "animate-pulse" : ""}`} />
                         </button>

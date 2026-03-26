@@ -158,7 +158,7 @@ export function AdminPlansClient() {
       />
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
+        <p className="rounded-none border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
       ) : null}
 
       <section className="admin-panel">
@@ -173,7 +173,7 @@ export function AdminPlansClient() {
               <input
                 value={createForm.name}
                 onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
-                className="ui-input !mt-1 rounded-xl"
+                className="ui-input !mt-1 rounded-none"
                 required
               />
             </div>
@@ -183,7 +183,7 @@ export function AdminPlansClient() {
                 value={createForm.dataAllowance}
                 onChange={(e) => setCreateForm((s) => ({ ...s, dataAllowance: e.target.value }))}
                 placeholder="e.g. Unlimited"
-                className="ui-input !mt-1 rounded-xl"
+                className="ui-input !mt-1 rounded-none"
                 required
               />
             </div>
@@ -194,7 +194,7 @@ export function AdminPlansClient() {
                 min={1}
                 value={createForm.durationDays}
                 onChange={(e) => setCreateForm((s) => ({ ...s, durationDays: e.target.value }))}
-                className="ui-input !mt-1 rounded-xl"
+                className="ui-input !mt-1 rounded-none"
                 required
               />
             </div>
@@ -205,7 +205,7 @@ export function AdminPlansClient() {
                 min={0}
                 value={createForm.priceCents}
                 onChange={(e) => setCreateForm((s) => ({ ...s, priceCents: e.target.value }))}
-                className="ui-input !mt-1 rounded-xl"
+                className="ui-input !mt-1 rounded-none"
                 required
               />
             </div>
@@ -216,7 +216,7 @@ export function AdminPlansClient() {
                 onChange={(e) =>
                   setCreateForm((s) => ({ ...s, planType: e.target.value as "physical_sim" | "esim" }))
                 }
-                className="ui-select !mt-1 rounded-xl"
+                className="ui-select !mt-1 rounded-none"
               >
                 <option value="physical_sim">Physical SIM</option>
                 <option value="esim">eSIM</option>
@@ -227,14 +227,14 @@ export function AdminPlansClient() {
               <select
                 value={createForm.market}
                 onChange={(e) => setCreateForm((s) => ({ ...s, market: e.target.value as "global" | "us" }))}
-                className="ui-select !mt-1 rounded-xl"
+                className="ui-select !mt-1 rounded-none"
               >
                 <option value="global">Global</option>
                 <option value="us">US</option>
               </select>
             </div>
           </div>
-          <button type="submit" disabled={creating} className="btn-primary rounded-xl">
+          <button type="submit" disabled={creating} className="btn-primary rounded-none">
             {creating ? "Creating…" : "Create plan"}
           </button>
         </form>
@@ -338,7 +338,7 @@ export function AdminPlansClient() {
                           type="button"
                           onClick={saveEdit}
                           disabled={savingId === p.id}
-                          className="btn-primary rounded-lg px-3 py-1.5 text-xs"
+                          className="btn-primary rounded-none px-3 py-1.5 text-xs"
                         >
                           {savingId === p.id ? "Saving…" : "Save"}
                         </button>
@@ -346,7 +346,7 @@ export function AdminPlansClient() {
                           type="button"
                           onClick={cancelEdit}
                           disabled={savingId === p.id}
-                          className="btn-secondary rounded-lg px-3 py-1.5 text-xs"
+                          className="btn-secondary rounded-none px-3 py-1.5 text-xs"
                         >
                           Cancel
                         </button>
@@ -365,7 +365,7 @@ export function AdminPlansClient() {
                       <button
                         type="button"
                         onClick={() => startEdit(p)}
-                        className="btn-secondary rounded-lg px-3 py-1.5 text-xs"
+                        className="btn-secondary rounded-none px-3 py-1.5 text-xs"
                       >
                         Edit
                       </button>

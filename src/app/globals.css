@@ -90,7 +90,7 @@
   }
 
   .public-site .ui-card {
-    @apply border-slate-200 bg-white shadow-[0_12px_28px_-12px_rgba(15,23,42,0.22)];
+    @apply rounded-none border-slate-200 bg-white shadow-[0_12px_28px_-12px_rgba(15,23,42,0.22)];
   }
 
   .public-site .ui-label {
@@ -100,7 +100,7 @@
   .public-site .ui-input,
   .public-site .ui-select,
   .public-site .ui-textarea {
-    @apply border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-accent;
+    @apply rounded-none border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-accent;
   }
 
   .public-site .ui-select option {
@@ -109,7 +109,11 @@
   }
 
   .public-site .btn-secondary {
-    @apply border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50;
+    @apply rounded-none border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50;
+  }
+
+  .public-site .btn-primary {
+    @apply rounded-none;
   }
 
   .public-site .text-muted {
@@ -184,7 +188,12 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-accent-sm transition hover:bg-accent-hover hover:shadow-accent-md disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-none transition disabled:pointer-events-none disabled:opacity-50;
+    background-color: #011054;
+  }
+
+  .btn-primary:hover {
+    background-color: #f30f23;
   }
 
   .btn-secondary {
@@ -246,7 +255,7 @@
 
   /* Admin console — light theme (matches public-site) */
   .admin-panel {
-    @apply overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)];
+    @apply overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)];
   }
 
   .admin-panel-head {
@@ -262,7 +271,7 @@
   }
 
   .admin-callout {
-    @apply flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3 text-sm;
+    @apply flex flex-wrap items-center gap-3 rounded-none border px-4 py-3 text-sm;
   }
 
   .admin-callout-emerald {

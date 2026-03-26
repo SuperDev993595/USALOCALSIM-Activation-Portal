@@ -23,7 +23,7 @@ export default function HomePage() {
         <div className="mt-10 grid w-full max-w-4xl gap-4 md:grid-cols-2">
           <Link
             href="/activate/redeem"
-            className="ui-card group block rounded-xl border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
+            className="ui-card group block rounded-none border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">{t("cardVoucherKicker")}</p>
             <h2 className="mt-2 text-lg font-semibold text-slate-900">{t("cardVoucherTitle")}</h2>
@@ -33,7 +33,7 @@ export default function HomePage() {
 
           <Link
             href="/activate/buy-plan"
-            className="ui-card group block rounded-xl border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
+            className="ui-card group block rounded-none border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">{t("cardPlanKicker")}</p>
             <h2 className="mt-2 text-lg font-semibold text-slate-900">{t("cardPlanTitle")}</h2>
@@ -42,7 +42,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <p className="mt-8 max-w-2xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+        <p className="mt-8 max-w-2xl rounded-none border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
           {t.rich("statusRich", {
             sched: (chunks) => <strong>{chunks}</strong>,
             active: (chunks) => <strong>{chunks}</strong>,

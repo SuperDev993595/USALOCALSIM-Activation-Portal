@@ -179,7 +179,7 @@ export function ActivateSuccessContent() {
           )}
 
           {act && (
-            <div className="mt-8 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-left text-sm">
+            <div className="mt-8 space-y-3 rounded-none border border-slate-200 bg-slate-50 p-4 text-left text-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{t("summaryTitle")}</p>
               <p className="font-mono text-xs text-slate-500">
                 {t("iccidLabel")}: {act.iccid ?? "—"}

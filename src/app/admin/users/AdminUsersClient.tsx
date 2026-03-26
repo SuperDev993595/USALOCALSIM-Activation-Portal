@@ -347,7 +347,7 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
         title="User management"
         description="Manage account details from the table. Create new accounts from the header action, edit from row actions, and delete users only after email code verification."
         rightActions={
-          <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary rounded-xl">
+          <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary rounded-none">
             Create account
           </button>
         }
@@ -404,7 +404,7 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
                             type="button"
                             disabled={isSelf || u.role === "admin"}
                             onClick={() => openDeleteDialog(u.id)}
-                            className="inline-flex items-center justify-center rounded-xl border border-red-500/45 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-100 transition hover:border-red-400/60 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-45"
+                            className="inline-flex items-center justify-center rounded-none border border-red-500/45 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-100 transition hover:border-red-400/60 hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-45"
                           >
                             Delete
                           </button>

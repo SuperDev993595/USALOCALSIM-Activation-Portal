@@ -16,7 +16,7 @@ export default async function AdminCompletedPage() {
         title="Active activations"
         description="Most recent 100 activated requests, newest first. Use this list for quick lookups and audits."
         meta={
-          <span className="inline-flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 px-3.5 py-2 text-xs text-muted">
+          <span className="inline-flex items-center gap-2 rounded-none border border-success/30 bg-success/10 px-3.5 py-2 text-xs text-muted">
             Showing <strong className="font-semibold text-success-hover">{completed.length}</strong> records
           </span>
         }
@@ -36,23 +36,23 @@ export default async function AdminCompletedPage() {
           completed.map((r) => (
             <article
               key={r.id}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.12)] transition hover:border-success/30"
+              className="rounded-none border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.12)] transition hover:border-success/30"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-2">
                   <p className="truncate text-base font-semibold text-slate-900">{r.email}</p>
                   <div className="flex flex-wrap gap-2">
                     <span className="badge badge-success">Active</span>
-                    <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+                    <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
                       {r.plan.name}
                     </span>
                     {r.iccid ? (
-                      <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                      <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
                         ICCID {r.iccid}
                       </span>
                     ) : null}
                     {r.voucherCode ? (
-                      <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                      <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
                         {r.voucherCode}
                       </span>
                     ) : null}
