@@ -44,6 +44,9 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "USALOCALSIM Activation",
   description: "Activate your USALOCALSIM service",
+  icons: {
+    icon: "https://usalocalsim.com/wp-content/uploads/2026/03/favicon-100x100.png",
+  },
 };
 
 export default async function RootLayout({

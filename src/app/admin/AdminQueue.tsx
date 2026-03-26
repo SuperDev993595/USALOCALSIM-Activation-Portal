@@ -88,13 +88,126 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
     );
   }
 
-  const today = new Date();
-  // Compare using UTC date parts so "due today" doesn't shift across timezones.
-  const todayISO = today.toISOString().slice(0, 10);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  function toStartOfLocalDay(value: string | Date | null | undefined): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
   const dueToday = items.filter((r) => {
-    if (!r.travelDate) return false;
-    return new Date(r.travelDate).toISOString().slice(0, 10) === todayISO;
+    const day = toStartOfLocalDay(r.travelDate);
+    if (!day) return false;
+    return day.getTime() === startOfToday.getTime();
   });
+  const overdue = items.filter((r) => {
+    const day = toStartOfLocalDay(r.travelDate);
+    if (!day) return false;
+    return day.getTime() < startOfToday.getTime();
+  });
+  const upcoming = items.filter((r) => {
+    const day = toStartOfLocalDay(r.travelDate);
+    if (!day) return true;
+    return day.getTime() > startOfToday.getTime();
+  });
+
+  function renderCard(r: Item) {
+    const hw = r.hardwareDeductionCents ?? 0;
+    const sh = r.shippingDeductionCents ?? 0;
+    const partner = Boolean(r.hasPartnerSim);
+    const showAdjustments = partner || hw > 0 || sh > 0;
+    return (
+      <article
+        key={r.id}
+        className="group relative overflow-hidden rounded-none border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.15)] transition hover:border-accent/25 md:p-6"
+      >
+        <div
+          className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-accent/[0.04] blur-2xl transition group-hover:bg-accent/[0.07]"
+          aria-hidden
+        />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="badge border border-amber-300/80 bg-amber-50 text-amber-900">Scheduled</span>
+              <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-500">
+                {r.scenario.replace(/_/g, " ")}
+              </span>
+              {partner ? (
+                <span className="rounded-none border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
+                  Partner SIM declared
+                </span>
+              ) : null}
+            </div>
+            <p className="break-all text-lg font-semibold tracking-tight text-slate-900">{r.email}</p>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
+                {r.plan.name}
+              </span>
+              <span className="rounded-none border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                Paid ${(r.amountPaidCents / 100).toFixed(2)}
+              </span>
+              {r.iccid ? (
+                <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                  {r.iccid}
+                </span>
+              ) : null}
+              {r.voucherCode ? (
+                <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
+                  {r.voucherCode}
+                </span>
+              ) : null}
+            </div>
+            {showAdjustments ? (
+              <p className="text-xs text-slate-600">
+                <span className="font-semibold text-slate-800">Checkout adjustments: </span>
+                Hardware −${(hw / 100).toFixed(2)}
+                {" · "}
+                {partner ? (
+                  <>Shipping waived: $0.00</>
+                ) : sh > 0 ? (
+                  <>Shipping −${(sh / 100).toFixed(2)}</>
+                ) : (
+                  <>Shipping −$0.00</>
+                )}
+              </p>
+            ) : null}
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+              Submitted {new Date(r.createdAt).toLocaleString()}
+            </p>
+            <p className="text-xs font-medium uppercase tracking-wider text-emerald-800">
+              Travel date {r.travelDate ? new Date(r.travelDate).toLocaleDateString() : "—"}
+            </p>
+            {r.scenario === "esim_voucher" && (
+              <label className="block text-xs text-slate-600">
+                <span className="font-semibold uppercase tracking-wider text-slate-800">eSIM QR / LPA (optional)</span>
+                <textarea
+                  value={esimQrPayload[r.id] ?? ""}
+                  onChange={(e) =>
+                    setEsimQrPayload((s) => ({ ...s, [r.id]: e.target.value }))
+                  }
+                  rows={2}
+                  placeholder="Paste LPA or provisioning string for the customer email"
+                  className="ui-textarea mt-2 rounded-none text-xs"
+                />
+              </label>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => handleComplete(r.id)}
+            disabled={loading[r.id]}
+            className="btn-primary h-11 w-full shrink-0 rounded-none px-6 lg:w-auto lg:self-start"
+          >
+            {loading[r.id] ? "Activating…" : "Mark as Active"}
+          </button>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <div className="space-y-4 pt-1">
@@ -126,99 +239,33 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
           </div>
         </div>
       )}
-      {items.map((r) => {
-        const hw = r.hardwareDeductionCents ?? 0;
-        const sh = r.shippingDeductionCents ?? 0;
-        const partner = Boolean(r.hasPartnerSim);
-        const showAdjustments = partner || hw > 0 || sh > 0;
-        return (
-          <article
-            key={r.id}
-            className="group relative overflow-hidden rounded-none border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.15)] transition hover:border-accent/25 md:p-6"
-          >
-            <div
-              className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-accent/[0.04] blur-2xl transition group-hover:bg-accent/[0.07]"
-              aria-hidden
-            />
-            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0 flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="badge border border-amber-300/80 bg-amber-50 text-amber-900">Scheduled</span>
-                  <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-500">
-                    {r.scenario.replace(/_/g, " ")}
-                  </span>
-                  {partner ? (
-                    <span className="rounded-none border border-sky-300 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-900">
-                      Partner SIM declared
-                    </span>
-                  ) : null}
-                </div>
-                <p className="break-all text-lg font-semibold tracking-tight text-slate-900">{r.email}</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
-                    {r.plan.name}
-                  </span>
-                  <span className="rounded-none border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
-                    Paid ${(r.amountPaidCents / 100).toFixed(2)}
-                  </span>
-                  {r.iccid ? (
-                    <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
-                      {r.iccid}
-                    </span>
-                  ) : null}
-                  {r.voucherCode ? (
-                    <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs text-slate-800">
-                      {r.voucherCode}
-                    </span>
-                  ) : null}
-                </div>
-                {showAdjustments ? (
-                  <p className="text-xs text-slate-600">
-                    <span className="font-semibold text-slate-800">Checkout adjustments: </span>
-                    Hardware −${(hw / 100).toFixed(2)}
-                    {" · "}
-                    {partner ? (
-                      <>Shipping waived: $0.00</>
-                    ) : sh > 0 ? (
-                      <>Shipping −${(sh / 100).toFixed(2)}</>
-                    ) : (
-                      <>Shipping −$0.00</>
-                    )}
-                  </p>
-                ) : null}
-                <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Submitted {new Date(r.createdAt).toLocaleString()}
-                </p>
-                <p className="text-xs font-medium uppercase tracking-wider text-emerald-800">
-                  Travel date {r.travelDate ? new Date(r.travelDate).toLocaleDateString() : "—"}
-                </p>
-                {r.scenario === "esim_voucher" && (
-                  <label className="block text-xs text-slate-600">
-                    <span className="font-semibold uppercase tracking-wider text-slate-800">eSIM QR / LPA (optional)</span>
-                    <textarea
-                      value={esimQrPayload[r.id] ?? ""}
-                      onChange={(e) =>
-                        setEsimQrPayload((s) => ({ ...s, [r.id]: e.target.value }))
-                      }
-                      rows={2}
-                      placeholder="Paste LPA or provisioning string for the customer email"
-                      className="ui-textarea mt-2 rounded-none text-xs"
-                    />
-                  </label>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => handleComplete(r.id)}
-                disabled={loading[r.id]}
-                className="btn-primary h-11 w-full shrink-0 rounded-none px-6 lg:w-auto lg:self-start"
-              >
-                {loading[r.id] ? "Activating…" : "Mark as Active"}
-              </button>
-            </div>
-          </article>
-        );
-      })}
+      {dueToday.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between rounded-none border border-emerald-200 bg-emerald-50 px-4 py-2.5">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-900">Due Today</h3>
+            <p className="text-xs font-semibold text-emerald-900">{dueToday.length} item{dueToday.length === 1 ? "" : "s"}</p>
+          </div>
+          {dueToday.map(renderCard)}
+        </section>
+      ) : null}
+      {overdue.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between rounded-none border border-rose-200 bg-rose-50 px-4 py-2.5">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-rose-900">Overdue</h3>
+            <p className="text-xs font-semibold text-rose-900">{overdue.length} item{overdue.length === 1 ? "" : "s"}</p>
+          </div>
+          {overdue.map(renderCard)}
+        </section>
+      ) : null}
+      {upcoming.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between rounded-none border border-slate-200 bg-slate-50 px-4 py-2.5">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-700">Upcoming</h3>
+            <p className="text-xs font-semibold text-slate-700">{upcoming.length} item{upcoming.length === 1 ? "" : "s"}</p>
+          </div>
+          {upcoming.map(renderCard)}
+        </section>
+      ) : null}
     </div>
   );
 }
