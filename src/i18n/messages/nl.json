@@ -109,6 +109,8 @@
       "submitFailed": "Verzenden mislukt",
       "planFieldsRequired": "Bundel, e-mail en reisdatum zijn verplicht.",
       "invalidIccid": "Ongeldige ICCID. Gebruik 18–22 cijfers van uw SIM-kaart.",
+      "invalidIccidRelaxed": "Ongeldige ICCID. Gebruik 19–20 cijfers die met 89 beginnen; het controlecijfer moet kloppen.",
+      "iccidPlaceholderRelaxed": "19–20 cijfers, startend met 89",
       "checkoutFailed": "Afrekenen kan niet worden gestart.",
       "missingCheckoutUrl": "Checkout-URL ontbreekt.",
       "loadPlansFailed": "Bundels laden mislukt. Vernieuw de pagina.",

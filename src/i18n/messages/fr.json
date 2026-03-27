@@ -109,6 +109,8 @@
       "submitFailed": "Échec de l'envoi",
       "planFieldsRequired": "Forfait, e-mail et date de voyage sont obligatoires.",
       "invalidIccid": "ICCID invalide. Utilisez 18 à 22 chiffres figurant sur votre carte SIM.",
+      "invalidIccidRelaxed": "ICCID invalide. Utilisez 19 à 20 chiffres commençant par 89 avec un chiffre de contrôle valide.",
+      "iccidPlaceholderRelaxed": "19–20 chiffres commençant par 89",
       "checkoutFailed": "Impossible de démarrer le paiement.",
       "missingCheckoutUrl": "URL de paiement manquante.",
       "loadPlansFailed": "Échec du chargement des forfaits. Actualisez la page.",

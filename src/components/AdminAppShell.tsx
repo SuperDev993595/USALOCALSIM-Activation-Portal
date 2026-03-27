@@ -26,6 +26,11 @@ const sections: {
         label: "Pricing & hardware",
         active: (p) => p.startsWith("/admin/sim-cost"),
       },
+      {
+        href: "/admin/iccid-validation",
+        label: "ICCID validation",
+        active: (p) => p.startsWith("/admin/iccid-validation"),
+      },
     ],
   },
   {

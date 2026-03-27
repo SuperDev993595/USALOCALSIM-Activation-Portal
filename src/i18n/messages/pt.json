@@ -112,6 +112,8 @@
       "submitFailed": "Falha ao enviar",
       "planFieldsRequired": "Plano, e‑mail e data de viagem são obrigatórios.",
       "invalidIccid": "ICCID inválido. Use 18–22 dígitos do seu SIM.",
+      "invalidIccidRelaxed": "ICCID inválido. Use 19–20 dígitos começando por 89, com dígito de verificação válido.",
+      "iccidPlaceholderRelaxed": "19–20 dígitos começando por 89",
       "checkoutFailed": "Não foi possível iniciar o pagamento.",
       "missingCheckoutUrl": "URL de pagamento em falta.",
       "loadPlansFailed": "Falha ao carregar planos. Atualize a página.",

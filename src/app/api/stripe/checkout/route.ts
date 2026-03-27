@@ -8,8 +8,7 @@ import {
   isIccidOwnedByEmail,
   normalizeIccid,
 } from "@/lib/activation-dedupe";
-
-const ICCID_REGEX = /^\d{18,22}$/;
+import { assertCustomerIccidAccepted } from "@/lib/iccid-validation";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -52,11 +51,9 @@ export async function POST(req: Request) {
   const rawIccid = body.iccid;
   let normalizedIccid: string | null = null;
   if (rawIccid.length > 0) {
-    if (!ICCID_REGEX.test(rawIccid)) {
-      return NextResponse.json(
-        { error: "Invalid ICCID. Use 18–22 digits from your SIM card." },
-        { status: 400 }
-      );
+    const iccidGate = await assertCustomerIccidAccepted(rawIccid);
+    if (!iccidGate.ok) {
+      return NextResponse.json({ error: iccidGate.error }, { status: 400 });
     }
     normalizedIccid = normalizeIccid(rawIccid);
     const owned = await isIccidOwnedByEmail(normalizedIccid, body.email);

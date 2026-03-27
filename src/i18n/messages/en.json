@@ -109,6 +109,8 @@
       "submitFailed": "Submission failed",
       "planFieldsRequired": "Plan, email, and travel date are required.",
       "invalidIccid": "Invalid ICCID. Use 18–22 digits from your SIM card.",
+      "invalidIccidRelaxed": "Invalid ICCID. Use 19–20 digits starting with 89; the number must pass the check digit.",
+      "iccidPlaceholderRelaxed": "19–20 digits starting with 89",
       "checkoutFailed": "Unable to start checkout.",
       "missingCheckoutUrl": "Missing checkout URL.",
       "loadPlansFailed": "Failed to load plans. Please refresh.",

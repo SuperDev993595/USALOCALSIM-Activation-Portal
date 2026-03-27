@@ -112,6 +112,8 @@
       "submitFailed": "Senden fehlgeschlagen",
       "planFieldsRequired": "Tarif, E‑Mail und Reisedatum sind erforderlich.",
       "invalidIccid": "Ungültige ICCID. Verwenden Sie 18–22 Ziffern von Ihrer SIM‑Karte.",
+      "invalidIccidRelaxed": "Ungültige ICCID. Verwenden Sie 19–20 Ziffern, beginnend mit 89, mit gültiger Prüfziffer.",
+      "iccidPlaceholderRelaxed": "19–20 Ziffern, beginnend mit 89",
       "checkoutFailed": "Checkout konnte nicht gestartet werden.",
       "missingCheckoutUrl": "Checkout‑URL fehlt.",
       "loadPlansFailed": "Tarife konnten nicht geladen werden. Bitte aktualisieren.",

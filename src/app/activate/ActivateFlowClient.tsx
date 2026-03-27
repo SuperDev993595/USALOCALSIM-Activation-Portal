@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslations } from "next-intl";
+import { clientIccidPrevalidate } from "@/lib/iccid-validation";
 
 type Plan = {
   id: string;
@@ -24,8 +25,6 @@ type VoucherPlan = {
 type Flow = "voucher" | "plan";
 type VoucherKind = "sim" | "esim";
 
-const ICCID_REGEX = /^\d{18,22}$/;
-
 export function ActivateFlowClient({ flow }: { flow: Flow }) {
   const t = useTranslations("activate");
   const tf = useTranslations("activate.flow");
@@ -44,6 +43,20 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
   const [validatedForCode, setValidatedForCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  /** When true, ICCID must match master-list rules on the server; when false, relaxed 89… Luhn pattern. */
+  const [iccidStrictPolicy, setIccidStrictPolicy] = useState(true);
+
+  useEffect(() => {
+    if (flow !== "plan") return;
+    void fetch("/api/iccid-validation-policy")
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && typeof data.strictDatabaseCheck === "boolean") {
+          setIccidStrictPolicy(data.strictDatabaseCheck);
+        }
+      })
+      .catch(() => {});
+  }, [flow]);
 
   useEffect(() => {
     if (flow !== "plan") return;
@@ -143,8 +156,8 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       return;
     }
     const iccidNorm = iccid.trim().replace(/\s/g, "");
-    if (iccidNorm && !ICCID_REGEX.test(iccidNorm)) {
-      setError(tf("invalidIccid"));
+    if (iccidNorm && !clientIccidPrevalidate(iccidNorm, iccidStrictPolicy)) {
+      setError(iccidStrictPolicy ? tf("invalidIccid") : tf("invalidIccidRelaxed"));
       return;
     }
     setLoading(true);
@@ -323,7 +336,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
-                    placeholder={tf("iccidPlaceholder")}
+                    placeholder={iccidStrictPolicy ? tf("iccidPlaceholder") : tf("iccidPlaceholderRelaxed")}
                     value={iccid}
                     onChange={(e) => setIccid(e.target.value)}
                     className="ui-input font-mono text-sm"

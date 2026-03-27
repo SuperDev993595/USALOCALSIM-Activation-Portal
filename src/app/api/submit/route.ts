@@ -4,8 +4,7 @@ import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { getRequestClientMeta } from "@/lib/request-meta";
 import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
-
-const ICCID_REGEX = /^\d{18,22}$/;
+import { assertCustomerIccidAccepted } from "@/lib/iccid-validation";
 
 const bodySchema = z
   .object({
@@ -22,10 +21,6 @@ const bodySchema = z
     const raw = data.iccid?.trim().replace(/\s/g, "") ?? "";
     if (!raw) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ICCID required for combo activation", path: ["iccid"] });
-      return;
-    }
-    if (!ICCID_REGEX.test(raw)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid ICCID", path: ["iccid"] });
     }
   });
 
@@ -65,6 +60,13 @@ export async function POST(req: Request) {
 
   const comboIccid =
     body.scenario === "combo" ? normalizeIccid(body.iccid ?? "") : null;
+  if (body.scenario === "combo" && comboIccid) {
+    const iccidGate = await assertCustomerIccidAccepted(comboIccid);
+    if (!iccidGate.ok) {
+      await recordFailedAttempt(key);
+      return NextResponse.json({ error: iccidGate.error }, { status: 400 });
+    }
+  }
   const travelDate = new Date(body.travelDate);
   if (Number.isNaN(travelDate.getTime())) {
     await recordFailedAttempt(key);

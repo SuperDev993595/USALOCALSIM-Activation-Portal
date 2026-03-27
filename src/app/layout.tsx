@@ -10,22 +10,14 @@ import en from "@/i18n/messages/en.json";
 import fr from "@/i18n/messages/fr.json";
 import de from "@/i18n/messages/de.json";
 import pt from "@/i18n/messages/pt.json";
-import ja from "@/i18n/messages/ja.json";
 import nl from "@/i18n/messages/nl.json";
-import zh from "@/i18n/messages/zh.json";
-import es from "@/i18n/messages/es.json";
-import hi from "@/i18n/messages/hi.json";
 
 const messagesMap: Record<Locale, AbstractIntlMessages> = {
   en: en as AbstractIntlMessages,
   fr: fr as AbstractIntlMessages,
   de: de as AbstractIntlMessages,
   pt: pt as AbstractIntlMessages,
-  ja: ja as AbstractIntlMessages,
   nl: nl as AbstractIntlMessages,
-  zh: zh as AbstractIntlMessages,
-  es: es as AbstractIntlMessages,
-  hi: hi as AbstractIntlMessages,
 };
 
 const inter = Inter({

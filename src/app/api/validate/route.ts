@@ -4,8 +4,7 @@ import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { iccidHasExistingActivation, isIccidOwnedByEmail, normalizeIccid } from "@/lib/activation-dedupe";
 import { getSimHardwareCostCentsForMarket } from "@/lib/sim-cost";
-
-const ICCID_REGEX = /^\d{18,22}$/;
+import { assertCustomerIccidAccepted } from "@/lib/iccid-validation";
 
 const querySchema = z.object({
   iccid: z.string().optional().transform((s) => s?.trim().replace(/\s/g, "") ?? ""),
@@ -85,12 +84,12 @@ export async function GET(req: Request) {
     );
   }
 
-  if (hasIccid && !ICCID_REGEX.test(iccid)) {
-    await recordFailedAttempt(key);
-    return NextResponse.json(
-      { error: "Invalid ICCID. Use 18–22 digits from your SIM card." },
-      { status: 400 }
-    );
+  if (hasIccid) {
+    const iccidGate = await assertCustomerIccidAccepted(iccid);
+    if (!iccidGate.ok) {
+      await recordFailedAttempt(key);
+      return NextResponse.json({ error: iccidGate.error }, { status: 400 });
+    }
   }
 
   // Combo (ICCID + voucher): ICCID must not already be used.

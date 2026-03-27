@@ -144,3 +144,16 @@ model RateLimitBlock {
   createdAt    DateTime @default(now())
   @@index([key, blockedUntil])
 }
+
+// Single-row config: strict ON = ICCID must exist in IccidWhitelist; OFF = Luhn pattern fallback only.
+model IccidValidationConfig {
+  id                  String   @id // fixed "default"
+  strictDatabaseCheck Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
+}
+
+// Master ICCID list (normalized digits). Used when strictDatabaseCheck is true.
+model IccidWhitelist {
+  iccid     String   @id @db.VarChar(32)
+  createdAt DateTime @default(now())
+}
