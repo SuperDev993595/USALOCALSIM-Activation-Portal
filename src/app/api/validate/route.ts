@@ -5,6 +5,7 @@ import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate
 import { iccidHasExistingActivation, isIccidOwnedByEmail, normalizeIccid } from "@/lib/activation-dedupe";
 import { getSimHardwareCostCentsForMarket } from "@/lib/sim-cost";
 import { assertCustomerIccidAccepted } from "@/lib/iccid-validation";
+import { resolveVoucherRedeemLookup } from "@/lib/voucher-redeem-lookup";
 
 const querySchema = z.object({
   iccid: z.string().optional().transform((s) => s?.trim().replace(/\s/g, "") ?? ""),
@@ -13,6 +14,10 @@ const querySchema = z.object({
   market: z.enum(["us", "global"]).optional().default("global"),
   mode: z.enum(["plans"]).optional(),
   hasPartnerSim: z
+    .string()
+    .optional()
+    .transform((s) => s === "1" || s === "true"),
+  clientRedeem: z
     .string()
     .optional()
     .transform((s) => s === "1" || s === "true"),
@@ -36,11 +41,12 @@ export async function GET(req: Request) {
     market: (searchParams.get("market") as "us" | "global" | null) ?? undefined,
     mode: (searchParams.get("mode") as "plans" | null) ?? undefined,
     hasPartnerSim: searchParams.get("hasPartnerSim") ?? undefined,
+    clientRedeem: searchParams.get("clientRedeem") ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
-  const { iccid, voucherCode, email, market, mode, hasPartnerSim } = parsed.data;
+  const { iccid, voucherCode, email, market, mode, hasPartnerSim, clientRedeem } = parsed.data;
 
   const hasIccid = iccid.length > 0;
   const hasVoucher = voucherCode.length > 0;
@@ -121,6 +127,15 @@ export async function GET(req: Request) {
     }
   }
 
+  if (hasVoucher && !hasIccid) {
+    const redeem = await resolveVoucherRedeemLookup(voucherCode, market, clientRedeem);
+    if (!redeem.ok) {
+      if (redeem.recordFailed) await recordFailedAttempt(key);
+      return NextResponse.json(redeem.body, { status: redeem.status });
+    }
+    return NextResponse.json(redeem.body);
+  }
+
   let voucher: {
     id: string;
     status: string;
@@ -136,7 +151,7 @@ export async function GET(req: Request) {
       market: string;
     };
   } | null = null;
-  if (hasVoucher) {
+  if (hasVoucher && hasIccid) {
     voucher = await prisma.voucher.findUnique({
       where: { code: voucherCode },
       include: { plan: true },
@@ -183,21 +198,6 @@ export async function GET(req: Request) {
     return NextResponse.json({
       scenario: "combo",
       iccid,
-      voucherCode,
-      plan: {
-        id: voucher!.plan.id,
-        name: voucher!.plan.name,
-        dataAllowance: voucher!.plan.dataAllowance,
-        durationDays: voucher!.plan.durationDays,
-        priceCents: 0,
-      },
-    });
-  }
-
-  if (hasVoucher && !hasIccid) {
-    const scenario = voucher!.type === "esim" ? "esim_voucher" : "voucher_sim";
-    return NextResponse.json({
-      scenario,
       voucherCode,
       plan: {
         id: voucher!.plan.id,

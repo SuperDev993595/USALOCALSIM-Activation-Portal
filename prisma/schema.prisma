@@ -119,6 +119,10 @@ model ActivationRequest {
   voucherId        String?  @unique
   voucher          Voucher? @relation(fields: [voucherId], references: [id])
   esimQrPayload    String?  @db.Text // LPA/SMDP+ string or QR payload for eSIM delivery email
+  deviceImei                 String?
+  deviceEid                  String?
+  physicalSimNumber          String?
+  deviceDetailsImageDataUrl  String?  @db.LongText
 
   @@index([iccid])
 }

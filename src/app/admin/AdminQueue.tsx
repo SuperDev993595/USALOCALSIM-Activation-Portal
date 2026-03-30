@@ -16,6 +16,10 @@ type Item = {
   hasPartnerSim?: boolean;
   hardwareDeductionCents?: number;
   shippingDeductionCents?: number;
+  deviceImei?: string | null;
+  deviceEid?: string | null;
+  physicalSimNumber?: string | null;
+  deviceDetailsImageDataUrl?: string | null;
   plan: Plan;
 };
 
@@ -161,6 +165,41 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                 </span>
               ) : null}
             </div>
+            {(r.physicalSimNumber || r.deviceEid || r.deviceImei || r.deviceDetailsImageDataUrl) && (
+              <div className="space-y-1 rounded-none border border-slate-200 bg-white p-3 text-xs text-slate-700">
+                <p className="font-semibold uppercase tracking-wide text-slate-800">Customer device / SIM</p>
+                {r.physicalSimNumber ? (
+                  <p>
+                    <span className="font-semibold text-slate-800">SIM / ICCID: </span>
+                    <span className="font-mono break-all">{r.physicalSimNumber}</span>
+                  </p>
+                ) : null}
+                {r.deviceEid ? (
+                  <p>
+                    <span className="font-semibold text-slate-800">EID: </span>
+                    <span className="font-mono break-all">{r.deviceEid}</span>
+                  </p>
+                ) : null}
+                {r.deviceImei ? (
+                  <p>
+                    <span className="font-semibold text-slate-800">IMEI: </span>
+                    <span className="font-mono break-all">{r.deviceImei}</span>
+                  </p>
+                ) : null}
+                {r.deviceDetailsImageDataUrl ? (
+                  <p>
+                    <a
+                      href={r.deviceDetailsImageDataUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-accent underline"
+                    >
+                      Open *#06# / device photo
+                    </a>
+                  </p>
+                ) : null}
+              </div>
+            )}
             {showAdjustments ? (
               <p className="text-xs text-slate-600">
                 <span className="font-semibold text-slate-800">Checkout adjustments: </span>

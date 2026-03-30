@@ -5,6 +5,14 @@ import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate
 import { getRequestClientMeta } from "@/lib/request-meta";
 import { iccidHasExistingActivation, normalizeIccid } from "@/lib/activation-dedupe";
 import { assertCustomerIccidAccepted } from "@/lib/iccid-validation";
+import {
+  normalizeImei,
+  normalizeEid,
+  isValidImei,
+  isValidEid,
+  isValidPhysicalSimPrintedNumber,
+  isValidOptionalImageDataUrl,
+} from "@/lib/device-identifiers";
 
 const bodySchema = z
   .object({
@@ -15,12 +23,79 @@ const bodySchema = z
     planId: z.string().min(1),
     travelDate: z.string().min(1),
     hasPartnerSim: z.boolean().optional(),
+    deviceImei: z.string().optional(),
+    deviceEid: z.string().optional(),
+    physicalSimNumber: z.string().optional(),
+    deviceDetailsImageDataUrl: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.scenario !== "combo") return;
-    const raw = data.iccid?.trim().replace(/\s/g, "") ?? "";
-    if (!raw) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ICCID required for combo activation", path: ["iccid"] });
+    if (data.scenario === "combo") {
+      const raw = data.iccid?.trim().replace(/\s/g, "") ?? "";
+      if (!raw) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ICCID required for combo activation", path: ["iccid"] });
+      }
+      return;
+    }
+
+    const img = data.deviceDetailsImageDataUrl?.trim() ?? "";
+    if (img && !isValidOptionalImageDataUrl(img)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Device photo is too large or invalid. Use a JPEG or PNG under about 300 KB, or clear it and type IMEI/EID.",
+        path: ["deviceDetailsImageDataUrl"],
+      });
+    }
+
+    const imeiRaw = data.deviceImei?.trim() ?? "";
+    if (!imeiRaw) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "IMEI is required (dial *#06# on your phone or use device settings).",
+        path: ["deviceImei"],
+      });
+      return;
+    }
+    if (!isValidImei(normalizeImei(imeiRaw))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "IMEI must be 14–17 digits; 15-digit IMEIs are check-verified.",
+        path: ["deviceImei"],
+      });
+    }
+
+    if (data.scenario === "voucher_sim") {
+      const simRaw = data.physicalSimNumber?.trim() ?? "";
+      if (!simRaw) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "SIM card number is required (digits on the card, typically starting with 8901).",
+          path: ["physicalSimNumber"],
+        });
+      } else if (!isValidPhysicalSimPrintedNumber(simRaw)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "SIM number must be 18–22 digits starting with 8901 with a valid check digit when 19–20 digits.",
+          path: ["physicalSimNumber"],
+        });
+      }
+    }
+
+    if (data.scenario === "esim_voucher") {
+      const eidRaw = data.deviceEid?.trim() ?? "";
+      if (!eidRaw) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "EID is required for eSIM (often shown with IMEI after *#06#).",
+          path: ["deviceEid"],
+        });
+      } else if (!isValidEid(normalizeEid(eidRaw))) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "EID must be 16–32 hexadecimal characters.",
+          path: ["deviceEid"],
+        });
+      }
     }
   });
 
@@ -37,8 +112,12 @@ export async function POST(req: Request) {
   let body: z.infer<typeof bodySchema>;
   try {
     body = bodySchema.parse(await req.json());
-  } catch {
+  } catch (e) {
     await recordFailedAttempt(key);
+    if (e instanceof z.ZodError) {
+      const msg = e.issues[0]?.message ?? "Invalid request body";
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
@@ -79,6 +158,16 @@ export async function POST(req: Request) {
       ? `${body.email} · ICCID ${comboIccid}`
       : body.email;
 
+  const normalizedDeviceImei =
+    body.scenario === "combo" ? null : normalizeImei(body.deviceImei?.trim() ?? "");
+  const normalizedDeviceEid =
+    body.scenario === "esim_voucher" ? normalizeEid(body.deviceEid?.trim() ?? "") : null;
+  const normalizedPhysicalSim =
+    body.scenario === "voucher_sim" ? normalizeIccid(body.physicalSimNumber?.trim() ?? "") : null;
+  const imageTrim = body.deviceDetailsImageDataUrl?.trim() ?? "";
+  const deviceImage =
+    body.scenario !== "combo" && imageTrim && isValidOptionalImageDataUrl(imageTrim) ? imageTrim : null;
+
   let activationRequest: { id: string };
   try {
     activationRequest = await prisma.$transaction(async (tx) => {
@@ -113,6 +202,10 @@ export async function POST(req: Request) {
           status: "scheduled",
           travelDate,
           hasPartnerSim: body.hasPartnerSim ?? false,
+          deviceImei: normalizedDeviceImei,
+          deviceEid: normalizedDeviceEid,
+          physicalSimNumber: normalizedPhysicalSim,
+          deviceDetailsImageDataUrl: deviceImage,
         },
       });
     });
@@ -147,6 +240,10 @@ export async function POST(req: Request) {
         iccid: comboIccid,
         travelDate: travelDate.toISOString(),
         hasPartnerSim: body.hasPartnerSim ?? false,
+        deviceImei: normalizedDeviceImei,
+        deviceEid: normalizedDeviceEid,
+        physicalSimNumber: normalizedPhysicalSim,
+        deviceImageChars: deviceImage ? deviceImage.length : 0,
         ip,
         userAgent,
       }),
