@@ -77,8 +77,9 @@ export default function RedeemUsPage() {
     const travelDateError = isTravelDateFilled(travelDate) ? "" : "Select a travel date.";
     const imeiError = isValidImei(deviceImei) ? "" : "Enter a valid IMEI.";
     const eidError = isValidEid(deviceEid) ? "" : "Enter a valid EID.";
-    const imageError =
-      !deviceImageDataUrl.trim() || isValidOptionalImageDataUrl(deviceImageDataUrl)
+    const imageError = !deviceImageDataUrl.trim()
+      ? "Photo is required for confirmation."
+      : isValidOptionalImageDataUrl(deviceImageDataUrl)
         ? ""
         : "Image is invalid or too large.";
     return { emailError, travelDateError, imeiError, eidError, imageError };
@@ -163,6 +164,14 @@ export default function RedeemUsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (voucherStage === "ac1") {
+      setError("");
+      void proceedToAc4();
+      return;
+    }
+    if (voucherStage === "ac2" || voucherStage === "ac3") {
+      return;
+    }
     setError("");
     const normalizedCode = voucherCode.trim().toUpperCase();
     if (!plan || validatedForCode !== normalizedCode) {

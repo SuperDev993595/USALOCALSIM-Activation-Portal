@@ -36,7 +36,8 @@ export function isVoucherRedeemReadyForConfirm(params: {
   if (!isValidImei(params.deviceImei)) return false;
 
   const img = params.deviceImageDataUrl.trim();
-  if (img && !isValidOptionalImageDataUrl(img)) return false;
+  if (!img) return false;
+  if (!isValidOptionalImageDataUrl(img)) return false;
 
   if (params.validatedScenario === "voucher_sim") {
     return isValidPhysicalSimPrintedNumber(params.physicalSimNumber);

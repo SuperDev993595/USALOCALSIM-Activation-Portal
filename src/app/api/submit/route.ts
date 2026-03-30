@@ -13,6 +13,7 @@ import {
   isValidPhysicalSimPrintedNumber,
   isValidOptionalImageDataUrl,
 } from "@/lib/device-identifiers";
+import { saveDevicePhotoDataUrlToPublic } from "@/lib/save-device-photo";
 
 const bodySchema = z
   .object({
@@ -38,11 +39,17 @@ const bodySchema = z
     }
 
     const img = data.deviceDetailsImageDataUrl?.trim() ?? "";
-    if (img && !isValidOptionalImageDataUrl(img)) {
+    if (!img) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Device photo is required. Please upload a clear *#06# image.",
+        path: ["deviceDetailsImageDataUrl"],
+      });
+    } else if (!isValidOptionalImageDataUrl(img)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          "Device photo is too large or invalid. Use a JPEG or PNG under about 300 KB, or clear it and type IMEI/EID.",
+          "Device photo is too large or invalid. Use a JPEG or PNG under about 300 KB.",
         path: ["deviceDetailsImageDataUrl"],
       });
     }
@@ -164,9 +171,17 @@ export async function POST(req: Request) {
     body.scenario === "esim_voucher" ? normalizeEid(body.deviceEid?.trim() ?? "") : null;
   const normalizedPhysicalSim =
     body.scenario === "voucher_sim" ? normalizeIccid(body.physicalSimNumber?.trim() ?? "") : null;
-  const imageTrim = body.deviceDetailsImageDataUrl?.trim() ?? "";
-  const deviceImage =
-    body.scenario !== "combo" && imageTrim && isValidOptionalImageDataUrl(imageTrim) ? imageTrim : null;
+
+  let storedDevicePhotoPath: string | null = null;
+  if (body.scenario !== "combo") {
+    const imageTrim = body.deviceDetailsImageDataUrl?.trim() ?? "";
+    const saved = await saveDevicePhotoDataUrlToPublic(imageTrim);
+    if ("error" in saved) {
+      await recordFailedAttempt(key);
+      return NextResponse.json({ error: saved.error }, { status: 400 });
+    }
+    storedDevicePhotoPath = saved.publicPath;
+  }
 
   let activationRequest: { id: string };
   try {
@@ -205,7 +220,7 @@ export async function POST(req: Request) {
           deviceImei: normalizedDeviceImei,
           deviceEid: normalizedDeviceEid,
           physicalSimNumber: normalizedPhysicalSim,
-          deviceDetailsImageDataUrl: deviceImage,
+          deviceDetailsImageDataUrl: storedDevicePhotoPath,
         },
       });
     });
@@ -243,7 +258,7 @@ export async function POST(req: Request) {
         deviceImei: normalizedDeviceImei,
         deviceEid: normalizedDeviceEid,
         physicalSimNumber: normalizedPhysicalSim,
-        deviceImageChars: deviceImage ? deviceImage.length : 0,
+        devicePhotoPath: storedDevicePhotoPath,
         ip,
         userAgent,
       }),

@@ -110,8 +110,9 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
     const emailError = isRedeemEmailValid(email) ? "" : "Enter a valid email address.";
     const travelDateError = isTravelDateFilled(travelDate) ? "" : "Select a travel date.";
     const imeiError = isValidImei(deviceImei) ? "" : "Enter a valid IMEI.";
-    const imageError =
-      !deviceImageDataUrl.trim() || isValidOptionalImageDataUrl(deviceImageDataUrl)
+    const imageError = !deviceImageDataUrl.trim()
+      ? "Photo is required for confirmation."
+      : isValidOptionalImageDataUrl(deviceImageDataUrl)
         ? ""
         : "Image is invalid or too large.";
     const simError =
@@ -235,6 +236,14 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
 
   async function submitVoucher(e: React.FormEvent) {
     e.preventDefault();
+    if (voucherStage === "ac1") {
+      setError("");
+      void proceedVoucherToAc4();
+      return;
+    }
+    if (voucherStage === "ac2" || voucherStage === "ac3") {
+      return;
+    }
     setError("");
     if (!voucherCode.trim() || !email.trim() || !travelDate) {
       setError(tf("voucherFieldsRequired"));

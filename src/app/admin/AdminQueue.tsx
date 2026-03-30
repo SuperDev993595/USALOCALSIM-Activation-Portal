@@ -28,6 +28,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [esimQrPayload, setEsimQrPayload] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<{ type: "warn"; message: string } | null>(null);
+  const [devicePhotoModalItem, setDevicePhotoModalItem] = useState<Item | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/admin/queue");
@@ -53,6 +54,15 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
     const t = setInterval(refresh, 30000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    if (!devicePhotoModalItem) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDevicePhotoModalItem(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [devicePhotoModalItem]);
 
   async function handleComplete(id: string) {
     setNotice(null);
@@ -187,16 +197,28 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                   </p>
                 ) : null}
                 {r.deviceDetailsImageDataUrl ? (
-                  <p>
-                    <a
-                      href={r.deviceDetailsImageDataUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-semibold text-accent underline"
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setDevicePhotoModalItem(r)}
+                      className="block w-full max-w-md cursor-zoom-in rounded-none border border-slate-200 bg-slate-50 p-0 text-left focus:outline-none focus:ring-2 focus:ring-accent"
                     >
-                      Open *#06# / device photo
-                    </a>
-                  </p>
+                      <img
+                        src={r.deviceDetailsImageDataUrl}
+                        alt="Customer *#06# screen (thumbnail)"
+                        className="max-h-40 w-full object-contain"
+                      />
+                    </button>
+                    <p>
+                      <button
+                        type="button"
+                        onClick={() => setDevicePhotoModalItem(r)}
+                        className="font-semibold text-accent underline hover:text-accent/80"
+                      >
+                        Open *#06# / device photo
+                      </button>
+                    </p>
+                  </div>
                 ) : null}
               </div>
             )}
@@ -304,6 +326,92 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
           </div>
           {upcoming.map(renderCard)}
         </section>
+      ) : null}
+
+      {devicePhotoModalItem?.deviceDetailsImageDataUrl ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="device-photo-modal-title">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/65"
+            aria-label="Close modal"
+            onClick={() => setDevicePhotoModalItem(null)}
+          />
+          <div className="relative z-[101] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-none border border-slate-200 bg-white shadow-2xl">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
+              <h2 id="device-photo-modal-title" className="text-sm font-bold uppercase tracking-wide text-slate-900">
+                Device photo &amp; identifiers
+              </h2>
+              <button
+                type="button"
+                onClick={() => setDevicePhotoModalItem(null)}
+                className="rounded-none border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-800 hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <div className="flex justify-center bg-slate-900/5 p-2">
+                <img
+                  src={devicePhotoModalItem.deviceDetailsImageDataUrl}
+                  alt="Customer *#06# screen"
+                  className="max-h-[70vh] w-full max-w-3xl object-contain"
+                />
+              </div>
+              <dl className="mt-5 grid gap-3 text-sm text-slate-800 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</dt>
+                  <dd className="mt-0.5 break-all font-medium">{devicePhotoModalItem.email}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Travel date</dt>
+                  <dd className="mt-0.5 font-medium">
+                    {devicePhotoModalItem.travelDate
+                      ? new Date(devicePhotoModalItem.travelDate).toLocaleDateString()
+                      : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Plan</dt>
+                  <dd className="mt-0.5 font-medium">{devicePhotoModalItem.plan.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scenario</dt>
+                  <dd className="mt-0.5 font-mono text-xs">{devicePhotoModalItem.scenario.replace(/_/g, " ")}</dd>
+                </div>
+                {devicePhotoModalItem.voucherCode ? (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Voucher</dt>
+                    <dd className="mt-0.5 break-all font-mono text-xs">{devicePhotoModalItem.voucherCode}</dd>
+                  </div>
+                ) : null}
+                {devicePhotoModalItem.iccid ? (
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">ICCID (request)</dt>
+                    <dd className="mt-0.5 break-all font-mono text-xs">{devicePhotoModalItem.iccid}</dd>
+                  </div>
+                ) : null}
+                {devicePhotoModalItem.physicalSimNumber ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">SIM / ICCID (customer)</dt>
+                    <dd className="mt-0.5 break-all font-mono text-xs">{devicePhotoModalItem.physicalSimNumber}</dd>
+                  </div>
+                ) : null}
+                {devicePhotoModalItem.deviceEid ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">EID</dt>
+                    <dd className="mt-0.5 break-all font-mono text-xs">{devicePhotoModalItem.deviceEid}</dd>
+                  </div>
+                ) : null}
+                {devicePhotoModalItem.deviceImei ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">IMEI</dt>
+                    <dd className="mt-0.5 break-all font-mono text-xs">{devicePhotoModalItem.deviceImei}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );
