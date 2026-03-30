@@ -116,7 +116,7 @@ export function AdminAppShell({
     <>
       <div className="relative z-10 border-b border-slate-200 px-4 py-5">
         <Link
-          href="/"
+          href="/redeem"
           className="flex items-center gap-3 font-semibold tracking-tight text-slate-900 transition hover:opacity-90"
           onClick={() => setMobileNavOpen(false)}
         >
@@ -228,7 +228,7 @@ export function AdminAppShell({
             </span>
           </span>
           <Link
-            href="/"
+            href="/redeem"
             className="btn-secondary ml-auto h-9 shrink-0 rounded-none px-3 py-0 text-xs font-semibold"
           >
             View site

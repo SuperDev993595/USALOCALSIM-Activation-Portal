@@ -125,7 +125,7 @@ export function ActivateSuccessContent() {
             </div>
             <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">{t("title")}</h1>
             <p className="mt-4 leading-relaxed text-muted">{t("message")}</p>
-            <Link href="/" className="btn-primary mt-8 inline-block min-w-[200px]">
+            <Link href="/redeem" className="btn-primary mt-8 inline-block min-w-[200px]">
               {t("backToActivation")}
             </Link>
           </div>
@@ -201,7 +201,7 @@ export function ActivateSuccessContent() {
             </div>
           )}
 
-          <Link href="/" className="btn-primary mt-8 inline-block min-w-[200px]">
+          <Link href="/redeem" className="btn-primary mt-8 inline-block min-w-[200px]">
             {t("backToActivation")}
           </Link>
         </div>

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 type HeaderLocale = "en" | "nl" | "fr" | "de" | "pt";
@@ -16,9 +15,6 @@ const languageOptions = [
 ] as const;
 
 export function SiteHeader() {
-  const pathname = usePathname() ?? "";
-  const searchParams = useSearchParams();
-  const flow = searchParams.get("flow");
   const locale = useLocale() as HeaderLocale;
   const th = useTranslations("header");
   const [openLangMenu, setOpenLangMenu] = useState(false);
@@ -30,20 +26,6 @@ export function SiteHeader() {
   }));
   const selectedLanguage =
     localizedLanguageOptions.find((o) => o.locale === locale) ?? localizedLanguageOptions[0];
-
-  const nav = [
-    { href: "/", label: th("navHome"), match: (p: string, f: string | null) => p === "/" && !f },
-    {
-      href: "/redeem",
-      label: th("navRedeem"),
-      match: (p: string) => p.startsWith("/redeem"),
-    },
-    {
-      href: "/buy-plan",
-      label: th("navBuyPlan"),
-      match: (p: string) => p.startsWith("/buy-plan"),
-    },
-  ];
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -102,32 +84,6 @@ export function SiteHeader() {
               />
             </span>
           </Link>
-
-          <nav className="hidden items-center font-roboto text-[18px] font-normal text-slate-800 md:flex">
-            {nav.map((item, idx) => {
-              const active = item.match(pathname, flow);
-              return (
-                <div key={item.href} className="flex items-center">
-                  <Link
-                    href={item.href}
-                    className={
-                      (active ? "text-[#ff1236] " : "text-[#2f2f2f] ") +
-                      "relative px-4 py-2.5 leading-none transition hover:text-[#ff1236]"
-                    }
-                  >
-                    <span>{item.label}</span>
-                    {active ? (
-                      <span
-                        className="pointer-events-none absolute left-1/2 top-[calc(100%+1px)] h-[4px] w-[48px] -translate-x-1/2 bg-[#ff1236]"
-                        aria-hidden
-                      />
-                    ) : null}
-                  </Link>
-                  {idx < nav.length - 1 ? <span className="px-2 text-[20px] leading-none text-[#5a5a5a]">|</span> : null}
-                </div>
-              );
-            })}
-          </nav>
 
           <div className="flex items-center gap-2">
             <div className="relative" ref={langMenuRef}>

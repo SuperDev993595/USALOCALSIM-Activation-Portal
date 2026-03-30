@@ -378,7 +378,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
           </div>
 
           <p className="mt-6 text-center">
-            <Link href="/" className="link-accent text-sm">{t("backToHome")}</Link>
+            <Link href="/redeem" className="link-accent text-sm">{t("backToHome")}</Link>
           </p>
         </div>
       </main>

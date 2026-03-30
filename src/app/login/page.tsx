@@ -93,7 +93,7 @@ export default function LoginPage() {
             </button>
           </form>
           <p className="mt-4 text-center">
-            <Link href="/" className="link-accent text-sm">
+            <Link href="/redeem" className="link-accent text-sm">
               ← Back to activation
             </Link>
           </p>

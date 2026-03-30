@@ -170,7 +170,7 @@ export default function RedeemUsPage() {
             </Link>
           </p>
           <p className="mt-2 text-center">
-            <Link href="/" className="link-accent text-sm">
+            <Link href="/redeem" className="link-accent text-sm">
               {t("backToHome")}
             </Link>
           </p>
