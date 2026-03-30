@@ -138,7 +138,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
         return;
       }
       router.push(
-        `/activate/success?scheduled=1&travelDate=${encodeURIComponent(travelDate)}&request_id=${encodeURIComponent(
+        `/redeem/success?scheduled=1&travelDate=${encodeURIComponent(travelDate)}&request_id=${encodeURIComponent(
           data.requestId
         )}`
       );

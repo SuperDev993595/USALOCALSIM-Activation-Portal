@@ -1,0 +1,16 @@
+import { Suspense } from "react";
+import { ActivateSuccessContent } from "@/components/ActivateSuccessContent";
+
+export default function RedeemSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="public-site public-main flex min-h-screen flex-col items-center justify-center px-6 py-16">
+          <p className="text-slate-600">…</p>
+        </div>
+      }
+    >
+      <ActivateSuccessContent />
+    </Suspense>
+  );
+}

@@ -1,5 +1,5 @@
-import { ActivateFlowClient } from "../ActivateFlowClient";
+import { redirect } from "next/navigation";
 
-export default function ActivateBuyPlanPage() {
-  return <ActivateFlowClient flow="plan" />;
+export default function LegacyActivateBuyPlanPage() {
+  redirect("/buy-plan");
 }

@@ -1,5 +1,5 @@
-import { ActivateFlowClient } from "../ActivateFlowClient";
+import { redirect } from "next/navigation";
 
-export default function ActivateRedeemPage() {
-  return <ActivateFlowClient flow="voucher" />;
+export default function LegacyActivateRedeemPage() {
+  redirect("/redeem");
 }

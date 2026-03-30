@@ -91,8 +91,8 @@ export async function POST(req: Request) {
         quantity: 1,
       },
     ],
-    success_url: `${appUrl}/activate/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/activate`,
+    success_url: `${appUrl}/buy-plan/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${appUrl}/buy-plan`,
     metadata: {
       planId: body.planId,
       scenario: "sim_only",

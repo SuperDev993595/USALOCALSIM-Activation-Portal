@@ -1,16 +1,25 @@
-import { Suspense } from "react";
-import { ActivateSuccessContent } from "./ActivateSuccessContent";
+import { redirect } from "next/navigation";
 
-export default function ActivateSuccessPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="public-site public-main flex min-h-screen flex-col items-center justify-center px-6 py-16">
-          <p className="text-slate-600">…</p>
-        </div>
-      }
-    >
-      <ActivateSuccessContent />
-    </Suspense>
-  );
+type Props = {
+  searchParams: Record<string, string | string[] | undefined>;
+};
+
+function buildQueryString(searchParams: Props["searchParams"]) {
+  const q = new URLSearchParams();
+  for (const [key, val] of Object.entries(searchParams)) {
+    if (val == null) continue;
+    if (Array.isArray(val)) {
+      for (const v of val) q.append(key, v);
+    } else {
+      q.set(key, val);
+    }
+  }
+  return q.toString();
+}
+
+export default function LegacyActivateSuccessPage({ searchParams }: Props) {
+  const qs = buildQueryString(searchParams);
+  const params = new URLSearchParams(qs);
+  const target = params.get("session_id") ? "/buy-plan/success" : "/redeem/success";
+  redirect(qs ? `${target}?${qs}` : target);
 }

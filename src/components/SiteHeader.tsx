@@ -34,14 +34,14 @@ export function SiteHeader() {
   const nav = [
     { href: "/", label: th("navHome"), match: (p: string, f: string | null) => p === "/" && !f },
     {
-      href: "/activate/redeem",
+      href: "/redeem",
       label: th("navRedeem"),
-      match: (p: string) => p.startsWith("/activate/redeem"),
+      match: (p: string) => p.startsWith("/redeem"),
     },
     {
-      href: "/activate/buy-plan",
+      href: "/buy-plan",
       label: th("navBuyPlan"),
-      match: (p: string) => p.startsWith("/activate/buy-plan"),
+      match: (p: string) => p.startsWith("/buy-plan"),
     },
   ];
 

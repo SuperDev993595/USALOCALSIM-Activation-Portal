@@ -22,7 +22,7 @@ export default function HomePage() {
 
         <div className="mt-10 grid w-full max-w-4xl gap-4 md:grid-cols-2">
           <Link
-            href="/activate/redeem"
+            href="/redeem"
             className="ui-card group block rounded-none border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">{t("cardVoucherKicker")}</p>
@@ -32,7 +32,7 @@ export default function HomePage() {
           </Link>
 
           <Link
-            href="/activate/buy-plan"
+            href="/buy-plan"
             className="ui-card group block rounded-none border border-slate-200 p-5 transition hover:border-accent/40 hover:shadow-accent-sm"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">{t("cardPlanKicker")}</p>

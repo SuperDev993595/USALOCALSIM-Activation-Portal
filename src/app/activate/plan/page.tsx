@@ -14,7 +14,7 @@ export default function ActivatePlanPage() {
             The old ICCID plan page is no longer used. Please continue from the new Buy Plan flow.
           </p>
           <p className="mt-6">
-            <Link href="/activate/buy-plan" className="btn-primary inline-block px-6 py-2.5">
+            <Link href="/buy-plan" className="btn-primary inline-block px-6 py-2.5">
               Go to Buy Plan
             </Link>
           </p>

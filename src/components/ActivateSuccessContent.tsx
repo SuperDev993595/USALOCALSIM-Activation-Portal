@@ -58,8 +58,6 @@ export function ActivateSuccessContent() {
           return;
         }
         setData(json);
-        // Stripe: keep polling only until webhook creates the row (processing) or we time out.
-        // Voucher / request_id: row exists immediately — do not wait for admin "active".
         const waitingForStripeRecord =
           Boolean(sessionId) && json.paid && !json.activation;
         const shouldContinue = json.processing || waitingForStripeRecord;
@@ -80,7 +78,6 @@ export function ActivateSuccessContent() {
     };
   }, [sessionId, requestId]);
 
-  // After the main confirmation UI is shown, keep polling while still "scheduled" so admin activation updates the headline without a full-screen loader.
   useEffect(() => {
     if (loading) return;
     const key = sessionId ?? requestId ?? "";
@@ -110,10 +107,10 @@ export function ActivateSuccessContent() {
       }
     }
 
-    const t = window.setTimeout(tick, 5000);
+    const timer = window.setTimeout(tick, 5000);
     return () => {
       cancelled = true;
-      window.clearTimeout(t);
+      window.clearTimeout(timer);
     };
   }, [loading, sessionId, requestId, data?.activation?.status, data?.activation?.id]);
 
