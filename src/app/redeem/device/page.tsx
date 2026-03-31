@@ -21,8 +21,10 @@ export default function RedeemDevicePage() {
   const [deviceImei, setDeviceImei] = useState("");
   const [deviceEid, setDeviceEid] = useState("");
   const [deviceImageDataUrl, setDeviceImageDataUrl] = useState("");
+  const [simCardImageDataUrl, setSimCardImageDataUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sampleLightbox, setSampleLightbox] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
     const d = loadIntlRedeemDraft();
@@ -41,6 +43,15 @@ export default function RedeemDevicePage() {
     setDraft(d);
   }, [router]);
 
+  useEffect(() => {
+    if (!sampleLightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSampleLightbox(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sampleLightbox]);
+
   const redeemReady = useMemo(
     () =>
       Boolean(
@@ -55,23 +66,31 @@ export default function RedeemDevicePage() {
             deviceImei,
             deviceEid,
             deviceImageDataUrl,
+            simCardImageDataUrl,
           })
       ),
-    [draft, deviceImei, deviceEid, deviceImageDataUrl]
+    [draft, deviceImei, deviceEid, deviceImageDataUrl, simCardImageDataUrl]
   );
 
   const clientErrors = useMemo(() => {
     if (!draft) return null;
     const imeiError = isValidImei(deviceImei) ? "" : "Enter a valid IMEI.";
-    const imageError = !deviceImageDataUrl.trim()
-      ? "Photo is required for confirmation."
-      : isValidOptionalImageDataUrl(deviceImageDataUrl)
-        ? ""
-        : "Image is invalid or too large.";
+    const devicePhotoError =
+      deviceImageDataUrl.trim() && !isValidOptionalImageDataUrl(deviceImageDataUrl)
+        ? "Image is invalid or too large."
+        : "";
+    const simCardPhotoError =
+      draft.scenario === "voucher_sim"
+        ? !simCardImageDataUrl.trim()
+          ? tf("simCardPhotoRequired")
+          : !isValidOptionalImageDataUrl(simCardImageDataUrl)
+            ? "Image is invalid or too large."
+            : ""
+        : "";
     const eidError =
       draft.scenario === "esim_voucher" && !isValidEid(deviceEid) ? "Enter a valid EID." : "";
-    return { imeiError, imageError, eidError };
-  }, [draft, deviceImei, deviceImageDataUrl, deviceEid]);
+    return { imeiError, devicePhotoError, simCardPhotoError, eidError };
+  }, [draft, deviceImei, deviceImageDataUrl, deviceEid, simCardImageDataUrl, tf]);
 
   function onDeviceImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -89,6 +108,26 @@ export default function RedeemDevicePage() {
       }
       setError("");
       setDeviceImageDataUrl(s);
+    };
+    reader.readAsDataURL(f);
+  }
+
+  function onSimCardImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) {
+      setSimCardImageDataUrl("");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const s = typeof reader.result === "string" ? reader.result : "";
+      if (s.length > MAX_DEVICE_IMAGE_DATA_URL_CHARS) {
+        setError(tf("imageTooLarge"));
+        setSimCardImageDataUrl("");
+        return;
+      }
+      setError("");
+      setSimCardImageDataUrl(s);
     };
     reader.readAsDataURL(f);
   }
@@ -115,7 +154,12 @@ export default function RedeemDevicePage() {
           travelDate: draft.travelDate,
           deviceImei: deviceImei.trim(),
           ...(draft.scenario === "esim_voucher" ? { deviceEid: deviceEid.trim() } : {}),
-          ...(deviceImageDataUrl.trim() ? { deviceDetailsImageDataUrl: deviceImageDataUrl.trim() } : {}),
+          ...(draft.scenario === "esim_voucher" && deviceImageDataUrl.trim()
+            ? { deviceDetailsImageDataUrl: deviceImageDataUrl.trim() }
+            : {}),
+          ...(draft.scenario === "voucher_sim" && simCardImageDataUrl.trim()
+            ? { simCardImageDataUrl: simCardImageDataUrl.trim() }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -192,24 +236,94 @@ export default function RedeemDevicePage() {
                 />
                 {clientErrors?.imeiError ? <p className="mt-1 text-xs text-red-600">{clientErrors.imeiError}</p> : null}
               </div>
-              <div>
-                <label htmlFor="device-photo-page" className="ui-label">
-                  {tf("devicePhotoLabel")}
-                </label>
-                <input
-                  id="device-photo-page"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  capture="environment"
-                  onChange={onDeviceImagePick}
-                  className="block w-full text-sm text-slate-600"
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  {draft.scenario === "voucher_sim" ? tf("devicePhotoHintPhysical") : tf("devicePhotoHintEsim")}
-                </p>
-                {deviceImageDataUrl ? <p className="mt-1 text-xs font-medium text-emerald-800">{tf("photoAttached")}</p> : null}
-                {clientErrors?.imageError ? <p className="mt-1 text-xs text-red-600">{clientErrors.imageError}</p> : null}
-              </div>
+              {draft.scenario === "esim_voucher" ? (
+                <div>
+                  <label htmlFor="device-photo-page" className="ui-label">
+                    {tf("devicePhotoLabel")}
+                  </label>
+                  <div className="mb-3 space-y-2 rounded-none border border-slate-200 bg-slate-50/90 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">{tf("photoSampleHeading")}</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSampleLightbox({
+                          src: "/images/imei-screenshot.jpeg",
+                          alt: tf("devicePhotoSampleAlt"),
+                        })
+                      }
+                      className="group block w-full overflow-hidden rounded-none border border-slate-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-accent"
+                      aria-label={tf("photoSampleZoomAria")}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- static public sample */}
+                      <img
+                        src="/images/imei-screenshot.jpeg"
+                        alt=""
+                        className="mx-auto max-h-44 w-full cursor-zoom-in object-contain transition group-hover:opacity-95"
+                      />
+                    </button>
+                    <p className="text-xs text-slate-600">{tf("devicePhotoSampleCaption")}</p>
+                  </div>
+                  <input
+                    id="device-photo-page"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
+                    onChange={onDeviceImagePick}
+                    className="block w-full text-sm text-slate-600"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">{tf("devicePhotoHintEsim")}</p>
+                  {deviceImageDataUrl ? (
+                    <p className="mt-1 text-xs font-medium text-emerald-800">{tf("photoAttached")}</p>
+                  ) : null}
+                  {clientErrors?.devicePhotoError ? (
+                    <p className="mt-1 text-xs text-red-600">{clientErrors.devicePhotoError}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              {draft.scenario === "voucher_sim" ? (
+                <div>
+                  <label htmlFor="sim-card-photo-page" className="ui-label">
+                    {tf("simCardPhotoLabel")}
+                  </label>
+                  <div className="mb-3 space-y-2 rounded-none border border-slate-200 bg-slate-50/90 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">{tf("photoSampleHeading")}</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSampleLightbox({
+                          src: "/images/simcard-screenshot.jpeg",
+                          alt: tf("simCardPhotoSampleAlt"),
+                        })
+                      }
+                      className="group block w-full overflow-hidden rounded-none border border-slate-200 bg-white text-left focus:outline-none focus:ring-2 focus:ring-accent"
+                      aria-label={tf("photoSampleZoomAria")}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element -- static public sample */}
+                      <img
+                        src="/images/simcard-screenshot.jpeg"
+                        alt=""
+                        className="mx-auto max-h-44 w-full cursor-zoom-in object-contain transition group-hover:opacity-95"
+                      />
+                    </button>
+                    <p className="text-xs text-slate-600">{tf("simCardPhotoSampleCaption")}</p>
+                  </div>
+                  <input
+                    id="sim-card-photo-page"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
+                    onChange={onSimCardImagePick}
+                    className="block w-full text-sm text-slate-600"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">{tf("simCardPhotoHint")}</p>
+                  {simCardImageDataUrl ? (
+                    <p className="mt-1 text-xs font-medium text-emerald-800">{tf("simCardPhotoAttached")}</p>
+                  ) : null}
+                  {clientErrors?.simCardPhotoError ? (
+                    <p className="mt-1 text-xs text-red-600">{clientErrors.simCardPhotoError}</p>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="grid grid-cols-2 gap-3">
                 <button type="button" className="btn-secondary w-full" onClick={() => router.push("/redeem/contact")}>
                   ◀ Back
@@ -223,6 +337,47 @@ export default function RedeemDevicePage() {
           </div>
         </div>
       </main>
+
+      {sampleLightbox ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sample-lightbox-title"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/70"
+            aria-label={tf("photoSampleClose")}
+            onClick={() => setSampleLightbox(null)}
+          />
+          <div className="relative z-[201] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-none border border-slate-200 bg-white shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
+              <h2 id="sample-lightbox-title" className="text-sm font-bold uppercase tracking-wide text-slate-900">
+                {tf("photoSampleHeading")}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSampleLightbox(null)}
+                className="rounded-none border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-800 hover:bg-slate-100"
+              >
+                {tf("photoSampleClose")}
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <div className="flex justify-center bg-slate-900/5 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- lightbox from same static asset */}
+                <img
+                  src={sampleLightbox.src}
+                  alt={sampleLightbox.alt}
+                  className="max-h-[85vh] w-full max-w-4xl object-contain"
+                />
+              </div>
+              <p className="mt-4 text-center text-xs text-slate-600">{sampleLightbox.alt}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

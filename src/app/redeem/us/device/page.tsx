@@ -51,6 +51,7 @@ export default function RedeemUsDevicePage() {
             deviceImei,
             deviceEid,
             deviceImageDataUrl,
+            simCardImageDataUrl: "",
           })
       ),
     [draft, deviceImei, deviceEid, deviceImageDataUrl]
@@ -61,11 +62,10 @@ export default function RedeemUsDevicePage() {
     return {
       imei: isValidImei(deviceImei) ? "" : "Enter a valid IMEI.",
       eid: isValidEid(deviceEid) ? "" : "Enter a valid EID.",
-      image: !deviceImageDataUrl.trim()
-        ? "Photo is required for confirmation."
-        : isValidOptionalImageDataUrl(deviceImageDataUrl)
-          ? ""
-          : "Image is invalid or too large.",
+      image:
+        deviceImageDataUrl.trim() && !isValidOptionalImageDataUrl(deviceImageDataUrl)
+          ? "Image is invalid or too large."
+          : "",
     };
   }, [draft, deviceImei, deviceEid, deviceImageDataUrl]);
 

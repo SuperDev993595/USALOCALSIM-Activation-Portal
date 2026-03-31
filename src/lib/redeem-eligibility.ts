@@ -26,7 +26,7 @@ export function isVoucherEmailTravelStepComplete(params: {
   return true;
 }
 
-/** AC5: validated voucher + AC4 fields + device identifiers and photo — confirm redemption allowed. */
+/** AC5: validated voucher + AC4 fields + device identifiers and photos — confirm redemption allowed. */
 export function isVoucherRedeemReadyForConfirm(params: {
   voucherCode: string;
   validatedForCode: string;
@@ -37,6 +37,7 @@ export function isVoucherRedeemReadyForConfirm(params: {
   deviceImei: string;
   deviceEid: string;
   deviceImageDataUrl: string;
+  simCardImageDataUrl: string;
 }): boolean {
   if (!params.voucherValidated || !params.validatedScenario) return false;
   const code = params.voucherCode.trim().toUpperCase();
@@ -45,12 +46,15 @@ export function isVoucherRedeemReadyForConfirm(params: {
   if (!isTravelDateFilled(params.travelDate)) return false;
   if (!isValidImei(params.deviceImei)) return false;
 
-  const img = params.deviceImageDataUrl.trim();
-  if (!img) return false;
-  if (!isValidOptionalImageDataUrl(img)) return false;
+  const deviceImg = params.deviceImageDataUrl.trim();
+  if (deviceImg && !isValidOptionalImageDataUrl(deviceImg)) return false;
 
   if (params.validatedScenario === "voucher_sim") {
+    const simImg = params.simCardImageDataUrl.trim();
+    if (!simImg || !isValidOptionalImageDataUrl(simImg)) return false;
     return true;
   }
-  return isValidEid(params.deviceEid);
+
+  if (!isValidEid(params.deviceEid)) return false;
+  return true;
 }

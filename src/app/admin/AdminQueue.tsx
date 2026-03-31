@@ -20,6 +20,7 @@ type Item = {
   deviceEid?: string | null;
   physicalSimNumber?: string | null;
   deviceDetailsImageDataUrl?: string | null;
+  simCardImageDataUrl?: string | null;
   plan: Plan;
 };
 
@@ -175,7 +176,11 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                 </span>
               ) : null}
             </div>
-            {(r.physicalSimNumber || r.deviceEid || r.deviceImei || r.deviceDetailsImageDataUrl) && (
+            {(r.physicalSimNumber ||
+              r.deviceEid ||
+              r.deviceImei ||
+              r.deviceDetailsImageDataUrl ||
+              r.simCardImageDataUrl) && (
               <div className="space-y-1 rounded-none border border-slate-200 bg-white p-3 text-xs text-slate-700">
                 <p className="font-semibold uppercase tracking-wide text-slate-800">Customer device / SIM</p>
                 {r.physicalSimNumber ? (
@@ -216,6 +221,30 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                         className="font-semibold text-accent underline hover:text-accent/80"
                       >
                         Open *#06# / device photo
+                      </button>
+                    </p>
+                  </div>
+                ) : null}
+                {r.simCardImageDataUrl ? (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setDevicePhotoModalItem(r)}
+                      className="block w-full max-w-md cursor-zoom-in rounded-none border border-slate-200 bg-slate-50 p-0 text-left focus:outline-none focus:ring-2 focus:ring-accent"
+                    >
+                      <img
+                        src={r.simCardImageDataUrl}
+                        alt="Customer SIM card (thumbnail)"
+                        className="max-h-40 w-full object-contain"
+                      />
+                    </button>
+                    <p>
+                      <button
+                        type="button"
+                        onClick={() => setDevicePhotoModalItem(r)}
+                        className="font-semibold text-accent underline hover:text-accent/80"
+                      >
+                        Open SIM card photo
                       </button>
                     </p>
                   </div>
@@ -328,7 +357,8 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
         </section>
       ) : null}
 
-      {devicePhotoModalItem?.deviceDetailsImageDataUrl ? (
+      {devicePhotoModalItem &&
+      (devicePhotoModalItem.deviceDetailsImageDataUrl || devicePhotoModalItem.simCardImageDataUrl) ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="device-photo-modal-title">
           <button
             type="button"
@@ -339,7 +369,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
           <div className="relative z-[101] flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-none border border-slate-200 bg-white shadow-2xl">
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-5">
               <h2 id="device-photo-modal-title" className="text-sm font-bold uppercase tracking-wide text-slate-900">
-                Device photo &amp; identifiers
+                Customer photos &amp; identifiers
               </h2>
               <button
                 type="button"
@@ -349,14 +379,31 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
                 Close
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-              <div className="flex justify-center bg-slate-900/5 p-2">
-                <img
-                  src={devicePhotoModalItem.deviceDetailsImageDataUrl}
-                  alt="Customer *#06# screen"
-                  className="max-h-[70vh] w-full max-w-3xl object-contain"
-                />
-              </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
+              {devicePhotoModalItem.deviceDetailsImageDataUrl ? (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">*#06# / device screen</p>
+                  <div className="flex justify-center bg-slate-900/5 p-2">
+                    <img
+                      src={devicePhotoModalItem.deviceDetailsImageDataUrl}
+                      alt="Customer *#06# screen"
+                      className="max-h-[70vh] w-full max-w-3xl object-contain"
+                    />
+                  </div>
+                </div>
+              ) : null}
+              {devicePhotoModalItem.simCardImageDataUrl ? (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Physical SIM card</p>
+                  <div className="flex justify-center bg-slate-900/5 p-2">
+                    <img
+                      src={devicePhotoModalItem.simCardImageDataUrl}
+                      alt="Customer SIM card"
+                      className="max-h-[70vh] w-full max-w-3xl object-contain"
+                    />
+                  </div>
+                </div>
+              ) : null}
               <dl className="mt-5 grid gap-3 text-sm text-slate-800 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</dt>

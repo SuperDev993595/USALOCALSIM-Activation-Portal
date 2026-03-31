@@ -27,6 +27,7 @@ const bodySchema = z
     deviceEid: z.string().optional(),
     physicalSimNumber: z.string().optional(),
     deviceDetailsImageDataUrl: z.string().optional(),
+    simCardImageDataUrl: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.scenario === "combo") {
@@ -35,22 +36,6 @@ const bodySchema = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ICCID required for combo activation", path: ["iccid"] });
       }
       return;
-    }
-
-    const img = data.deviceDetailsImageDataUrl?.trim() ?? "";
-    if (!img) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Device photo is required. Please upload a clear *#06# image.",
-        path: ["deviceDetailsImageDataUrl"],
-      });
-    } else if (!isValidOptionalImageDataUrl(img)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Device photo is too large or invalid. Use a JPEG or PNG under about 300 KB.",
-        path: ["deviceDetailsImageDataUrl"],
-      });
     }
 
     const imeiRaw = data.deviceImei?.trim() ?? "";
@@ -68,6 +53,7 @@ const bodySchema = z
         message: "IMEI must be 14–17 digits; 15-digit IMEIs are check-verified.",
         path: ["deviceImei"],
       });
+      return;
     }
 
     if (data.scenario === "esim_voucher") {
@@ -85,6 +71,38 @@ const bodySchema = z
           path: ["deviceEid"],
         });
       }
+    }
+
+    const deviceImg = data.deviceDetailsImageDataUrl?.trim() ?? "";
+    const simImg = data.simCardImageDataUrl?.trim() ?? "";
+
+    if (data.scenario === "voucher_sim") {
+      if (!simImg) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "SIM card photo is required. Upload a clear image of the physical SIM card.",
+          path: ["simCardImageDataUrl"],
+        });
+      } else if (!isValidOptionalImageDataUrl(simImg)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "SIM card photo is too large or invalid. Use a JPEG or PNG under about 300 KB.",
+          path: ["simCardImageDataUrl"],
+        });
+      }
+      if (deviceImg && !isValidOptionalImageDataUrl(deviceImg)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Device photo is too large or invalid. Use a JPEG or PNG under about 300 KB.",
+          path: ["deviceDetailsImageDataUrl"],
+        });
+      }
+    } else if (deviceImg && !isValidOptionalImageDataUrl(deviceImg)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Device photo is too large or invalid. Use a JPEG or PNG under about 300 KB.",
+        path: ["deviceDetailsImageDataUrl"],
+      });
     }
   });
 
@@ -160,14 +178,26 @@ export async function POST(req: Request) {
       : null;
 
   let storedDevicePhotoPath: string | null = null;
+  let storedSimCardPhotoPath: string | null = null;
   if (body.scenario !== "combo") {
-    const imageTrim = body.deviceDetailsImageDataUrl?.trim() ?? "";
-    const saved = await saveDevicePhotoDataUrlToPublic(imageTrim);
-    if ("error" in saved) {
-      await recordFailedAttempt(key);
-      return NextResponse.json({ error: saved.error }, { status: 400 });
+    const deviceTrim = body.deviceDetailsImageDataUrl?.trim() ?? "";
+    if (deviceTrim) {
+      const saved = await saveDevicePhotoDataUrlToPublic(deviceTrim);
+      if ("error" in saved) {
+        await recordFailedAttempt(key);
+        return NextResponse.json({ error: saved.error }, { status: 400 });
+      }
+      storedDevicePhotoPath = saved.publicPath;
     }
-    storedDevicePhotoPath = saved.publicPath;
+    if (body.scenario === "voucher_sim") {
+      const simTrim = body.simCardImageDataUrl?.trim() ?? "";
+      const savedSim = await saveDevicePhotoDataUrlToPublic(simTrim);
+      if ("error" in savedSim) {
+        await recordFailedAttempt(key);
+        return NextResponse.json({ error: savedSim.error }, { status: 400 });
+      }
+      storedSimCardPhotoPath = savedSim.publicPath;
+    }
   }
 
   let activationRequest: { id: string };
@@ -208,6 +238,7 @@ export async function POST(req: Request) {
           deviceEid: normalizedDeviceEid,
           physicalSimNumber: normalizedPhysicalSim,
           deviceDetailsImageDataUrl: storedDevicePhotoPath,
+          simCardImageDataUrl: storedSimCardPhotoPath,
         },
       });
     });
@@ -246,6 +277,7 @@ export async function POST(req: Request) {
         deviceEid: normalizedDeviceEid,
         physicalSimNumber: normalizedPhysicalSim,
         devicePhotoPath: storedDevicePhotoPath,
+        simCardPhotoPath: storedSimCardPhotoPath,
         ip,
         userAgent,
       }),

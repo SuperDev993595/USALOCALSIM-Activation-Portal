@@ -123,6 +123,7 @@ model ActivationRequest {
   deviceEid                  String?
   physicalSimNumber          String?
   deviceDetailsImageDataUrl  String?  @db.LongText
+  simCardImageDataUrl        String?  @db.LongText
 
   @@index([iccid])
 }
