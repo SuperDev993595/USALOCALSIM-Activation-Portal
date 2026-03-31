@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SiteHeader } from "@/components/SiteHeader";
 import {
-  MAX_DEVICE_IMAGE_DATA_URL_CHARS,
-  isValidEid,
-  isValidImei,
-  isValidOptionalImageDataUrl,
-} from "@/lib/device-identifiers";
-import { isRedeemEmailValid, isTravelDateFilled, isVoucherRedeemReadyForConfirm } from "@/lib/redeem-eligibility";
+  clearUsRedeemDraft,
+  loadUsRedeemDraft,
+  REDEEM_RETURN_TO_SUMMARY_FLAG_US,
+  saveUsRedeemDraft,
+} from "@/lib/redeem-draft";
 
 const AUTO_VALIDATE_LEN = 10;
 
@@ -27,17 +26,11 @@ export default function RedeemUsPage() {
   const t = useTranslations("activateUs");
   const router = useRouter();
   const [voucherCode, setVoucherCode] = useState("");
-  const [email, setEmail] = useState("");
-  const [travelDate, setTravelDate] = useState("");
   const [plan, setPlan] = useState<PlanPayload | null>(null);
-  const [voucherStage, setVoucherStage] = useState<"ac1" | "ac2" | "ac3" | "ac4">("ac1");
+  const [voucherStage, setVoucherStage] = useState<"ac1" | "ac2" | "ac3">("ac1");
   const [creditCents, setCreditCents] = useState<number | null>(null);
   const [validatedForCode, setValidatedForCode] = useState("");
-  const [deviceImei, setDeviceImei] = useState("");
-  const [deviceEid, setDeviceEid] = useState("");
-  const [deviceImageDataUrl, setDeviceImageDataUrl] = useState("");
   const [validating, setValidating] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const validateSeqRef = useRef(0);
 
@@ -47,43 +40,23 @@ export default function RedeemUsPage() {
       setPlan(null);
       setValidatedForCode("");
       setCreditCents(null);
-      setDeviceImei("");
-      setDeviceEid("");
-      setDeviceImageDataUrl("");
       setVoucherStage("ac1");
+      clearUsRedeemDraft();
     }
   }, [voucherCode, validatedForCode]);
 
-  const usRedeemReady = useMemo(
-    () =>
-      isVoucherRedeemReadyForConfirm({
-        voucherCode,
-        validatedForCode,
-        voucherValidated: Boolean(plan),
-        validatedScenario: plan ? "esim_voucher" : null,
-        email,
-        travelDate,
-        physicalSimNumber: "",
-        deviceImei,
-        deviceEid,
-        deviceImageDataUrl,
-      }),
-    [voucherCode, validatedForCode, plan, email, travelDate, deviceImei, deviceEid, deviceImageDataUrl]
-  );
-
-  const usClientErrors = useMemo(() => {
-    if (voucherStage !== "ac4" || !plan) return null;
-    const emailError = isRedeemEmailValid(email) ? "" : "Enter a valid email address.";
-    const travelDateError = isTravelDateFilled(travelDate) ? "" : "Select a travel date.";
-    const imeiError = isValidImei(deviceImei) ? "" : "Enter a valid IMEI.";
-    const eidError = isValidEid(deviceEid) ? "" : "Enter a valid EID.";
-    const imageError = !deviceImageDataUrl.trim()
-      ? "Photo is required for confirmation."
-      : isValidOptionalImageDataUrl(deviceImageDataUrl)
-        ? ""
-        : "Image is invalid or too large.";
-    return { emailError, travelDateError, imeiError, eidError, imageError };
-  }, [voucherStage, plan, email, travelDate, deviceImei, deviceEid, deviceImageDataUrl]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(REDEEM_RETURN_TO_SUMMARY_FLAG_US) !== "1") return;
+    sessionStorage.removeItem(REDEEM_RETURN_TO_SUMMARY_FLAG_US);
+    const d = loadUsRedeemDraft();
+    if (!d) return;
+    setVoucherCode(d.voucherCode);
+    setPlan(d.plan);
+    setValidatedForCode(d.validatedForCode);
+    setCreditCents(d.creditAmountCents);
+    setVoucherStage("ac3");
+  }, []);
 
   async function runValidate(codeRaw: string, seq?: number): Promise<boolean> {
     setError("");
@@ -102,6 +75,7 @@ export default function RedeemUsPage() {
         setPlan(null);
         setValidatedForCode("");
         setCreditCents(null);
+        clearUsRedeemDraft();
         setError(data.error ?? t("genericError"));
         return false;
       }
@@ -109,15 +83,25 @@ export default function RedeemUsPage() {
         setPlan(null);
         setValidatedForCode("");
         setCreditCents(null);
+        clearUsRedeemDraft();
         setError(t("notUsEsimVoucher"));
         return false;
       }
-      setPlan(data.plan as PlanPayload);
+      const planPayload = data.plan as PlanPayload;
+      const credit = typeof data.credit_amount_cents === "number" ? data.credit_amount_cents : null;
+      setPlan(planPayload);
       setValidatedForCode(code);
-      setCreditCents(typeof data.credit_amount_cents === "number" ? data.credit_amount_cents : null);
+      setCreditCents(credit);
+      saveUsRedeemDraft({
+        voucherCode: code,
+        validatedForCode: code,
+        plan: planPayload,
+        creditAmountCents: credit,
+      });
       return true;
     } catch {
       if (seq != null && seq !== validateSeqRef.current) return false;
+      clearUsRedeemDraft();
       setError(t("genericError"));
       return false;
     } finally {
@@ -133,82 +117,33 @@ export default function RedeemUsPage() {
       void runValidate(code, seq);
     }, 500);
     return () => window.clearTimeout(tid);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- voucherCode only
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- voucherCode only
   }, [voucherCode]);
 
-  async function proceedToAc4() {
+  async function proceedFromStep1() {
     const seq = ++validateSeqRef.current;
     const ok = await runValidate(voucherCode, seq);
     if (ok) setVoucherStage("ac2");
-  }
-
-  function onDeviceImagePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) {
-      setDeviceImageDataUrl("");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const s = typeof reader.result === "string" ? reader.result : "";
-      if (s.length > MAX_DEVICE_IMAGE_DATA_URL_CHARS) {
-        setError(t("imageTooLarge"));
-        setDeviceImageDataUrl("");
-        return;
-      }
-      setError("");
-      setDeviceImageDataUrl(s);
-    };
-    reader.readAsDataURL(f);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (voucherStage === "ac1") {
       setError("");
-      void proceedToAc4();
-      return;
+      void proceedFromStep1();
     }
-    if (voucherStage === "ac2" || voucherStage === "ac3") {
-      return;
-    }
-    setError("");
-    const normalizedCode = voucherCode.trim().toUpperCase();
-    if (!plan || validatedForCode !== normalizedCode) {
-      setError(t("validateFirst"));
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          scenario: "esim_voucher",
-          email: email.trim(),
-          voucherCode: normalizedCode,
-          planId: plan.id,
-          travelDate,
-          deviceImei: deviceImei.trim(),
-          deviceEid: deviceEid.trim(),
-          ...(deviceImageDataUrl.trim() ? { deviceDetailsImageDataUrl: deviceImageDataUrl.trim() } : {}),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : t("genericError"));
-        setLoading(false);
-        return;
-      }
-      router.push(
-        `/redeem/success?scheduled=1&travelDate=${encodeURIComponent(travelDate)}&request_id=${encodeURIComponent(
-          data.requestId
-        )}`
-      );
-    } catch {
-      setError(t("genericError"));
-    }
-    setLoading(false);
+  }
+
+  function goToUsContact() {
+    if (!plan) return;
+    const code = voucherCode.trim().toUpperCase();
+    saveUsRedeemDraft({
+      voucherCode: code,
+      validatedForCode,
+      plan,
+      creditAmountCents: creditCents,
+    });
+    router.push("/redeem/us/contact");
   }
 
   return (
@@ -223,7 +158,7 @@ export default function RedeemUsPage() {
             <form className="space-y-4" onSubmit={handleSubmit}>
               {voucherStage === "ac1" ? (
                 <>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 1 of 4</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 1 of 5</p>
                   <p className="text-xs text-slate-600">{t("autoRecognize")}</p>
                   <div>
                     <label htmlFor="voucher" className="ui-label">
@@ -244,8 +179,8 @@ export default function RedeemUsPage() {
                   <div className="flex justify-end">
                     <button
                       type="button"
-                      onClick={() => void proceedToAc4()}
-                      disabled={validating || loading || !voucherCode.trim()}
+                      onClick={() => void proceedFromStep1()}
+                      disabled={validating || !voucherCode.trim()}
                       className="btn-secondary min-w-36"
                     >
                       Redeem ➜
@@ -255,7 +190,7 @@ export default function RedeemUsPage() {
               ) : null}
               {voucherStage === "ac2" && plan ? (
                 <>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 2 of 4</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 2 of 5</p>
                   <div className="space-y-2 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-lg" aria-hidden>
@@ -266,10 +201,10 @@ export default function RedeemUsPage() {
                     <p className="text-slate-600">Voucher type recognized automatically from metadata.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac1")} disabled={loading || validating}>
+                    <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac1")} disabled={validating}>
                       ◀ Back
                     </button>
-                    <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac3")} disabled={loading || validating}>
+                    <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac3")} disabled={validating}>
                       Next ➜
                     </button>
                   </div>
@@ -277,134 +212,29 @@ export default function RedeemUsPage() {
               ) : null}
               {voucherStage === "ac3" && plan ? (
                 <>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 3 of 4</p>
-                <div className="space-y-2 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg" aria-hidden>
-                      📶
-                    </span>
-                    <p className="font-semibold text-slate-900">{t("esimProduct")}</p>
-                  </div>
-                  <p className="font-semibold text-slate-900">{plan.name}</p>
-                  <p className="text-slate-600">
-                    {t("faceValue")}:{" "}
-                    {creditCents != null ? (
-                      <span className="font-semibold">${(creditCents / 100).toFixed(2)}</span>
-                    ) : (
-                      "—"
-                    )}
-                  </p>
-                  <p className="text-slate-600">
-                    {t("dataPack")}: {plan.dataAllowance} · {plan.durationDays} {t("days")}
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac2")} disabled={loading || validating}>
-                    ◀ Back
-                  </button>
-                  <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac4")} disabled={loading || validating}>
-                    Next ➜
-                  </button>
-                </div>
-                </>
-              ) : null}
-              {voucherStage === "ac4" && plan ? (
-                <>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 4 of 4</p>
-                  <div className="rounded-none border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-                    <p className="font-semibold text-slate-900">{t("deviceBlockTitle")}</p>
-                    <p className="mt-1">{t("dialHint")}</p>
-                    <p className="mt-1">{t("manualNote")}</p>
-                  </div>
-                  <div>
-                    <label htmlFor="eid" className="ui-label">
-                      {t("eidLabel")}
-                    </label>
-                    <input
-                      id="eid"
-                      type="text"
-                      value={deviceEid}
-                      onChange={(e) => setDeviceEid(e.target.value)}
-                      className="ui-input font-mono text-sm"
-                      autoComplete="off"
-                    />
-                    {usClientErrors?.eidError ? <p className="mt-1 text-xs text-red-600">{usClientErrors.eidError}</p> : null}
-                  </div>
-                  <div>
-                    <label htmlFor="imei" className="ui-label">
-                      {t("imeiLabel")}
-                    </label>
-                    <input
-                      id="imei"
-                      type="text"
-                      inputMode="numeric"
-                      value={deviceImei}
-                      onChange={(e) => setDeviceImei(e.target.value)}
-                      className="ui-input font-mono text-sm"
-                      autoComplete="off"
-                    />
-                    {usClientErrors?.imeiError ? <p className="mt-1 text-xs text-red-600">{usClientErrors.imeiError}</p> : null}
-                  </div>
-                  <div>
-                    <label htmlFor="photo" className="ui-label">
-                      {t("photoLabel")}
-                    </label>
-                    <input
-                      id="photo"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      capture="environment"
-                      onChange={onDeviceImagePick}
-                      className="block w-full text-sm text-slate-600"
-                    />
-                    <p className="mt-1 text-xs text-slate-500">{t("photoHint")}</p>
-                    {deviceImageDataUrl ? <p className="mt-1 text-xs text-emerald-800">{t("photoOk")}</p> : null}
-                    {usClientErrors?.imageError ? <p className="mt-1 text-xs text-red-600">{usClientErrors.imageError}</p> : null}
-                  </div>
-                </>
-              ) : null}
-              {voucherStage === "ac4" && plan ? (
-                <>
-                  <p className="text-sm text-muted">{t("esimEmailHint")}</p>
-                  <div>
-                    <label htmlFor="email" className="ui-label">
-                      {t("emailLabel")}
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="ui-input"
-                    />
-                    {usClientErrors?.emailError ? <p className="mt-1 text-xs text-red-600">{usClientErrors.emailError}</p> : null}
-                  </div>
-                  <div>
-                    <label htmlFor="travelDate" className="ui-label">
-                      {t("travelDate")}
-                    </label>
-                    <input
-                      id="travelDate"
-                      type="date"
-                      required
-                      value={travelDate}
-                      onChange={(e) => setTravelDate(e.target.value)}
-                      className="ui-input"
-                    />
-                    {usClientErrors?.travelDateError ? <p className="mt-1 text-xs text-red-600">{usClientErrors.travelDateError}</p> : null}
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 3 of 5</p>
+                  <div className="space-y-2 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg" aria-hidden>
+                        📶
+                      </span>
+                      <p className="font-semibold text-slate-900">{t("esimProduct")}</p>
+                    </div>
+                    <p className="font-semibold text-slate-900">{plan.name}</p>
+                    <p className="text-slate-600">
+                      {t("faceValue")}:{" "}
+                      {creditCents != null ? <span className="font-semibold">${(creditCents / 100).toFixed(2)}</span> : "—"}
+                    </p>
+                    <p className="text-slate-600">
+                      {t("dataPack")}: {plan.dataAllowance} · {plan.durationDays} {t("days")}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      className="btn-secondary w-full"
-                      onClick={() => setVoucherStage("ac3")}
-                      disabled={loading || validating}
-                    >
+                    <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac2")} disabled={validating}>
                       ◀ Back
                     </button>
-                    <button type="submit" disabled={loading || validating || !usRedeemReady} className="btn-primary w-full">
-                      {loading ? t("submitting") : `${t("confirm")} ▶`}
+                    <button type="button" className="btn-secondary w-full" onClick={goToUsContact} disabled={validating}>
+                      Next ➜
                     </button>
                   </div>
                 </>

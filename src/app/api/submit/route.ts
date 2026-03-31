@@ -10,7 +10,6 @@ import {
   normalizeEid,
   isValidImei,
   isValidEid,
-  isValidPhysicalSimPrintedNumber,
   isValidOptionalImageDataUrl,
 } from "@/lib/device-identifiers";
 import { saveDevicePhotoDataUrlToPublic } from "@/lib/save-device-photo";
@@ -69,23 +68,6 @@ const bodySchema = z
         message: "IMEI must be 14–17 digits; 15-digit IMEIs are check-verified.",
         path: ["deviceImei"],
       });
-    }
-
-    if (data.scenario === "voucher_sim") {
-      const simRaw = data.physicalSimNumber?.trim() ?? "";
-      if (!simRaw) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "SIM card number is required (digits on the card, typically starting with 8901).",
-          path: ["physicalSimNumber"],
-        });
-      } else if (!isValidPhysicalSimPrintedNumber(simRaw)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "SIM number must be 18–22 digits starting with 8901 with a valid check digit when 19–20 digits.",
-          path: ["physicalSimNumber"],
-        });
-      }
     }
 
     if (data.scenario === "esim_voucher") {
@@ -170,7 +152,12 @@ export async function POST(req: Request) {
   const normalizedDeviceEid =
     body.scenario === "esim_voucher" ? normalizeEid(body.deviceEid?.trim() ?? "") : null;
   const normalizedPhysicalSim =
-    body.scenario === "voucher_sim" ? normalizeIccid(body.physicalSimNumber?.trim() ?? "") : null;
+    body.scenario === "voucher_sim"
+      ? (() => {
+          const n = normalizeIccid(body.physicalSimNumber?.trim() ?? "");
+          return n || null;
+        })()
+      : null;
 
   let storedDevicePhotoPath: string | null = null;
   if (body.scenario !== "combo") {

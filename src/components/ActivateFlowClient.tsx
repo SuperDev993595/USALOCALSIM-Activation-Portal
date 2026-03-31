@@ -6,13 +6,11 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslations } from "next-intl";
 import { clientIccidPrevalidate } from "@/lib/iccid-validation";
 import {
-  MAX_DEVICE_IMAGE_DATA_URL_CHARS,
-  isValidEid,
-  isValidImei,
-  isValidOptionalImageDataUrl,
-  isValidPhysicalSimPrintedNumber,
-} from "@/lib/device-identifiers";
-import { isRedeemEmailValid, isTravelDateFilled, isVoucherRedeemReadyForConfirm } from "@/lib/redeem-eligibility";
+  clearIntlRedeemDraft,
+  loadIntlRedeemDraft,
+  REDEEM_RETURN_TO_SUMMARY_FLAG_INTL,
+  saveIntlRedeemDraft,
+} from "@/lib/redeem-draft";
 
 type Plan = {
   id: string;
@@ -46,15 +44,11 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
   const [voucherPlan, setVoucherPlan] = useState<VoucherPlan | null>(null);
-  const [voucherStage, setVoucherStage] = useState<"ac1" | "ac2" | "ac3" | "ac4">("ac1");
+  const [voucherStage, setVoucherStage] = useState<"ac1" | "ac2" | "ac3">("ac1");
   const [validatedScenario, setValidatedScenario] = useState<"voucher_sim" | "esim_voucher" | null>(null);
   const [validatedForCode, setValidatedForCode] = useState("");
   const [creditAmountCents, setCreditAmountCents] = useState<number | null>(null);
   const [productType, setProductType] = useState<"physical_sim" | "esim" | null>(null);
-  const [physicalSimNumber, setPhysicalSimNumber] = useState("");
-  const [deviceImei, setDeviceImei] = useState("");
-  const [deviceEid, setDeviceEid] = useState("");
-  const [deviceImageDataUrl, setDeviceImageDataUrl] = useState("");
   const [validating, setValidating] = useState(false);
   const validateSeqRef = useRef(0);
   const [loading, setLoading] = useState(false);
@@ -73,56 +67,6 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       })
       .catch(() => {});
   }, [flow]);
-
-  const voucherRedeemReady = useMemo(
-    () =>
-      flow === "voucher"
-        ? isVoucherRedeemReadyForConfirm({
-            voucherCode,
-            validatedForCode,
-            voucherValidated: Boolean(voucherPlan && validatedScenario),
-            validatedScenario,
-            email,
-            travelDate,
-            physicalSimNumber,
-            deviceImei,
-            deviceEid,
-            deviceImageDataUrl,
-          })
-        : false,
-    [
-      flow,
-      voucherCode,
-      validatedForCode,
-      voucherPlan,
-      validatedScenario,
-      email,
-      travelDate,
-      physicalSimNumber,
-      deviceImei,
-      deviceEid,
-      deviceImageDataUrl,
-    ]
-  );
-
-  const voucherClientErrors = useMemo(() => {
-    if (voucherStage !== "ac4" || !validatedScenario) return null;
-    const emailError = isRedeemEmailValid(email) ? "" : "Enter a valid email address.";
-    const travelDateError = isTravelDateFilled(travelDate) ? "" : "Select a travel date.";
-    const imeiError = isValidImei(deviceImei) ? "" : "Enter a valid IMEI.";
-    const imageError = !deviceImageDataUrl.trim()
-      ? "Photo is required for confirmation."
-      : isValidOptionalImageDataUrl(deviceImageDataUrl)
-        ? ""
-        : "Image is invalid or too large.";
-    const simError =
-      validatedScenario === "voucher_sim" && !isValidPhysicalSimPrintedNumber(physicalSimNumber)
-        ? "Enter a valid SIM number starting with 8901."
-        : "";
-    const eidError =
-      validatedScenario === "esim_voucher" && !isValidEid(deviceEid) ? "Enter a valid EID." : "";
-    return { emailError, travelDateError, imeiError, imageError, simError, eidError };
-  }, [voucherStage, validatedScenario, email, travelDate, deviceImei, deviceImageDataUrl, physicalSimNumber, deviceEid]);
 
   useEffect(() => {
     if (flow !== "plan") return;
@@ -143,13 +87,26 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       setValidatedForCode("");
       setCreditAmountCents(null);
       setProductType(null);
-      setPhysicalSimNumber("");
-      setDeviceImei("");
-      setDeviceEid("");
-      setDeviceImageDataUrl("");
       setVoucherStage("ac1");
+      clearIntlRedeemDraft();
     }
   }, [voucherCode, validatedForCode]);
+
+  useEffect(() => {
+    if (flow !== "voucher") return;
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(REDEEM_RETURN_TO_SUMMARY_FLAG_INTL) !== "1") return;
+    sessionStorage.removeItem(REDEEM_RETURN_TO_SUMMARY_FLAG_INTL);
+    const d = loadIntlRedeemDraft();
+    if (!d) return;
+    setVoucherCode(d.voucherCode);
+    setVoucherPlan(d.plan);
+    setValidatedScenario(d.scenario);
+    setValidatedForCode(d.validatedForCode);
+    setCreditAmountCents(d.creditAmountCents);
+    setProductType(d.productType);
+    setVoucherStage("ac3");
+  }, [flow]);
 
   async function runVoucherValidate(codeRaw: string, seq?: number): Promise<boolean> {
     setError("");
@@ -169,6 +126,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
         setValidatedForCode("");
         setCreditAmountCents(null);
         setProductType(null);
+        clearIntlRedeemDraft();
         setError(validData.error ?? tf("validationFailed"));
         return false;
       }
@@ -179,16 +137,25 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
         typeof validData.credit_amount_cents === "number" ? validData.credit_amount_cents : null
       );
       const scen = validData.scenario as string;
-      setProductType(
+      const pt: "physical_sim" | "esim" | null =
         validData.product_type === "esim" || scen === "esim_voucher"
           ? "esim"
           : validData.product_type === "physical_sim" || scen === "voucher_sim"
             ? "physical_sim"
-            : null
-      );
+            : null;
+      setProductType(pt);
+      saveIntlRedeemDraft({
+        voucherCode: code,
+        validatedForCode: code,
+        scenario: validData.scenario as "voucher_sim" | "esim_voucher",
+        plan: validData.plan as VoucherPlan,
+        creditAmountCents: typeof validData.credit_amount_cents === "number" ? validData.credit_amount_cents : null,
+        productType: pt,
+      });
       return true;
     } catch {
       if (seq != null && seq !== validateSeqRef.current) return false;
+      clearIntlRedeemDraft();
       setError(tf("genericError"));
       return false;
     } finally {
@@ -214,26 +181,6 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
     if (ok) setVoucherStage("ac2");
   }
 
-  function onDeviceImagePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) {
-      setDeviceImageDataUrl("");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const s = typeof reader.result === "string" ? reader.result : "";
-      if (s.length > MAX_DEVICE_IMAGE_DATA_URL_CHARS) {
-        setError(tf("imageTooLarge"));
-        setDeviceImageDataUrl("");
-        return;
-      }
-      setError("");
-      setDeviceImageDataUrl(s);
-    };
-    reader.readAsDataURL(f);
-  }
-
   async function submitVoucher(e: React.FormEvent) {
     e.preventDefault();
     if (voucherStage === "ac1") {
@@ -241,52 +188,20 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       void proceedVoucherToAc4();
       return;
     }
-    if (voucherStage === "ac2" || voucherStage === "ac3") {
-      return;
-    }
-    setError("");
-    if (!voucherCode.trim() || !email.trim() || !travelDate) {
-      setError(tf("voucherFieldsRequired"));
-      return;
-    }
-    const normalizedCode = voucherCode.trim().toUpperCase();
-    if (!voucherPlan || !validatedScenario || validatedForCode !== normalizedCode) {
-      setError(tf("validateFirst"));
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          scenario: validatedScenario,
-          email: email.trim(),
-          voucherCode: normalizedCode,
-          planId: voucherPlan.id,
-          travelDate,
-          deviceImei: deviceImei.trim(),
-          ...(validatedScenario === "esim_voucher"
-            ? { deviceEid: deviceEid.trim() }
-            : { physicalSimNumber: physicalSimNumber.trim() }),
-          ...(deviceImageDataUrl.trim() ? { deviceDetailsImageDataUrl: deviceImageDataUrl.trim() } : {}),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? tf("submitFailed"));
-        setLoading(false);
-        return;
-      }
-      router.push(
-        `/redeem/success?scheduled=1&travelDate=${encodeURIComponent(travelDate)}&request_id=${encodeURIComponent(
-          data.requestId
-        )}`
-      );
-    } catch {
-      setError(tf("genericError"));
-    }
-    setLoading(false);
+  }
+
+  function goToRedeemContact() {
+    if (!voucherPlan || !validatedScenario) return;
+    const code = voucherCode.trim().toUpperCase();
+    saveIntlRedeemDraft({
+      voucherCode: code,
+      validatedForCode,
+      scenario: validatedScenario,
+      plan: voucherPlan,
+      creditAmountCents,
+      productType,
+    });
+    router.push("/redeem/contact");
   }
 
   async function submitPaidPlan(e: React.FormEvent) {
@@ -347,7 +262,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
               <form className="space-y-4" onSubmit={submitVoucher}>
                 {voucherStage === "ac1" ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 1 of 4</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 1 of 5</p>
                     <p className="text-xs text-slate-600">{tf("voucherAutoRecognizeHint")}</p>
                     <div>
                       <label htmlFor="voucher" className="ui-label">{tf("voucherCode")}</label>
@@ -376,7 +291,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                 ) : null}
                 {voucherStage === "ac2" && voucherPlan && validatedScenario ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 2 of 4</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 2 of 5</p>
                     <div className="space-y-3 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-lg" aria-hidden>
@@ -404,7 +319,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                 ) : null}
                 {voucherStage === "ac3" && voucherPlan && validatedScenario ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 3 of 4</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 3 of 5</p>
                   <div className="space-y-3 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-lg" aria-hidden>
@@ -439,113 +354,8 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                       <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac2")} disabled={loading || validating}>
                         ◀ Back
                       </button>
-                      <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac4")} disabled={loading || validating}>
+                      <button type="button" className="btn-secondary w-full" onClick={goToRedeemContact} disabled={loading || validating}>
                         Next ➜
-                      </button>
-                    </div>
-                  </>
-                ) : null}
-                {voucherStage === "ac4" && voucherPlan && validatedScenario ? (
-                  <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 4 of 4</p>
-                    <div className="rounded-none border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-                      <p className="font-semibold text-slate-900">{tf("deviceDetailsTitle")}</p>
-                      <p className="mt-1">{tf("dialImeiHint")}</p>
-                      <p className="mt-1">{tf("manualActivationNotice")}</p>
-                    </div>
-                    {validatedScenario === "voucher_sim" ? (
-                      <div>
-                        <label htmlFor="physical-sim" className="ui-label">
-                          {tf("physicalSimNumberLabel")}
-                        </label>
-                        <input
-                          id="physical-sim"
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          value={physicalSimNumber}
-                          onChange={(e) => setPhysicalSimNumber(e.target.value)}
-                          className="ui-input font-mono text-sm"
-                        />
-                        {voucherClientErrors?.simError ? <p className="mt-1 text-xs text-red-600">{voucherClientErrors.simError}</p> : null}
-                      </div>
-                    ) : (
-                      <div>
-                        <label htmlFor="device-eid" className="ui-label">
-                          {tf("eidLabel")}
-                        </label>
-                        <input
-                          id="device-eid"
-                          type="text"
-                          autoComplete="off"
-                          value={deviceEid}
-                          onChange={(e) => setDeviceEid(e.target.value)}
-                          className="ui-input font-mono text-sm"
-                        />
-                        {voucherClientErrors?.eidError ? <p className="mt-1 text-xs text-red-600">{voucherClientErrors.eidError}</p> : null}
-                      </div>
-                    )}
-                    <div>
-                      <label htmlFor="device-imei" className="ui-label">
-                        {tf("imeiLabel")}
-                      </label>
-                      <input
-                        id="device-imei"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        value={deviceImei}
-                        onChange={(e) => setDeviceImei(e.target.value)}
-                        className="ui-input font-mono text-sm"
-                      />
-                      {voucherClientErrors?.imeiError ? <p className="mt-1 text-xs text-red-600">{voucherClientErrors.imeiError}</p> : null}
-                    </div>
-                    <div>
-                      <label htmlFor="device-photo" className="ui-label">
-                        {tf("devicePhotoLabel")}
-                      </label>
-                      <input
-                        id="device-photo"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        capture="environment"
-                        onChange={onDeviceImagePick}
-                        className="block w-full text-sm text-slate-600"
-                      />
-                      <p className="mt-1 text-xs text-slate-500">{tf("devicePhotoHint")}</p>
-                      {deviceImageDataUrl ? (
-                        <p className="mt-1 text-xs font-medium text-emerald-800">{tf("photoAttached")}</p>
-                      ) : null}
-                      {voucherClientErrors?.imageError ? <p className="mt-1 text-xs text-red-600">{voucherClientErrors.imageError}</p> : null}
-                    </div>
-                  </>
-                ) : null}
-                {voucherStage === "ac4" && voucherPlan && validatedScenario ? (
-                  <>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="email-v" className="ui-label">{t("emailLabel")}</label>
-                        <input id="email-v" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="ui-input" required />
-                        {voucherClientErrors?.emailError ? <p className="mt-1 text-xs text-red-600">{voucherClientErrors.emailError}</p> : null}
-                      </div>
-                      <div>
-                        <label htmlFor="travelDate-v" className="ui-label">{tf("travelDate")}</label>
-                        <input id="travelDate-v" type="date" value={travelDate} onChange={(e) => setTravelDate(e.target.value)} className="ui-input" required />
-                        {voucherClientErrors?.travelDateError ? <p className="mt-1 text-xs text-red-600">{voucherClientErrors.travelDateError}</p> : null}
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-500">{tf("noPaymentFooter")}</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        className="btn-secondary w-full"
-                        onClick={() => setVoucherStage("ac3")}
-                        disabled={loading || validating}
-                      >
-                        ◀ Back
-                      </button>
-                      <button type="submit" className="btn-primary w-full" disabled={loading || validating || !voucherRedeemReady}>
-                        {loading ? tf("scheduleSubmitting") : `${tf("confirmRedemption")} ▶`}
                       </button>
                     </div>
                   </>

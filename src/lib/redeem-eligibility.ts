@@ -1,9 +1,4 @@
-import {
-  isValidEid,
-  isValidImei,
-  isValidOptionalImageDataUrl,
-  isValidPhysicalSimPrintedNumber,
-} from "@/lib/device-identifiers";
+import { isValidEid, isValidImei, isValidOptionalImageDataUrl } from "@/lib/device-identifiers";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,7 +10,23 @@ export function isTravelDateFilled(travelDate: string): boolean {
   return travelDate.trim().length > 0;
 }
 
-/** True when voucher is validated for the current code and all AC4 customer fields pass client-side gates. */
+/** AC4: email + travel date complete; safe to show device-details step (AC5). */
+export function isVoucherEmailTravelStepComplete(params: {
+  voucherCode: string;
+  validatedForCode: string;
+  voucherValidated: boolean;
+  email: string;
+  travelDate: string;
+}): boolean {
+  if (!params.voucherValidated) return false;
+  const code = params.voucherCode.trim().toUpperCase();
+  if (!code || params.validatedForCode !== code) return false;
+  if (!isRedeemEmailValid(params.email)) return false;
+  if (!isTravelDateFilled(params.travelDate)) return false;
+  return true;
+}
+
+/** AC5: validated voucher + AC4 fields + device identifiers and photo — confirm redemption allowed. */
 export function isVoucherRedeemReadyForConfirm(params: {
   voucherCode: string;
   validatedForCode: string;
@@ -23,7 +34,6 @@ export function isVoucherRedeemReadyForConfirm(params: {
   validatedScenario: "voucher_sim" | "esim_voucher" | null;
   email: string;
   travelDate: string;
-  physicalSimNumber: string;
   deviceImei: string;
   deviceEid: string;
   deviceImageDataUrl: string;
@@ -40,7 +50,7 @@ export function isVoucherRedeemReadyForConfirm(params: {
   if (!isValidOptionalImageDataUrl(img)) return false;
 
   if (params.validatedScenario === "voucher_sim") {
-    return isValidPhysicalSimPrintedNumber(params.physicalSimNumber);
+    return true;
   }
   return isValidEid(params.deviceEid);
 }
