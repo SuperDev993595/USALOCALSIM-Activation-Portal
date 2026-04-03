@@ -124,6 +124,22 @@
       "voucherAutoRecognizeHint": "Introduza o código — detetamos automaticamente SIM físico ou eSIM.",
       "voucherValidateHint": "Após 10 caracteres verificamos automaticamente. Ou toque em ‘Validar voucher’.",
       "identifyingVoucher": "A carregar… a identificar o voucher.",
+      "beforeYouStartTitle": "Antes de começar",
+      "instructionReadFirst": "Leia isto antes de introduzir o código do voucher. Os passos seguintes pedem dados do dispositivo e da ativação consoante o voucher seja para SIM físico ou eSIM.",
+      "instructionItemVoucherCode": "Tenha o código do voucher à mão (cartão, recibo ou e-mail).",
+      "instructionItemEmailTravel": "Vai precisar de um e-mail e da data de viagem para agendar a ativação.",
+      "instructionItemPhysical": "Voucher SIM físico: precisa do IMEI. Marque *#06# no telemóvel, carregue uma foto nítida desse ecrã ou escreva o IMEI com cuidado. Pode ser necessária uma foto da SIM com o ICCID visível.",
+      "instructionItemEsim": "Voucher eSIM: precisa do IMEI e do EID. Marque *#06# — ambos aparecem nesse ecrã. Carregue uma foto nítida ou escreva cada valor com cuidado.",
+      "instructionAckLabel": "Li e compreendi as instruções acima.",
+      "instructionAckRequired": "Confirme que leu as instruções antes de continuar.",
+      "needHelpWithVouchers": "Precisa de ajuda com vouchers?",
+      "needHelpWithGiftCards": "Precisa de ajuda com cartões-presente?",
+      "landingTitleRedeem": "Resgate o seu voucher",
+      "landingSubtitleCode": "Introduza o código abaixo para começar.",
+      "voucherCodePlaceholderNetflix": "Código do voucher ou PIN",
+      "redeemButtonCta": "Resgatar",
+      "redeemStep1SmartHint": "Após 10 caracteres verificamos automaticamente — ou toque em Resgatar quando estiver pronto.",
+      "redeemStep1Progress": "{count} / 10 caracteres para verificação imediata",
       "faceValue": "Valor facial",
       "dataPack": "Pacote de dados",
       "deviceDetailsTitle": "Dados do dispositivo para ativação",
@@ -256,6 +272,11 @@
     "bodyScheduledFor": "A sua ativação está agendada para {travelDate}.",
     "daysSuffix": "days",
     "backToActivation": "Back to activation"
+  },
+  "qaRoadmap": {
+    "title": "Ajuda & roadmap de QA",
+    "intro": "Leia isto antes de resgatar. Os passos seguintes pedem dados do dispositivo consoante o tipo de voucher (SIM físico ou eSIM).",
+    "backToRedeem": "← Voltar ao resgate"
   }
 }
 

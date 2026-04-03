@@ -121,6 +121,22 @@
       "voucherAutoRecognizeHint": "Enter your code — we detect automatically whether it is for a physical SIM or eSIM.",
       "voucherValidateHint": "After 10 characters we check your code automatically. You can also tap “Validate voucher” anytime.",
       "identifyingVoucher": "Loading… identifying your voucher.",
+      "beforeYouStartTitle": "Before you start",
+      "instructionReadFirst": "Please read this before entering your voucher. Later steps will ask for device and activation details based on whether your voucher is for a physical SIM or an eSIM.",
+      "instructionItemVoucherCode": "Have your voucher code ready (from your card, receipt, or email).",
+      "instructionItemEmailTravel": "You will need an email address and your travel date to schedule activation.",
+      "instructionItemPhysical": "Physical SIM voucher: you will need your IMEI. Dial *#06# on your phone, then upload a clear photo of that screen or type the IMEI carefully. A photo of your SIM card showing the printed ICCID may also be required.",
+      "instructionItemEsim": "eSIM voucher: you will need IMEI and EID. Dial *#06# — both numbers appear on that screen. Upload a clear photo or type each value carefully.",
+      "instructionAckLabel": "I have read and understood the instructions above.",
+      "instructionAckRequired": "Please confirm that you have read the instructions before continuing.",
+      "needHelpWithVouchers": "Need help with vouchers?",
+      "needHelpWithGiftCards": "Need help with gift cards?",
+      "landingTitleRedeem": "Redeem your voucher",
+      "landingSubtitleCode": "Enter your code below to get started.",
+      "voucherCodePlaceholderNetflix": "Voucher code or PIN",
+      "redeemButtonCta": "Redeem",
+      "redeemStep1SmartHint": "We check your code automatically after 10 characters — or tap Redeem whenever you’re ready.",
+      "redeemStep1Progress": "{count} / 10 characters for instant check",
       "faceValue": "Face value",
       "dataPack": "Data pack",
       "deviceDetailsTitle": "Device details for activation",
@@ -261,5 +277,10 @@
     "paymentError": "Could not start checkout",
     "genericError": "Something went wrong.",
     "missingCheckoutUrl": "Missing checkout URL"
+  },
+  "qaRoadmap": {
+    "title": "Help & QA roadmap",
+    "intro": "Read this before you redeem. Later steps ask for device details depending on your voucher type (physical SIM or eSIM).",
+    "backToRedeem": "← Back to redeem"
   }
 }

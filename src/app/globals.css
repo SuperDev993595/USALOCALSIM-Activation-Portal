@@ -71,7 +71,23 @@
       linear-gradient(to bottom, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9));
   }
 
-  .public-site::after {
+  /* Home banner: only /redeem (voucher) landing — not other public-site pages */
+  .public-site.public-site--home-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.62), rgba(15, 23, 42, 0.8)),
+      url("/images/home-banner-01.webp");
+    background-repeat: no-repeat, no-repeat;
+    background-position: center 100px, center 100px;
+    background-size: cover, cover;
+  }
+
+  /* Faint map — all public pages except step-1 redeem (home banner replaces this layer) */
+  .public-site:not(.public-site--home-banner)::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -80,13 +96,79 @@
     opacity: 0.14;
     background-image: url("/images/map-02.webp");
     background-repeat: no-repeat;
-    /* Push map down so sticky header doesn't crop it */
     background-position: center 140px;
     background-size: min(980px, 92vw) auto;
   }
 
   .public-main {
     @apply relative z-10;
+  }
+
+  .public-site.public-site--home-banner .page-hero-title {
+    @apply text-white;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  .public-site.public-site--home-banner .page-hero-subtitle {
+    @apply text-slate-200;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  .public-site.public-site--home-banner .activate-flow-main .ui-label {
+    @apply text-slate-200;
+  }
+
+  .public-site.public-site--home-banner .activate-netflix-hero {
+    @apply w-full min-w-0;
+  }
+
+  .public-site.public-site--home-banner .activate-netflix-hero .page-hero-title {
+    @apply w-full max-w-none text-left text-4xl font-bold normal-case tracking-tight text-white sm:text-5xl;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  }
+
+  .public-site.public-site--home-banner .activate-netflix-hero .page-hero-subtitle {
+    @apply mt-2 w-full max-w-none text-left text-base font-normal normal-case text-slate-200 sm:text-lg;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  .public-site.public-site--home-banner .ui-input-netflix {
+    @apply mt-2 block w-full rounded-sm border border-slate-600 bg-black/55 px-4 py-3.5 text-base tracking-wide text-white shadow-none outline-none transition duration-200 placeholder:text-slate-500 focus:border-slate-300 focus:ring-2 focus:ring-white/20;
+  }
+
+  .public-site.public-site--home-banner .ui-input-netflix.ui-input-netflix--error {
+    @apply border-red-400/90 ring-2 ring-red-500/25;
+  }
+
+  .public-site.public-site--home-banner .redeem-step1-form {
+    @apply flex flex-col gap-5;
+  }
+
+  .public-site.public-site--home-banner .redeem-step1-field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .public-site.public-site--home-banner .redeem-step1-hint {
+    @apply text-xs leading-snug text-slate-400;
+  }
+
+  .public-site.public-site--home-banner .redeem-step1-progress {
+    @apply text-[11px] font-medium tabular-nums text-slate-500;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .public-site.public-site--home-banner .ui-input-netflix {
+      @apply transition-none;
+    }
+  }
+
+  .public-site.public-site--home-banner .btn-netflix-primary {
+    @apply inline-flex min-w-[9rem] items-center justify-center rounded-sm px-5 py-3 text-base font-semibold text-white transition disabled:pointer-events-none disabled:opacity-50;
+    background-color: #e50914;
+  }
+
+  .public-site.public-site--home-banner .btn-netflix-primary:hover:not(:disabled) {
+    background-color: #f40612;
   }
 
   .public-site .ui-card {

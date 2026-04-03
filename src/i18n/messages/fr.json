@@ -121,6 +121,22 @@
       "voucherAutoRecognizeHint": "Saisissez votre code — nous détectons automatiquement SIM physique ou eSIM.",
       "voucherValidateHint": "Après 10 caractères nous vérifions le code automatiquement. Vous pouvez aussi appuyer sur « Valider le bon ».",
       "identifyingVoucher": "Chargement… identification du bon.",
+      "beforeYouStartTitle": "Avant de commencer",
+      "instructionReadFirst": "Veuillez lire ceci avant de saisir votre code bon. Les étapes suivantes demanderont des détails d’appareil et d’activation selon qu’il s’agit d’une carte SIM physique ou d’un eSIM.",
+      "instructionItemVoucherCode": "Ayez votre code bon à portée de main (carte, reçu ou e-mail).",
+      "instructionItemEmailTravel": "Vous aurez besoin d’une adresse e-mail et de votre date de voyage pour planifier l’activation.",
+      "instructionItemPhysical": "Bon SIM physique : vous aurez besoin de l’IMEI. Composez *#06# sur le téléphone, puis téléversez une photo nette de l’écran ou saisissez l’IMEI avec soin. Une photo de la SIM montrant l’ICCID imprimé peut aussi être requise.",
+      "instructionItemEsim": "Bon eSIM : vous aurez besoin de l’IMEI et de l’EID. Composez *#06# — les deux apparaissent sur cet écran. Téléversez une photo nette ou saisissez chaque valeur avec soin.",
+      "instructionAckLabel": "J’ai lu et compris les instructions ci-dessus.",
+      "instructionAckRequired": "Veuillez confirmer que vous avez lu les instructions avant de continuer.",
+      "needHelpWithVouchers": "Besoin d’aide avec les bons ?",
+      "needHelpWithGiftCards": "Besoin d’aide avec les cartes cadeaux ?",
+      "landingTitleRedeem": "Utiliser votre bon",
+      "landingSubtitleCode": "Saisissez votre code ci-dessous pour commencer.",
+      "voucherCodePlaceholderNetflix": "Code bon ou PIN",
+      "redeemButtonCta": "Utiliser",
+      "redeemStep1SmartHint": "Après 10 caractères nous vérifions automatiquement — ou appuyez sur Utiliser quand vous êtes prêt.",
+      "redeemStep1Progress": "{count} / 10 caractères pour la vérification instantanée",
       "faceValue": "Valeur nominale",
       "dataPack": "Forfait data",
       "deviceDetailsTitle": "Infos appareil pour l'activation",
@@ -261,5 +277,10 @@
     "paymentError": "Impossible de démarrer le paiement",
     "genericError": "Une erreur s'est produite.",
     "missingCheckoutUrl": "URL de paiement manquante"
+  },
+  "qaRoadmap": {
+    "title": "Aide & feuille de route QA",
+    "intro": "Lisez ceci avant d’utiliser votre bon. Les étapes suivantes demandent des informations sur l’appareil selon le type de bon (SIM physique ou eSIM).",
+    "backToRedeem": "← Retour au bon"
   }
 }

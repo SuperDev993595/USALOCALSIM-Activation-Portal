@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslations } from "next-intl";
@@ -109,10 +110,12 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
   }, [flow]);
 
   async function runVoucherValidate(codeRaw: string, seq?: number): Promise<boolean> {
-    setError("");
     const code = codeRaw.trim().toUpperCase();
     if (!code) {
       setError(tf("enterVoucherFirst"));
+      return false;
+    }
+    if (seq != null && seq !== validateSeqRef.current) {
       return false;
     }
     setValidating(true);
@@ -120,6 +123,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
       const validate = await fetch(`/api/validate?voucherCode=${encodeURIComponent(code)}&clientRedeem=1`);
       const validData = await validate.json();
       if (seq != null && seq !== validateSeqRef.current) return false;
+      setError("");
       if (!validate.ok) {
         setVoucherPlan(null);
         setValidatedScenario(null);
@@ -184,7 +188,6 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
   async function submitVoucher(e: React.FormEvent) {
     e.preventDefault();
     if (voucherStage === "ac1") {
-      setError("");
       void proceedVoucherToAc4();
       return;
     }
@@ -246,52 +249,109 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
     }
   }
 
-  return (
-    <div className="public-site flex h-screen flex-col overflow-hidden">
-      <SiteHeader />
-      <main className="public-main ui-main-scrollbar flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-6 py-12">
-        <div className="w-full max-w-2xl">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">{t("stepLabel")}</p>
-          <h1 className="page-hero-title">{flow === "voucher" ? tf("titleRedeem") : tf("titleBuy")}</h1>
-          <p className="page-hero-subtitle">
-            {flow === "voucher" ? tf("subtitleRedeem") : tf("subtitleBuy")}
-          </p>
+  const isVoucherStep1 = flow === "voucher" && voucherStage === "ac1";
+  const redeemCodeLen = voucherCode.trim().length;
 
-          <div className="ui-card mt-8 p-6">
+  return (
+    <div
+      className={`public-site flex h-screen flex-col overflow-hidden ${isVoucherStep1 ? "public-site--home-banner" : ""}`}
+    >
+      <SiteHeader />
+      <main
+        className={`activate-flow-main public-main ui-main-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto px-6 ${
+          isVoucherStep1 ? "items-start py-10 sm:px-10 sm:py-14" : "items-center py-12"
+        }`}
+      >
+        <div
+          className={`w-full ${isVoucherStep1 ? "max-w-lg self-stretch sm:max-w-xl" : "max-w-2xl"} ${isVoucherStep1 ? "min-w-0" : ""}`}
+        >
+          <div className={isVoucherStep1 ? "activate-netflix-hero" : undefined}>
+            <h1 className="page-hero-title">
+              {flow === "voucher"
+                ? voucherStage === "ac1"
+                  ? tf("landingTitleRedeem")
+                  : tf("titleRedeem")
+                : tf("titleBuy")}
+            </h1>
+            <p className="page-hero-subtitle">
+              {flow === "voucher"
+                ? voucherStage === "ac1"
+                  ? tf("landingSubtitleCode")
+                  : tf("subtitleRedeem")
+                : tf("subtitleBuy")}
+            </p>
+          </div>
+
+          <div className={isVoucherStep1 ? "mt-10" : "mt-8"}>
             {flow === "voucher" ? (
-              <form className="space-y-4" onSubmit={submitVoucher}>
+              <form
+                className={voucherStage === "ac1" ? "redeem-step1-form" : "space-y-4"}
+                onSubmit={submitVoucher}
+                aria-busy={validating && voucherStage === "ac1"}
+              >
                 {voucherStage === "ac1" ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 1 of 5</p>
-                    <p className="text-xs text-slate-600">{tf("voucherAutoRecognizeHint")}</p>
-                    <div>
-                      <label htmlFor="voucher" className="ui-label">{tf("voucherCode")}</label>
+                    <div className="redeem-step1-field">
+                      <label htmlFor="voucher" className="sr-only">
+                        {tf("voucherCode")}
+                      </label>
                       <input
                         id="voucher"
                         type="text"
+                        name="voucher"
                         autoComplete="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        enterKeyHint="go"
                         value={voucherCode}
-                        onChange={(e) => setVoucherCode(e.target.value)}
-                        className="ui-input"
+                        onChange={(e) => {
+                          setVoucherCode(e.target.value.toUpperCase());
+                          if (error) setError("");
+                        }}
+                        className={`ui-input-netflix${error ? " ui-input-netflix--error" : ""}`}
+                        placeholder={tf("voucherCodePlaceholderNetflix")}
+                        aria-invalid={error ? true : undefined}
+                        aria-describedby={error ? "voucher-hint voucher-error" : "voucher-hint"}
                       />
-                      <p className="mt-1 text-xs text-slate-500">{tf("voucherValidateHint")}</p>
+                      <div className="mt-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                        <p id="voucher-hint" className="redeem-step1-hint w-full min-w-0">
+                          {tf("redeemStep1SmartHint")}
+                        </p>
+                        {redeemCodeLen > 0 && redeemCodeLen < VOUCHER_AUTO_VALIDATE_LEN ? (
+                          <span className="redeem-step1-progress shrink-0 font-mono" aria-live="polite">
+                            {tf("redeemStep1Progress", { count: redeemCodeLen })}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                    {validating ? <p className="text-sm text-slate-600">{tf("identifyingVoucher")}</p> : null}
-                    <div className="flex justify-end">
+                    {error ? (
+                      <p id="voucher-error" className="text-sm text-red-300 motion-safe:transition-opacity" role="alert">
+                        {error}
+                      </p>
+                    ) : null}
+                    <div className="flex flex-col items-stretch gap-4">
                       <button
-                        type="button"
-                        className="btn-secondary min-w-36"
-                        onClick={() => void proceedVoucherToAc4()}
-                        disabled={validating || loading || !voucherCode.trim()}
+                        type="submit"
+                        className="btn-netflix-primary min-h-[3rem] w-full sm:w-auto"
+                        disabled={validating}
+                        aria-busy={validating}
                       >
-                        Redeem ➜
+                        {validating ? tf("validateChecking") : tf("redeemButtonCta")}
                       </button>
+                      <p className="text-center sm:text-left">
+                        <Link
+                          href="/qa-roadmap"
+                          className="text-sm text-slate-400 underline decoration-white/25 underline-offset-2 transition hover:text-slate-200"
+                        >
+                          {tf("needHelpWithGiftCards")}
+                        </Link>
+                      </p>
                     </div>
                   </>
                 ) : null}
                 {voucherStage === "ac2" && voucherPlan && validatedScenario ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 2 of 5</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Step 2 of 5</p>
                     <div className="space-y-3 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-lg" aria-hidden>
@@ -319,7 +379,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                 ) : null}
                 {voucherStage === "ac3" && voucherPlan && validatedScenario ? (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-dim">Step 3 of 5</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Step 3 of 5</p>
                   <div className="space-y-3 rounded-none border border-accent/35 bg-accent/10 p-3 text-sm">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-lg" aria-hidden>
@@ -360,7 +420,11 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     </div>
                   </>
                 ) : null}
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && voucherStage !== "ac1" ? (
+                  <p className="text-sm text-red-600" role="alert">
+                    {error}
+                  </p>
+                ) : null}
               </form>
             ) : (
               <form className="space-y-4" onSubmit={submitPaidPlan}>
@@ -395,11 +459,11 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                   ))}
                 </div>
                 {selectedPlan ? (
-                  <p className="text-xs text-slate-500">
-                    {tf("selectedPlanPrefix")} <span className="font-semibold text-slate-700">{selectedPlan.name}</span>
+                  <p className="text-xs text-slate-600">
+                    {tf("selectedPlanPrefix")} <span className="font-semibold text-slate-800">{selectedPlan.name}</span>
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-500">{tf("selectOnePlan")}</p>
+                  <p className="text-xs text-slate-600">{tf("selectOnePlan")}</p>
                 )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -414,7 +478,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                 </div>
                 <div>
                   <label htmlFor="iccid-p" className="ui-label">
-                    {tf("iccidLabel")} <span className="font-normal text-slate-500">{tf("iccidOptional")}</span>
+                    {tf("iccidLabel")} <span className="font-normal text-slate-400">{tf("iccidOptional")}</span>
                   </label>
                   <input
                     id="iccid-p"
@@ -426,7 +490,7 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                     onChange={(e) => setIccid(e.target.value)}
                     className="ui-input font-mono text-sm"
                   />
-                  <p className="mt-1 text-xs text-slate-500">{tf("iccidHint")}</p>
+                  <p className="mt-1 text-xs text-slate-400">{tf("iccidHint")}</p>
                 </div>
                 {selectedPlan && (
                   <div className="rounded-none border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">

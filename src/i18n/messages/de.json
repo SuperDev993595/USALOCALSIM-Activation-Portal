@@ -124,6 +124,22 @@
       "voucherAutoRecognizeHint": "Code eingeben — wir erkennen automatisch physische SIM oder eSIM.",
       "voucherValidateHint": "Ab 10 Zeichen prüfen wir automatisch. Oder „Voucher prüfen“ tippen.",
       "identifyingVoucher": "Laden… Voucher wird erkannt.",
+      "beforeYouStartTitle": "Bevor Sie starten",
+      "instructionReadFirst": "Bitte lesen Sie dies, bevor Sie Ihren Voucher‑Code eingeben. In den nächsten Schritten werden je nach physischem SIM‑ oder eSIM‑Voucher Geräte‑ und Aktivierungsdaten abgefragt.",
+      "instructionItemVoucherCode": "Halten Sie Ihren Voucher‑Code bereit (Karte, Beleg oder E‑Mail).",
+      "instructionItemEmailTravel": "Sie benötigen eine E‑Mail‑Adresse und Ihr Reisedatum zur Terminplanung der Aktivierung.",
+      "instructionItemPhysical": "Physischer SIM‑Voucher: Sie benötigen die IMEI. Wählen Sie *#06# auf dem Telefon, laden Sie ein klares Foto dieses Bildschirms hoch oder tippen Sie die IMEI sorgfältig ein. Ein Foto der SIM mit sichtbarer ICCID kann ebenfalls erforderlich sein.",
+      "instructionItemEsim": "eSIM‑Voucher: Sie benötigen IMEI und EID. Wählen Sie *#06# — beide Nummern erscheinen dort. Laden Sie ein klares Foto hoch oder tippen Sie jeden Wert sorgfältig ein.",
+      "instructionAckLabel": "Ich habe die obigen Anweisungen gelesen und verstanden.",
+      "instructionAckRequired": "Bitte bestätigen Sie, dass Sie die Anweisungen gelesen haben, bevor Sie fortfahren.",
+      "needHelpWithVouchers": "Hilfe zu Vouchern?",
+      "needHelpWithGiftCards": "Hilfe zu Geschenkkarten?",
+      "landingTitleRedeem": "Voucher einlösen",
+      "landingSubtitleCode": "Geben Sie unten Ihren Code ein, um zu starten.",
+      "voucherCodePlaceholderNetflix": "Voucher‑Code oder PIN",
+      "redeemButtonCta": "Einlösen",
+      "redeemStep1SmartHint": "Ab 10 Zeichen prüfen wir automatisch — oder tippen Sie jederzeit auf Einlösen.",
+      "redeemStep1Progress": "{count} / 10 Zeichen für die Sofortprüfung",
       "faceValue": "Nennwert",
       "dataPack": "Datenvolumen",
       "deviceDetailsTitle": "Gerätedaten zur Aktivierung",
@@ -256,6 +272,11 @@
     "bodyScheduledFor": "Ihre Aktivierung ist geplant für {travelDate}.",
     "daysSuffix": "days",
     "backToActivation": "Back to activation"
+  },
+  "qaRoadmap": {
+    "title": "Hilfe & QA‑Roadmap",
+    "intro": "Lesen Sie dies vor dem Einlösen. In späteren Schritten werden je nach Voucher‑Typ (physische SIM oder eSIM) Gerätedaten abgefragt.",
+    "backToRedeem": "← Zurück zum Einlösen"
   }
 }
 

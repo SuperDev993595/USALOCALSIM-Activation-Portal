@@ -121,6 +121,22 @@
       "voucherAutoRecognizeHint": "Voer uw code in — we herkennen automatisch fysieke SIM of eSIM.",
       "voucherValidateHint": "Na 10 tekens controleren we automatisch. Of tik ‘Voucher valideren’.",
       "identifyingVoucher": "Laden… voucher herkennen.",
+      "beforeYouStartTitle": "Voordat u begint",
+      "instructionReadFirst": "Lees dit voordat u uw vouchercode invoert. In latere stappen vragen we apparaat- en activeringsgegevens, afhankelijk van een fysieke SIM- of eSIM-voucher.",
+      "instructionItemVoucherCode": "Houd uw vouchercode bij de hand (kaart, bon of e-mail).",
+      "instructionItemEmailTravel": "U heeft een e-mailadres en uw reisdatum nodig om de activering te plannen.",
+      "instructionItemPhysical": "Fysieke SIM-voucher: u heeft uw IMEI nodig. Toets *#06# op uw telefoon, upload een duidelijke foto van dat scherm of typ de IMEI zorgvuldig. Een foto van de SIM met zichtbare ICCID kan ook nodig zijn.",
+      "instructionItemEsim": "eSIM-voucher: u heeft IMEI en EID nodig. Toets *#06# — beide nummers verschijnen op dat scherm. Upload een duidelijke foto of typ elke waarde zorgvuldig.",
+      "instructionAckLabel": "Ik heb bovenstaande instructies gelezen en begrepen.",
+      "instructionAckRequired": "Bevestig dat u de instructies heeft gelezen voordat u verder gaat.",
+      "needHelpWithVouchers": "Hulp nodig bij vouchers?",
+      "needHelpWithGiftCards": "Hulp nodig bij cadeaukaarten?",
+      "landingTitleRedeem": "Verzilver uw voucher",
+      "landingSubtitleCode": "Voer hieronder uw code in om te beginnen.",
+      "voucherCodePlaceholderNetflix": "Vouchercode of PIN",
+      "redeemButtonCta": "Verzilveren",
+      "redeemStep1SmartHint": "Na 10 tekens controleren we automatisch — of tik op Verzilveren wanneer u klaar bent.",
+      "redeemStep1Progress": "{count} / 10 tekens voor directe controle",
       "faceValue": "Nominaal bedrag",
       "dataPack": "Data-abonnement",
       "deviceDetailsTitle": "Apparaatgegevens voor activering",
@@ -261,5 +277,10 @@
     "paymentError": "Betaling kon niet worden gestart",
     "genericError": "Er ging iets mis.",
     "missingCheckoutUrl": "Checkout-URL ontbreekt"
+  },
+  "qaRoadmap": {
+    "title": "Hulp & QA-roadmap",
+    "intro": "Lees dit voordat u verzilvert. In latere stappen vragen we apparaatgegevens afhankelijk van uw voucher (fysieke SIM of eSIM).",
+    "backToRedeem": "← Terug naar verzilveren"
   }
 }
