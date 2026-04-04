@@ -291,61 +291,63 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
               >
                 {voucherStage === "ac1" ? (
                   <>
-                    <div className="redeem-step1-field">
-                      <label htmlFor="voucher" className="sr-only">
-                        {tf("voucherCode")}
-                      </label>
-                      <input
-                        id="voucher"
-                        type="text"
-                        name="voucher"
-                        autoComplete="off"
-                        autoCapitalize="characters"
-                        spellCheck={false}
-                        enterKeyHint="go"
-                        value={voucherCode}
-                        onChange={(e) => {
-                          setVoucherCode(e.target.value.toUpperCase());
-                          if (error) setError("");
-                        }}
-                        className={`ui-input-netflix${error ? " ui-input-netflix--error" : ""}`}
-                        placeholder={tf("voucherCodePlaceholderNetflix")}
-                        aria-invalid={error ? true : undefined}
-                        aria-describedby={error ? "voucher-hint voucher-error" : "voucher-hint"}
-                      />
-                      <div className="mt-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-                        <p id="voucher-hint" className="redeem-step1-hint w-full min-w-0">
-                          {tf("redeemStep1SmartHint")}
-                        </p>
-                        {redeemCodeLen > 0 && redeemCodeLen < VOUCHER_AUTO_VALIDATE_LEN ? (
-                          <span className="redeem-step1-progress shrink-0 font-mono" aria-live="polite">
-                            {tf("redeemStep1Progress", { count: redeemCodeLen })}
-                          </span>
-                        ) : null}
+                    <div className="flex w-full max-w-xs flex-col gap-4 sm:max-w-sm">
+                      <div className="redeem-step1-field">
+                        <label htmlFor="voucher" className="sr-only">
+                          {tf("voucherCode")}
+                        </label>
+                        <input
+                          id="voucher"
+                          type="text"
+                          name="voucher"
+                          autoComplete="off"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          enterKeyHint="go"
+                          value={voucherCode}
+                          onChange={(e) => {
+                            setVoucherCode(e.target.value.toUpperCase());
+                            if (error) setError("");
+                          }}
+                          className={`ui-input-netflix${error ? " ui-input-netflix--error" : ""}`}
+                          placeholder={tf("voucherCodePlaceholderNetflix")}
+                          aria-invalid={error ? true : undefined}
+                          aria-describedby={error ? "voucher-hint voucher-error" : "voucher-hint"}
+                        />
+                        <div className="mt-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                          <p id="voucher-hint" className="redeem-step1-hint w-full min-w-0">
+                            {tf("redeemStep1SmartHint")}
+                          </p>
+                          {redeemCodeLen > 0 && redeemCodeLen < VOUCHER_AUTO_VALIDATE_LEN ? (
+                            <span className="redeem-step1-progress shrink-0 font-mono" aria-live="polite">
+                              {tf("redeemStep1Progress", { count: redeemCodeLen })}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                    {error ? (
-                      <p id="voucher-error" className="text-sm text-red-300 motion-safe:transition-opacity" role="alert">
-                        {error}
-                      </p>
-                    ) : null}
-                    <div className="flex flex-col items-stretch gap-4">
-                      <button
-                        type="submit"
-                        className="btn-netflix-primary min-h-[3rem] w-full sm:w-auto"
-                        disabled={validating}
-                        aria-busy={validating}
-                      >
-                        {validating ? tf("validateChecking") : tf("redeemButtonCta")}
-                      </button>
-                      <p className="text-center sm:text-left">
-                        <Link
-                          href="/qa-roadmap"
-                          className="text-sm text-slate-400 underline decoration-white/25 underline-offset-2 transition hover:text-slate-200"
+                      {error ? (
+                        <p id="voucher-error" className="text-sm text-red-300 motion-safe:transition-opacity" role="alert">
+                          {error}
+                        </p>
+                      ) : null}
+                      <div className="flex flex-col items-stretch gap-4">
+                        <button
+                          type="submit"
+                          className="btn-netflix-primary min-h-[3rem] w-full"
+                          disabled={validating}
+                          aria-busy={validating}
                         >
-                          {tf("needHelpWithGiftCards")}
-                        </Link>
-                      </p>
+                          {validating ? tf("validateChecking") : tf("redeemButtonCta")}
+                        </button>
+                        <p className="text-center sm:text-left">
+                          <Link
+                            href="/qa-roadmap"
+                            className="text-sm text-slate-400 underline decoration-white/25 underline-offset-2 transition hover:text-slate-200"
+                          >
+                            {tf("needHelpWithGiftCards")}
+                          </Link>
+                        </p>
+                      </div>
                     </div>
                   </>
                 ) : null}
