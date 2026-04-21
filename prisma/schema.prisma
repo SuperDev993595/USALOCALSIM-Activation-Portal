@@ -80,6 +80,7 @@ model Plan {
   createdAt     DateTime @default(now())
   vouchers      Voucher[]
   activationRequests ActivationRequest[]
+  shopPurchases ShopPurchase[]
 }
 
 model Voucher {
@@ -96,6 +97,46 @@ model Voucher {
   redeemedBy         String?  // email or ICCID
   createdAt          DateTime @default(now())
   activationRequest  ActivationRequest?
+  shopPurchase        ShopPurchase?
+}
+
+// SMS-verified shopper session (Ding-style /shop flow).
+model ShopSession {
+  id         String         @id @default(cuid())
+  phoneE164 String
+  verifiedAt DateTime
+  expiresAt  DateTime
+  createdAt  DateTime       @default(now())
+  purchases  ShopPurchase[]
+
+  @@index([phoneE164])
+}
+
+model ShopPhoneOtp {
+  id          String   @id @default(cuid())
+  phoneE164 String   @unique
+  attempts    Int      @default(0)
+  lastSentAt  DateTime @default(now())
+}
+
+// Paid plan authorization before physical PIN redemption.
+model ShopPurchase {
+  id               String      @id @default(cuid())
+  shopSessionId    String
+  shopSession      ShopSession   @relation(fields: [shopSessionId], references: [id], onDelete: Cascade)
+  planId           String
+  plan             Plan          @relation(fields: [planId], references: [id])
+  stripePaymentId  String        @unique
+  amountPaidCents  Int
+  customerEmail    String
+  status             String // "authorized" | "redeemed"
+  voucherId        String?       @unique
+  voucher          Voucher?      @relation(fields: [voucherId], references: [id])
+  serviceStartDate DateTime?
+  redeemedAt       DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@index([shopSessionId])
 }
 
 model ActivationRequest {

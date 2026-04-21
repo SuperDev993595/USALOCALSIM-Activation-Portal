@@ -34,6 +34,89 @@ export async function POST(req: Request) {
   const paymentIntent = session.payment_intent as string | undefined;
   const paymentId = typeof paymentIntent === "string" ? paymentIntent : session.id;
 
+  const flow = session.metadata?.flow ?? "";
+
+  if (flow === "shop_voucher") {
+    const existingShop = await prisma.shopPurchase.findUnique({
+      where: { stripePaymentId: paymentId },
+    });
+    if (existingShop) {
+      return NextResponse.json({ received: true });
+    }
+
+    const shopSessionId = session.metadata?.shopSessionId ?? "";
+    const planId = session.metadata?.planId ?? "";
+    const emailMeta = (session.metadata?.customerEmail ?? "").trim();
+    const email =
+      emailMeta ||
+      (session.customer_email ?? "").trim() ||
+      (session.customer_details?.email ?? "").trim() ||
+      `reconcile+${session.id}@usalocalsim.shop`;
+
+    if (!planId || !shopSessionId) {
+      await prisma.auditLog.create({
+        data: {
+          action: "shop_webhook_invalid_metadata",
+          metadata: JSON.stringify({ stripePaymentId: paymentId, planId, shopSessionId }),
+        },
+      });
+      return NextResponse.json({ received: true });
+    }
+
+    const shopSession = await prisma.shopSession.findUnique({ where: { id: shopSessionId } });
+    if (!shopSession) {
+      await prisma.auditLog.create({
+        data: {
+          action: "shop_webhook_missing_session",
+          metadata: JSON.stringify({ stripePaymentId: paymentId, shopSessionId }),
+        },
+      });
+      return NextResponse.json({ received: true });
+    }
+
+    const plan = await prisma.plan.findFirst({
+      where: { id: planId, planType: "physical_sim" },
+    });
+    if (!plan) {
+      await prisma.auditLog.create({
+        data: {
+          action: "shop_webhook_invalid_plan",
+          metadata: JSON.stringify({ stripePaymentId: paymentId, planId }),
+        },
+      });
+      return NextResponse.json({ received: true });
+    }
+
+    const createdShop = await prisma.shopPurchase.create({
+      data: {
+        shopSessionId: shopSession.id,
+        planId: plan.id,
+        stripePaymentId: paymentId,
+        amountPaidCents: session.amount_total ?? 0,
+        customerEmail: email,
+        status: "authorized",
+      },
+    });
+
+    const { ip, userAgent } = getRequestClientMeta(req);
+    await prisma.auditLog.create({
+      data: {
+        action: "stripe_shop_checkout_completed",
+        metadata: JSON.stringify({
+          shopPurchaseId: createdShop.id,
+          planId: plan.id,
+          shopSessionId: shopSession.id,
+          stripePaymentId: paymentId,
+          amountTotal: session.amount_total,
+          ip,
+          userAgent,
+        }),
+      },
+    });
+
+    return NextResponse.json({ received: true });
+  }
+
   const existing = await prisma.activationRequest.findFirst({
     where: { stripePaymentId: paymentId },
   });

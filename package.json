@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
+    "@prelude.so/sdk": "^0.10.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
+    "libphonenumber-js": "^1.12.41",
     "next": "^14.2.0",
     "next-auth": "^4.24.10",
     "next-intl": "^3.22.0",

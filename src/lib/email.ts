@@ -36,6 +36,9 @@ function variantParagraph(plan: PlanEmailInfo): string {
   if (plan.scenario === "combo") {
     return `This message confirms your physical SIM top-up (${plan.name}). Your data allowance is active on the ICCID you provided.`;
   }
+  if (plan.scenario === "shop_voucher") {
+    return `This message confirms your physical SIM plan (${plan.name}) after your shop purchase and voucher activation.`;
+  }
   return `This message confirms your physical SIM activation (${plan.name}). Your plan is now active.`;
 }
 
