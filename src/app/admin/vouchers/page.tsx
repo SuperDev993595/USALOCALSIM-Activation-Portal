@@ -70,7 +70,11 @@ export default function AdminVouchersPage() {
       >
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">Import batch</h2>
-          <p className="admin-panel-head-desc">Choose plan and type, then paste codes. Duplicates in the database are skipped.</p>
+          <p className="admin-panel-head-desc">
+            Choose plan and type, then paste codes. Duplicates in the database are skipped. For cart physical-card PINs,
+            any <span className="font-mono">physical_sim</span> top-up plan is fine — checkout sets the sold plan; redeem
+            updates each voucher to match the purchase.
+          </p>
         </div>
         <div className="divide-y divide-slate-100 px-6 py-5 md:px-8 md:py-6">
           <div className="pb-5 md:pb-6">

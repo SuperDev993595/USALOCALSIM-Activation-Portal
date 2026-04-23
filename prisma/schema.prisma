@@ -80,7 +80,7 @@ model Plan {
   createdAt     DateTime @default(now())
   vouchers      Voucher[]
   activationRequests ActivationRequest[]
-  shopPurchases ShopPurchase[]
+  cartPurchases CartPurchase[]
 }
 
 model Voucher {
@@ -97,46 +97,50 @@ model Voucher {
   redeemedBy         String?  // email or ICCID
   createdAt          DateTime @default(now())
   activationRequest  ActivationRequest?
-  shopPurchase        ShopPurchase?
+  cartPurchase CartPurchase?
 }
 
-// SMS-verified shopper session (Ding-style /shop flow).
-model ShopSession {
+// SMS-verified cart session (physical-card checkout flow). Tables keep legacy names via @@map.
+model CartSession {
   id         String         @id @default(cuid())
   phoneE164 String
   verifiedAt DateTime
   expiresAt  DateTime
   createdAt  DateTime       @default(now())
-  purchases  ShopPurchase[]
+  purchases  CartPurchase[]
 
   @@index([phoneE164])
+  @@map("ShopSession")
 }
 
-model ShopPhoneOtp {
+model CartPhoneOtp {
   id          String   @id @default(cuid())
   phoneE164 String   @unique
   attempts    Int      @default(0)
   lastSentAt  DateTime @default(now())
+
+  @@map("ShopPhoneOtp")
 }
 
 // Paid plan authorization before physical PIN redemption.
-model ShopPurchase {
+model CartPurchase {
   id               String      @id @default(cuid())
-  shopSessionId    String
-  shopSession      ShopSession   @relation(fields: [shopSessionId], references: [id], onDelete: Cascade)
+  cartSessionId    String      @map("shopSessionId")
+  cartSession      CartSession @relation(fields: [cartSessionId], references: [id], onDelete: Cascade)
   planId           String
-  plan             Plan          @relation(fields: [planId], references: [id])
-  stripePaymentId  String        @unique
+  plan             Plan        @relation(fields: [planId], references: [id])
+  stripePaymentId  String      @unique
   amountPaidCents  Int
   customerEmail    String
   status             String // "authorized" | "redeemed"
-  voucherId        String?       @unique
-  voucher          Voucher?      @relation(fields: [voucherId], references: [id])
+  voucherId        String?     @unique
+  voucher          Voucher?    @relation(fields: [voucherId], references: [id])
   serviceStartDate DateTime?
   redeemedAt       DateTime?
-  createdAt        DateTime      @default(now())
+  createdAt        DateTime    @default(now())
 
-  @@index([shopSessionId])
+  @@index([cartSessionId])
+  @@map("ShopPurchase")
 }
 
 model ActivationRequest {
@@ -144,7 +148,7 @@ model ActivationRequest {
   iccid            String?
   voucherCode      String?
   email            String
-  scenario         String   // "sim_only" | "combo" | "esim_voucher"
+  scenario         String   // "sim_only" | "combo" | "esim_voucher" | "cart_voucher" (legacy rows may differ)
   planId           String
   plan             Plan     @relation(fields: [planId], references: [id])
   amountPaidCents  Int      @default(0)

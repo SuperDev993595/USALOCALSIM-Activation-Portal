@@ -1,0 +1,151 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
+import { getRequestClientMeta } from "@/lib/request-meta";
+import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
+import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
+
+const bodySchema = z.object({
+  purchaseId: z.string().min(1),
+  voucherCode: z.string().min(1),
+  activationDate: z.string().min(1),
+});
+
+export async function POST(req: Request) {
+  const key = getRateLimitKey(req);
+  const { allowed } = await checkRateLimit(key);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many attempts. Try again in an hour." }, { status: 429 });
+  }
+
+  const cartSession = await getVerifiedCartSessionByRequest(req);
+  if (!cartSession) {
+    return NextResponse.json({ error: "Session expired. Start again from the cart." }, { status: 401 });
+  }
+
+  let body: z.infer<typeof bodySchema>;
+  try {
+    body = bodySchema.parse(await req.json());
+  } catch {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const serviceStart = new Date(body.activationDate);
+  if (Number.isNaN(serviceStart.getTime())) {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "Invalid activation date." }, { status: 400 });
+  }
+
+  const purchase = await prisma.cartPurchase.findFirst({
+    where: { id: body.purchaseId, cartSessionId: cartSession.id },
+    include: { plan: true },
+  });
+
+  if (!purchase || purchase.status !== "authorized") {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "This purchase is not available for redemption." }, { status: 400 });
+  }
+
+  const codeUpper = body.voucherCode.trim().toUpperCase();
+  const voucher = await prisma.voucher.findUnique({
+    where: { code: codeUpper },
+    include: { plan: true },
+  });
+
+  if (!voucher) {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "Invalid PIN or voucher code." }, { status: 400 });
+  }
+
+  // Physical cart flow: PIN is neutral at import — plan comes from CartPurchase after payment.
+  if (voucher.type !== "top_up" || voucher.plan.planType !== "physical_sim") {
+    await recordFailedAttempt(key);
+    return NextResponse.json(
+      { error: "This code is not valid for physical card activation after cart checkout." },
+      { status: 400 },
+    );
+  }
+
+  // Cart-only: allow scratch inventory as inactive (never dealer-unlocked) or activated (legacy).
+  if (voucher.status === "redeemed") {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
+  }
+  if (voucher.status !== "activated" && voucher.status !== "inactive") {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "This voucher cannot be used in the cart flow." }, { status: 400 });
+  }
+
+  const redeemedBy = `${purchase.customerEmail} · cart · ${cartSession.phoneE164}`;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const claimed = await tx.voucher.updateMany({
+        where: { id: voucher.id, status: { in: ["inactive", "activated"] } },
+        data: {
+          status: "redeemed",
+          redeemedAt: new Date(),
+          redeemedBy,
+          // Align voucher row with the plan paid for on checkout (neutral inventory → sold plan).
+          planId: purchase.planId,
+        },
+      });
+      if (claimed.count === 0) {
+        const err = new Error("VOUCHER_CLAIM_FAILED");
+        err.name = "VOUCHER_CLAIM_FAILED";
+        throw err;
+      }
+
+      await tx.cartPurchase.update({
+        where: { id: purchase.id },
+        data: {
+          status: "redeemed",
+          voucherId: voucher.id,
+          serviceStartDate: serviceStart,
+          redeemedAt: new Date(),
+        },
+      });
+
+      await tx.activationRequest.create({
+        data: {
+          email: purchase.customerEmail,
+          scenario: ACTIVATION_SCENARIO_CART_VOUCHER,
+          planId: purchase.planId,
+          voucherCode: codeUpper,
+          voucherId: voucher.id,
+          amountPaidCents: purchase.amountPaidCents,
+          travelDate: serviceStart,
+          status: "scheduled",
+          hasPartnerSim: false,
+          hardwareDeductionCents: 0,
+          shippingDeductionCents: 0,
+        },
+      });
+    });
+  } catch (e) {
+    const name = e instanceof Error ? e.name : "";
+    if (name === "VOUCHER_CLAIM_FAILED") {
+      await recordFailedAttempt(key);
+      return NextResponse.json({ error: "This voucher could not be applied. Try again or contact support." }, { status: 409 });
+    }
+    throw e;
+  }
+
+  const { ip, userAgent } = getRequestClientMeta(req);
+  await prisma.auditLog.create({
+    data: {
+      action: "cart_voucher_redeemed",
+      metadata: JSON.stringify({
+        purchaseId: purchase.id,
+        planId: purchase.planId,
+        voucherId: voucher.id,
+        ip,
+        userAgent,
+      }),
+    },
+  });
+
+  return NextResponse.json({ ok: true });
+}

@@ -5,6 +5,10 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { getRequestClientMeta } from "@/lib/request-meta";
 import { deletePendingActivationRequestsForIccid, normalizeIccid } from "@/lib/activation-dedupe";
+import {
+  isStripeCartVoucherFlow,
+  readCartSessionIdFromStripeMetadata,
+} from "@/lib/stripe-cart-flow";
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -36,39 +40,39 @@ export async function POST(req: Request) {
 
   const flow = session.metadata?.flow ?? "";
 
-  if (flow === "shop_voucher") {
-    const existingShop = await prisma.shopPurchase.findUnique({
+  if (isStripeCartVoucherFlow(flow)) {
+    const existingPurchase = await prisma.cartPurchase.findUnique({
       where: { stripePaymentId: paymentId },
     });
-    if (existingShop) {
+    if (existingPurchase) {
       return NextResponse.json({ received: true });
     }
 
-    const shopSessionId = session.metadata?.shopSessionId ?? "";
+    const cartSessionId = readCartSessionIdFromStripeMetadata(session.metadata);
     const planId = session.metadata?.planId ?? "";
     const emailMeta = (session.metadata?.customerEmail ?? "").trim();
     const email =
       emailMeta ||
       (session.customer_email ?? "").trim() ||
       (session.customer_details?.email ?? "").trim() ||
-      `reconcile+${session.id}@usalocalsim.shop`;
+      `reconcile+${session.id}@usalocalsim.com`;
 
-    if (!planId || !shopSessionId) {
+    if (!planId || !cartSessionId) {
       await prisma.auditLog.create({
         data: {
-          action: "shop_webhook_invalid_metadata",
-          metadata: JSON.stringify({ stripePaymentId: paymentId, planId, shopSessionId }),
+          action: "cart_webhook_invalid_metadata",
+          metadata: JSON.stringify({ stripePaymentId: paymentId, planId, cartSessionId }),
         },
       });
       return NextResponse.json({ received: true });
     }
 
-    const shopSession = await prisma.shopSession.findUnique({ where: { id: shopSessionId } });
-    if (!shopSession) {
+    const cartSession = await prisma.cartSession.findUnique({ where: { id: cartSessionId } });
+    if (!cartSession) {
       await prisma.auditLog.create({
         data: {
-          action: "shop_webhook_missing_session",
-          metadata: JSON.stringify({ stripePaymentId: paymentId, shopSessionId }),
+          action: "cart_webhook_missing_session",
+          metadata: JSON.stringify({ stripePaymentId: paymentId, cartSessionId }),
         },
       });
       return NextResponse.json({ received: true });
@@ -80,16 +84,16 @@ export async function POST(req: Request) {
     if (!plan) {
       await prisma.auditLog.create({
         data: {
-          action: "shop_webhook_invalid_plan",
+          action: "cart_webhook_invalid_plan",
           metadata: JSON.stringify({ stripePaymentId: paymentId, planId }),
         },
       });
       return NextResponse.json({ received: true });
     }
 
-    const createdShop = await prisma.shopPurchase.create({
+    const createdPurchase = await prisma.cartPurchase.create({
       data: {
-        shopSessionId: shopSession.id,
+        cartSessionId: cartSession.id,
         planId: plan.id,
         stripePaymentId: paymentId,
         amountPaidCents: session.amount_total ?? 0,
@@ -101,11 +105,11 @@ export async function POST(req: Request) {
     const { ip, userAgent } = getRequestClientMeta(req);
     await prisma.auditLog.create({
       data: {
-        action: "stripe_shop_checkout_completed",
+        action: "stripe_cart_checkout_completed",
         metadata: JSON.stringify({
-          shopPurchaseId: createdShop.id,
+          cartPurchaseId: createdPurchase.id,
           planId: plan.id,
-          shopSessionId: shopSession.id,
+          cartSessionId: cartSession.id,
           stripePaymentId: paymentId,
           amountTotal: session.amount_total,
           ip,
