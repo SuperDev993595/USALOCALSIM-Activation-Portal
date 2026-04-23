@@ -318,6 +318,8 @@
   "cart": {
     "title": "Cart · verify your phone",
     "subtitle": "Enter your mobile number. We will send a one-time code by SMS before showing plans or checkout.",
+    "resumePendingBanner": "We opened a secure link from your payment email. Verify the same phone number you used at checkout, then you will continue to card activation.",
+    "resumeInvalidBanner": "That recovery link is missing or no longer valid. If you already paid, check your email for a newer message or contact support with your receipt.",
     "phoneLabel": "Phone number",
     "phoneHint": "US/CA: 10 digits, or full international (e.g. +44…, 63…, or 00…).",
     "sendCode": "Send code",

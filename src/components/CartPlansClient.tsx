@@ -13,7 +13,14 @@ export type CartPlanRow = {
   market: string;
 };
 
-export function CartPlansClient({ plans }: { plans: CartPlanRow[] }) {
+export function CartPlansClient({
+  plans,
+  pendingActivations = 0,
+}: {
+  plans: CartPlanRow[];
+  /** Paid but not yet redeemed (same verified session). */
+  pendingActivations?: number;
+}) {
   const t = useTranslations("cart");
   const [email, setEmail] = useState("");
   const [planId, setPlanId] = useState<string | null>(plans[0]?.id ?? null);
@@ -71,6 +78,14 @@ export function CartPlansClient({ plans }: { plans: CartPlanRow[] }) {
         <Link href="/cart" className="text-sm text-[#00104E] underline">
           {t("backCart")}
         </Link>
+        {pendingActivations > 0 ? (
+          <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p className="font-medium">{t("plansResumeBanner", { count: pendingActivations })}</p>
+            <Link href="/cart/paid" className="mt-2 inline-block font-semibold text-[#00104E] underline">
+              {t("plansResumeCta")}
+            </Link>
+          </div>
+        ) : null}
         <h1 className="mt-4 text-2xl font-bold text-slate-900">{t("plansTitle")}</h1>
         <p className="mt-2 text-sm text-slate-600">{t("plansSubtitle")}</p>
       </div>

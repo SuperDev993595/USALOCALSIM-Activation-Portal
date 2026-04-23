@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { prisma } from "@/lib/db";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { normalizePhoneE164 } from "@/lib/phone-e164";
 import { verifyCartPhoneOtpAndCreateSession } from "@/lib/cart-phone-otp";
 import { CART_SESSION_COOKIE, cartSessionCookieOptions } from "@/lib/cart-session";
+import {
+  CART_RESUME_COOKIE,
+  clearCartResumeCookieOptions,
+  readResumeTokenFromRequest,
+  tryConsumeCartResumeCookie,
+} from "@/lib/cart-resume";
 
 const bodySchema = z.object({
   phone: z.string().min(5),
@@ -31,13 +38,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid phone number." }, { status: 400 });
   }
 
+  const resumeTokenEarly = readResumeTokenFromRequest(req);
+  if (resumeTokenEarly) {
+    const resumeRow = await prisma.cartPurchaseResumeToken.findUnique({
+      where: { token: resumeTokenEarly.trim() },
+      select: { phoneE164: true, expiresAt: true },
+    });
+    if (resumeRow && resumeRow.expiresAt.getTime() > Date.now() && resumeRow.phoneE164 !== phoneE164) {
+      return NextResponse.json(
+        {
+          error:
+            "This recovery link was created for a different phone number. Enter the same number you verified during checkout, then request a new SMS code.",
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   const result = await verifyCartPhoneOtpAndCreateSession(phoneE164, body.code);
   if (!result.ok) {
     await recordFailedAttempt(ipKey);
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  const res = NextResponse.json({ ok: true });
+  const resumeToken = readResumeTokenFromRequest(req);
+  let redirectTo: string | undefined;
+
+  if (resumeToken) {
+    const rr = await tryConsumeCartResumeCookie(resumeToken, result.sessionId, phoneE164);
+    if (rr.kind === "attached") {
+      redirectTo = rr.redirectTo;
+    }
+  }
+
+  const res = NextResponse.json(redirectTo ? { ok: true, redirectTo } : { ok: true });
   res.cookies.set(CART_SESSION_COOKIE, result.sessionId, cartSessionCookieOptions());
+  if (resumeToken) {
+    res.cookies.set(CART_RESUME_COOKIE, "", clearCartResumeCookieOptions());
+  }
   return res;
 }

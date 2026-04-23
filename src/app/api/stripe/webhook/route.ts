@@ -9,6 +9,8 @@ import {
   isStripeCartVoucherFlow,
   readCartSessionIdFromStripeMetadata,
 } from "@/lib/stripe-cart-flow";
+import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
+import { sendCartPurchasePaidEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -91,15 +93,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
-    const createdPurchase = await prisma.cartPurchase.create({
-      data: {
-        cartSessionId: cartSession.id,
-        planId: plan.id,
-        stripePaymentId: paymentId,
-        amountPaidCents: session.amount_total ?? 0,
-        customerEmail: email,
-        status: "authorized",
-      },
+    const resumeToken = generateOpaqueResumeToken();
+    const createdPurchase = await prisma.$transaction(async (tx) => {
+      const purchase = await tx.cartPurchase.create({
+        data: {
+          cartSessionId: cartSession.id,
+          planId: plan.id,
+          stripePaymentId: paymentId,
+          amountPaidCents: session.amount_total ?? 0,
+          customerEmail: email,
+          status: "authorized",
+        },
+      });
+      await tx.cartPurchaseResumeToken.create({
+        data: {
+          token: resumeToken,
+          cartPurchaseId: purchase.id,
+          phoneE164: cartSession.phoneE164,
+          expiresAt: newResumeTokenExpiresAt(),
+        },
+      });
+      return purchase;
     });
 
     const { ip, userAgent } = getRequestClientMeta(req);
@@ -117,6 +131,30 @@ export async function POST(req: Request) {
         }),
       },
     });
+
+    const appBase = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "") || "http://localhost:3000";
+    const resumeUrl = `${appBase}/api/cart/resume?t=${encodeURIComponent(resumeToken)}`;
+    const isSyntheticReconcileEmail = /^reconcile\+/i.test(email) && /@usalocalsim\.com$/i.test(email);
+    if (!isSyntheticReconcileEmail) {
+      const mail = await sendCartPurchasePaidEmail({
+        to: email,
+        planName: plan.name,
+        resumeUrl,
+      });
+      if (!mail.ok) {
+        await prisma.auditLog.create({
+          data: {
+            action: "cart_purchase_email_failed",
+            metadata: JSON.stringify({
+              cartPurchaseId: createdPurchase.id,
+              error: mail.error ?? "unknown",
+              ip,
+              userAgent,
+            }),
+          },
+        });
+      }
+    }
 
     return NextResponse.json({ received: true });
   }

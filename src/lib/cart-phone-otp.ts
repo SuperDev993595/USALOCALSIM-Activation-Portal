@@ -70,6 +70,16 @@ export async function verifyCartPhoneOtpAndCreateSession(
 
   const session = await prisma.$transaction(async (tx) => {
     await tx.cartPhoneOtp.delete({ where: { phoneE164 } });
+    const existing = await tx.cartSession.findFirst({
+      where: { phoneE164, expiresAt: { gt: new Date() } },
+      orderBy: { verifiedAt: "desc" },
+    });
+    if (existing) {
+      return tx.cartSession.update({
+        where: { id: existing.id },
+        data: { expiresAt },
+      });
+    }
     return tx.cartSession.create({
       data: { phoneE164, verifiedAt, expiresAt },
     });

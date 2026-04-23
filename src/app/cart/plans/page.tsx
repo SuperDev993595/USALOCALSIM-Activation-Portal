@@ -31,9 +31,13 @@ export default async function CartPlansPage() {
     },
   });
 
+  const pendingActivations = await prisma.cartPurchase.count({
+    where: { cartSessionId: sid, status: "authorized" },
+  });
+
   return (
     <div className="flex flex-1 justify-center py-4 sm:py-8">
-      <CartPlansClient plans={plans} />
+      <CartPlansClient plans={plans} pendingActivations={pendingActivations} />
     </div>
   );
 }

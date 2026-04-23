@@ -59,6 +59,9 @@ export function CartCheckoutReturnClient() {
     return (
       <div className="ui-card mx-auto max-w-md p-6 text-center">
         <p className="text-sm text-red-600">{t("returnFailed")}</p>
+        <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
+          {t("returnTryPurchasesList")}
+        </Link>
         <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
           {t("goPlans")}
         </Link>
@@ -70,6 +73,9 @@ export function CartCheckoutReturnClient() {
     return (
       <div className="ui-card mx-auto max-w-md p-6 text-center">
         <p className="text-sm text-slate-700">{t("returnFailed")}</p>
+        <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
+          {t("returnTryPurchasesList")}
+        </Link>
         <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
           {t("goPlans")}
         </Link>

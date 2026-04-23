@@ -113,6 +113,19 @@ model CartSession {
   @@map("ShopSession")
 }
 
+// Opaque token emailed after cart payment so the customer can resume redeem if the browser session is lost.
+model CartPurchaseResumeToken {
+  id             String       @id @default(cuid())
+  token          String       @unique @db.VarChar(64)
+  cartPurchaseId String       @unique
+  cartPurchase   CartPurchase @relation(fields: [cartPurchaseId], references: [id], onDelete: Cascade)
+  phoneE164      String
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+
+  @@map("CartPurchaseResumeToken")
+}
+
 model CartPhoneOtp {
   id          String   @id @default(cuid())
   phoneE164 String   @unique
@@ -138,6 +151,7 @@ model CartPurchase {
   serviceStartDate DateTime?
   redeemedAt       DateTime?
   createdAt        DateTime    @default(now())
+  resumeToken      CartPurchaseResumeToken?
 
   @@index([cartSessionId])
   @@map("ShopPurchase")

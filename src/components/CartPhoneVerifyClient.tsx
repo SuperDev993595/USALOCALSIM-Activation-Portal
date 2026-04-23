@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-export function CartPhoneVerifyClient() {
+export function CartPhoneVerifyClient({ resumeQuery }: { resumeQuery: string | null }) {
   const t = useTranslations("cart");
   const router = useRouter();
   const [phone, setPhone] = useState("");
@@ -13,6 +13,13 @@ export function CartPhoneVerifyClient() {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resumeBanner = useMemo(() => {
+    if (!resumeQuery) return null;
+    if (resumeQuery === "pending") return t("resumePendingBanner");
+    if (resumeQuery === "invalid" || resumeQuery === "missing") return t("resumeInvalidBanner");
+    return null;
+  }, [resumeQuery, t]);
 
   async function sendCode() {
     setError(null);
@@ -43,9 +50,14 @@ export function CartPhoneVerifyClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, code }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; redirectTo?: string };
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
+        return;
+      }
+      if (typeof data.redirectTo === "string" && data.redirectTo.startsWith("/")) {
+        router.push(data.redirectTo);
+        router.refresh();
         return;
       }
       router.push("/cart/plans");
@@ -59,6 +71,9 @@ export function CartPhoneVerifyClient() {
     <div className="ui-card mx-auto w-full max-w-md p-6 sm:p-8">
       <h1 className="text-xl font-bold text-slate-900">{t("title")}</h1>
       <p className="mt-2 text-sm text-slate-600">{t("subtitle")}</p>
+      {resumeBanner ? (
+        <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">{resumeBanner}</p>
+      ) : null}
 
       {step === "phone" ? (
         <div className="mt-6 space-y-4">

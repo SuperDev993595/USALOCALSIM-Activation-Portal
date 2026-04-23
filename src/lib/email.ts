@@ -245,6 +245,29 @@ export async function sendAdminUserDeleteCodeEmail(
   return deliverSimpleMail({ to, subject, text, html });
 }
 
+export async function sendCartPurchasePaidEmail(opts: {
+  to: string;
+  planName: string;
+  resumeUrl: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const subject = `USALOCALSIM — payment received (${opts.planName})`;
+  const text =
+    `Thank you for your purchase.\n\n` +
+    `Plan: ${opts.planName}\n\n` +
+    `Next step: enter the PIN from your physical card and your service start date.\n\n` +
+    `If this page did not open after payment, use this link on the same phone number you verified at checkout:\n` +
+    `${opts.resumeUrl}\n\n` +
+    `The link expires in 30 days. If you did not make this purchase, contact support.\n`;
+  const html =
+    `<p>Thank you for your purchase.</p>` +
+    `<p><strong>Plan:</strong> ${escapeHtml(opts.planName)}</p>` +
+    `<p>Next step: enter the PIN from your physical card and your service start date.</p>` +
+    `<p>If the site did not open after payment, open this link on the <strong>same phone number</strong> you verified at checkout:</p>` +
+    `<p><a href="${escapeHtml(opts.resumeUrl)}">Continue to activation</a></p>` +
+    `<p style="font-size:12px;color:#555">This link expires in 30 days. If you did not make this purchase, contact support.</p>`;
+  return deliverSimpleMail({ to: opts.to, subject, text, html });
+}
+
 export async function sendAdminUserUpdateCodeEmail(
   to: string,
   code: string,
