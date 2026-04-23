@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 export type CartCheckoutPlanSummary = {
@@ -20,11 +19,11 @@ export function CartRedeemClient({
   plan: CartCheckoutPlanSummary;
 }) {
   const t = useTranslations("cart");
-  const router = useRouter();
   const [voucherCode, setVoucherCode] = useState("");
   const [activationDate, setActivationDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submissionComplete, setSubmissionComplete] = useState(false);
 
   async function submit() {
     setError(null);
@@ -44,10 +43,26 @@ export function CartRedeemClient({
         setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
         return;
       }
-      router.push("/cart/success");
+      setSubmissionComplete(true);
     } finally {
       setLoading(false);
     }
+  }
+
+  if (submissionComplete) {
+    return (
+      <div className="ui-card mx-auto w-full max-w-md p-6 sm:p-8 text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-2xl text-emerald-700">
+          ✓
+        </div>
+        <h1 className="text-xl font-bold text-slate-900">{t("successTitle")}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-slate-600">{t("successBody")}</p>
+        <p className="mt-6 text-sm text-slate-600">{t("redeemSuccessFooter")}</p>
+        <Link href="/cart/plans" className="btn-primary mt-6 inline-block px-6 py-2.5 text-sm font-semibold">
+          {t("goPlans")}
+        </Link>
+      </div>
+    );
   }
 
   return (

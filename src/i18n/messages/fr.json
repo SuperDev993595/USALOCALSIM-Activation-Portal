@@ -358,6 +358,7 @@
     "submitting": "Submitting…",
     "successTitle": "Request received",
     "successBody": "Your voucher is redeemed and your request is queued. Our team will activate service for your chosen start date. Watch your email for updates.",
+    "redeemSuccessFooter": "You are all set for this purchase. Use the plans page if you want to buy another plan on the same verified phone.",
     "backRedeem": "← Main redeem portal",
     "errorGeneric": "Something went wrong. Try again."
   }
