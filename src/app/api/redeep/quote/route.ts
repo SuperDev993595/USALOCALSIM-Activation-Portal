@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { PHASE2_FULFILLMENT_TYPES, computePhase2Totals } from "@/lib/redeep-phase2";
+import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -40,19 +41,27 @@ export async function POST(req: Request) {
           redemptionAccessExpiresAt: { gt: new Date() },
           status: "authorized",
         },
+        include: { prepaidCard: { include: { voucher: true } } },
       })
     : await prisma.cartPurchase.findFirst({
         where: { id: body.purchaseId, cartSessionId: cartSession!.id, status: "authorized" },
+        include: { prepaidCard: { include: { voucher: true } } },
       });
   if (!purchase) {
     return NextResponse.json({ error: "Purchase not found for this session." }, { status: 404 });
   }
 
-  const voucherCode = body.voucherCode.trim().toUpperCase();
-  const voucher = await prisma.voucher.findUnique({
-    where: { code: voucherCode },
-    include: { plan: true, prepaidCard: true },
-  });
+  const pinInput = body.voucherCode.trim();
+  let voucher =
+    purchase.prepaidCard?.voucher && (await matchesVoucherPin(purchase.prepaidCard.voucher, pinInput))
+      ? await prisma.voucher.findUnique({
+          where: { id: purchase.prepaidCard.voucher.id },
+          include: { plan: true, prepaidCard: true },
+        })
+      : null;
+  if (!voucher) {
+    voucher = await resolveVoucherByPin(pinInput);
+  }
   if (!voucher) {
     return NextResponse.json({ error: "Invalid PIN or voucher code." }, { status: 400 });
   }

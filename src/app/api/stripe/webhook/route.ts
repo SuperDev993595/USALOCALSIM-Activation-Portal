@@ -53,6 +53,7 @@ export async function POST(req: Request) {
 
     const cartSessionId = readCartSessionIdFromStripeMetadata(session.metadata);
     const planId = session.metadata?.planId ?? "";
+    const customerName = (session.metadata?.customerName ?? "").trim();
     const emailMeta = (session.metadata?.customerEmail ?? "").trim();
     const email =
       emailMeta ||
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
           planId: plan.id,
           stripePaymentId: paymentId,
           amountPaidCents: session.amount_total ?? 0,
+          customerName: customerName || null,
           customerEmail: email,
           status: "authorized",
           prepaidCardId: verifiedPrepaidId,
@@ -143,6 +145,28 @@ export async function POST(req: Request) {
           expiresAt: newResumeTokenExpiresAt(),
         },
       });
+      if (verifiedPrepaidId) {
+        const prepaid = await tx.prepaidCard.findUnique({
+          where: { id: verifiedPrepaidId },
+          include: { voucher: true },
+        });
+        if (prepaid?.voucher) {
+          await tx.voucher.update({
+            where: { id: prepaid.voucher.id },
+            data: {
+              paymentStatus: true,
+              isVerified: true,
+              customerEmail: email,
+              customerName: customerName || null,
+              customerPhone: cartSession.phoneE164,
+              creditAmountCents:
+                prepaid.voucher.creditAmountCents > 0
+                  ? prepaid.voucher.creditAmountCents
+                  : session.amount_total ?? 0,
+            },
+          });
+        }
+      }
       return purchase;
     });
 

@@ -11,7 +11,13 @@ export default async function RedeemPage({
 }) {
   const purchaseId = Array.isArray(searchParams.purchaseId) ? searchParams.purchaseId[0] : searchParams.purchaseId;
   const access = Array.isArray(searchParams.access) ? searchParams.access[0] : searchParams.access;
-  if (!purchaseId) redirect("/cart/plans");
+  if (!purchaseId) {
+    return (
+      <div className="flex flex-1 justify-center py-8">
+        <RedeepPhase2Client />
+      </div>
+    );
+  }
 
   if (access?.trim()) {
     const purchase = await prisma.cartPurchase.findFirst({

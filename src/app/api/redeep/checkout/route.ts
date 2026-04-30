@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { PHASE2_FULFILLMENT_TYPES, computePhase2Totals } from "@/lib/redeep-phase2";
+import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -45,9 +46,11 @@ export async function POST(req: Request) {
           redemptionAccessExpiresAt: { gt: now },
           status: "authorized",
         },
+        include: { prepaidCard: { include: { voucher: true } } },
       })
     : await prisma.cartPurchase.findFirst({
         where: { id: body.purchaseId, cartSessionId: cartSession!.id, status: "authorized" },
+        include: { prepaidCard: { include: { voucher: true } } },
       });
   if (!purchase) {
     return NextResponse.json({ error: "Purchase not found for this session." }, { status: 404 });
@@ -63,10 +66,15 @@ export async function POST(req: Request) {
   const plan = await prisma.plan.findUnique({ where: { id: body.planId } });
   if (!plan) return NextResponse.json({ error: "Plan not found." }, { status: 404 });
 
-  const voucher = await prisma.voucher.findUnique({
-    where: { code: body.voucherCode.trim().toUpperCase() },
-    include: { plan: true },
-  });
+  const pinInput = body.voucherCode.trim();
+  let voucher =
+    purchase.prepaidCard?.voucher && (await matchesVoucherPin(purchase.prepaidCard.voucher, pinInput))
+      ? await prisma.voucher.findUnique({
+          where: { id: purchase.prepaidCard.voucher.id },
+          include: { plan: true },
+        })
+      : null;
+  if (!voucher) voucher = await resolveVoucherByPin(pinInput);
   if (!voucher || voucher.status === "redeemed") {
     return NextResponse.json({ error: "Invalid or already redeemed voucher." }, { status: 400 });
   }

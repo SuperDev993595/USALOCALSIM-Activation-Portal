@@ -13,6 +13,7 @@ import { isPlanAllowedForPrepaidCard, loadPrepaidCardClaimedBySession } from "@/
 const bodySchema = z.object({
   planId: z.string().min(1),
   email: z.string().email(),
+  customerName: z.string().min(2).max(120),
 });
 
 export async function POST(req: Request) {
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
   try {
     body = bodySchema.parse(await req.json());
   } catch {
-    return NextResponse.json({ error: "Invalid request: planId and email required." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request: planId, name, and email required." }, { status: 400 });
   }
 
   const plan = await prisma.plan.findFirst({
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
       flow: STRIPE_CART_CHECKOUT_FLOW,
       [STRIPE_CART_SESSION_METADATA_KEY]: cartSession.id,
       planId: plan.id,
+      customerName: body.customerName.trim(),
       customerEmail: body.email.trim(),
       ...(prepaid ? { [STRIPE_PREPAID_CARD_METADATA_KEY]: prepaid.id } : {}),
     },

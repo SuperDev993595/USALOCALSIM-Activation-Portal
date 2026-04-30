@@ -25,6 +25,7 @@ export function CartPlansClient({
   prepaidUpsell?: boolean;
 }) {
   const t = useTranslations("cart");
+  const [customerName, setCustomerName] = useState("");
   const [email, setEmail] = useState("");
   const [planId, setPlanId] = useState<string | null>(plans[0]?.id ?? null);
   const [loading, setLoading] = useState<"stripe" | "mercadopago" | null>(null);
@@ -38,7 +39,7 @@ export function CartPlansClient({
       const res = await fetch("/api/cart/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, email }),
+        body: JSON.stringify({ planId, email, customerName }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
       if (!res.ok || !data.url) {
@@ -59,7 +60,7 @@ export function CartPlansClient({
       const res = await fetch("/api/cart/checkout/mercadopago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId, email }),
+        body: JSON.stringify({ planId, email, customerName }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (res.status === 501) {
@@ -128,6 +129,17 @@ export function CartPlansClient({
       </div>
 
       <div className="ui-card mt-6 p-5">
+        <label className="mb-1 mt-1 block text-sm font-medium text-slate-800" htmlFor="cart-name">
+          Full name
+        </label>
+        <input
+          id="cart-name"
+          type="text"
+          autoComplete="name"
+          value={customerName}
+          onChange={(e) => setCustomerName(e.target.value)}
+          className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
+        />
         <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="cart-email">
           {t("emailLabel")}
         </label>
@@ -143,7 +155,7 @@ export function CartPlansClient({
         <button
           type="button"
           className="btn-primary mt-4 w-full py-2.5 text-sm font-semibold disabled:opacity-60"
-          disabled={loading !== null || !email.trim() || !planId}
+          disabled={loading !== null || !customerName.trim() || !email.trim() || !planId}
           onClick={() => void checkoutStripe()}
         >
           {loading === "stripe" ? t("paying") : t("payWithStripe")}
@@ -151,7 +163,7 @@ export function CartPlansClient({
         <button
           type="button"
           className="mt-3 w-full border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 disabled:opacity-60"
-          disabled={loading !== null || !email.trim() || !planId}
+          disabled={loading !== null || !customerName.trim() || !email.trim() || !planId}
           onClick={() => void checkoutMercadoPago()}
         >
           {loading === "mercadopago" ? t("paying") : t("payWithMercadoPago")}

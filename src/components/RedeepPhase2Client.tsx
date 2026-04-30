@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 type PlanRow = {
   id: string;
@@ -15,12 +16,14 @@ type PlanRow = {
 type FulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
 
 export function RedeepPhase2Client({
-  purchaseId,
-  accessToken,
+  purchaseId: purchaseIdProp,
+  accessToken: accessTokenProp,
 }: {
-  purchaseId: string;
+  purchaseId?: string | null;
   accessToken?: string | null;
 }) {
+  const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
+  const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
   const [voucherCode, setVoucherCode] = useState("");
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
@@ -45,15 +48,38 @@ export function RedeepPhase2Client({
     setError(null);
     setLoading("unlock");
     try {
+      let pid = purchaseId;
+      let at = accessToken;
+      if (!pid) {
+        const startRes = await fetch("/api/redeem/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin: voucherCode }),
+        });
+        const startData = (await startRes.json().catch(() => ({}))) as {
+          error?: string;
+          purchaseId?: string;
+          accessToken?: string;
+        };
+        if (!startRes.ok || !startData.purchaseId) {
+          setError(typeof startData.error === "string" ? startData.error : "Unable to start Phase 2 from this PIN.");
+          return;
+        }
+        pid = startData.purchaseId;
+        at = typeof startData.accessToken === "string" ? startData.accessToken : "";
+        setPurchaseId(pid);
+        setAccessToken(at);
+      }
+
       const res = await fetch("/api/redeem/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          purchaseId,
+          purchaseId: pid,
           voucherCode,
           ...(planId ? { planId } : {}),
           ...(fType ? { fulfillmentType: fType } : {}),
-          ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
+          ...(at ? { accessToken: at } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -98,7 +124,7 @@ export function RedeepPhase2Client({
           fulfillmentType,
           iccid,
           shippingAddress,
-          ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
+          ...(accessToken ? { accessToken } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; zeroDue?: boolean; url?: string };
@@ -129,7 +155,7 @@ export function RedeepPhase2Client({
           purchaseId,
           voucherCode,
           activationDate,
-          ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
+          ...(accessToken ? { accessToken } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -160,6 +186,11 @@ export function RedeepPhase2Client({
       <p className="mt-2 text-sm text-slate-600">
         Enter PIN, choose hardware fulfillment, select a plan, and pay only the balance over voucher credit.
       </p>
+      {!purchaseIdProp ? (
+        <p className="mt-1 text-xs text-slate-500">
+          Need the classic voucher flow? <Link href="/redeem/legacy" className="underline">Open legacy redeem</Link>.
+        </p>
+      ) : null}
 
       <div className="mt-6">
         <label className="mb-1 block text-sm font-medium text-slate-800">PIN / voucher code</label>
@@ -174,7 +205,7 @@ export function RedeepPhase2Client({
           disabled={loading !== null || !voucherCode.trim()}
           onClick={() => void unlockAndQuote()}
         >
-          {loading === "unlock" ? "Unlocking..." : "Unlock credit"}
+          {loading === "unlock" ? "Unlocking..." : purchaseId ? "Refresh quote" : "Unlock credit"}
         </button>
       </div>
 

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-server";
 import { z } from "zod";
 import { getRequestClientMeta } from "@/lib/request-meta";
+import { hash } from "bcryptjs";
+import { pinLast4 } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
   codes: z.array(z.string().min(1)).min(1).max(5000),
@@ -38,6 +40,8 @@ export async function POST(req: Request) {
     await prisma.voucher.create({
       data: {
         code: normalized,
+        pinCodeHash: await hash(normalized, 10),
+        pinLast4: pinLast4(normalized),
         status: "inactive",
         type: body.type,
         planId: body.planId,

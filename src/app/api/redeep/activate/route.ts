@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
 import { PHASE2_FULFILLMENT_TYPES } from "@/lib/redeep-phase2";
+import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -39,18 +40,23 @@ export async function POST(req: Request) {
           redemptionAccessExpiresAt: { gt: new Date() },
           status: "authorized",
         },
-        include: { plan: true },
+        include: { plan: true, prepaidCard: { include: { voucher: true } } },
       })
     : await prisma.cartPurchase.findFirst({
         where: { id: body.purchaseId, cartSessionId: cartSession!.id, status: "authorized" },
-        include: { plan: true },
+        include: { plan: true, prepaidCard: { include: { voucher: true } } },
       });
   if (!purchase) {
     return NextResponse.json({ error: "Purchase is not available for activation." }, { status: 400 });
   }
 
-  const voucherCode = body.voucherCode.trim().toUpperCase();
-  const voucher = await prisma.voucher.findUnique({ where: { code: voucherCode } });
+  const pinInput = body.voucherCode.trim();
+  const voucherCode = pinInput.toUpperCase();
+  let voucher =
+    purchase.prepaidCard?.voucher && (await matchesVoucherPin(purchase.prepaidCard.voucher, pinInput))
+      ? await prisma.voucher.findUnique({ where: { id: purchase.prepaidCard.voucher.id } })
+      : null;
+  if (!voucher) voucher = await resolveVoucherByPin(pinInput);
   if (!voucher || voucher.status === "redeemed") {
     return NextResponse.json({ error: "Invalid or already redeemed PIN." }, { status: 400 });
   }
@@ -83,6 +89,7 @@ export async function POST(req: Request) {
         redeemedBy: `${purchase.customerEmail} · phase2`,
         paymentStatus: true,
         isVerified: true,
+        customerName: purchase.customerName ?? voucher.customerName,
         customerEmail: purchase.customerEmail,
         customerPhone: cartSession?.phoneE164 ?? voucher.customerPhone,
         linkedIccid: purchase.phase2Iccid?.trim() || null,

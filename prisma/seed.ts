@@ -3,6 +3,10 @@ import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+function pinLast4(raw: string): string {
+  return raw.trim().toUpperCase().slice(-4);
+}
+
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@usalocalsim.com";
   const adminPassword = process.env.ADMIN_PASSWORD ?? "ChangeMe123!";
@@ -77,6 +81,8 @@ async function main() {
     demoVoucher = await prisma.voucher.create({
       data: {
         code: demoPin,
+        pinCodeHash: await hash(demoPin.toUpperCase(), 10),
+        pinLast4: pinLast4(demoPin),
         status: "inactive",
         type: "top_up",
         planId: prepaidBasic.id,

@@ -65,6 +65,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
+  const claimedCard = await prisma.prepaidCard.findFirst({
+    where: { claimedCartSessionId: result.sessionId },
+    include: { voucher: true },
+  });
+  if (claimedCard?.voucher) {
+    await prisma.voucher.update({
+      where: { id: claimedCard.voucher.id },
+      data: {
+        isVerified: true,
+        customerPhone: phoneE164,
+      },
+    });
+  }
+
   const resumeToken = readResumeTokenFromRequest(req);
   let redirectTo: string | undefined;
 
