@@ -16,10 +16,13 @@ export type CartPlanRow = {
 export function CartPlansClient({
   plans,
   pendingActivations = 0,
+  prepaidUpsell = false,
 }: {
   plans: CartPlanRow[];
   /** Paid but not yet redeemed (same verified session). */
   pendingActivations?: number;
+  /** QR prepaid flow: only base + optional upgrade plans are shown. */
+  prepaidUpsell?: boolean;
 }) {
   const t = useTranslations("cart");
   const [email, setEmail] = useState("");
@@ -88,6 +91,12 @@ export function CartPlansClient({
         ) : null}
         <h1 className="mt-4 text-2xl font-bold text-slate-900">{t("plansTitle")}</h1>
         <p className="mt-2 text-sm text-slate-600">{t("plansSubtitle")}</p>
+        {prepaidUpsell ? (
+          <div className="mt-4 rounded border border-[#00104E]/20 bg-slate-50 px-4 py-3 text-sm text-slate-800">
+            <p className="font-semibold text-slate-900">{t("upsellTitle")}</p>
+            <p className="mt-1 text-slate-700">{t("upsellBody")}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-3">

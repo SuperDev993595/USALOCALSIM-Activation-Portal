@@ -15,6 +15,8 @@ import {
 const bodySchema = z.object({
   phone: z.string().min(5),
   code: z.string().min(4),
+  /** From QR `?serial=` — bound to this verified session in the same transaction as OTP success. */
+  prepaidSerial: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -55,7 +57,9 @@ export async function POST(req: Request) {
     }
   }
 
-  const result = await verifyCartPhoneOtpAndCreateSession(phoneE164, body.code);
+  const result = await verifyCartPhoneOtpAndCreateSession(phoneE164, body.code, {
+    prepaidSerial: body.prepaidSerial,
+  });
   if (!result.ok) {
     await recordFailedAttempt(ipKey);
     return NextResponse.json({ error: result.error }, { status: 400 });

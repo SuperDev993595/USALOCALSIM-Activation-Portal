@@ -14,9 +14,12 @@ export type CartCheckoutPlanSummary = {
 export function CartRedeemClient({
   purchaseId,
   plan,
+  accessToken,
 }: {
   purchaseId: string;
   plan: CartCheckoutPlanSummary;
+  /** From payment email — redeem without cart session / SMS. */
+  accessToken?: string | null;
 }) {
   const t = useTranslations("cart");
   const [voucherCode, setVoucherCode] = useState("");
@@ -36,6 +39,7 @@ export function CartRedeemClient({
           purchaseId,
           voucherCode,
           activationDate,
+          ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -57,8 +61,14 @@ export function CartRedeemClient({
         </div>
         <h1 className="text-xl font-bold text-slate-900">{t("successTitle")}</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-600">{t("successBody")}</p>
+        <Link
+          href={`/cart/schedule?purchaseId=${encodeURIComponent(purchaseId)}${accessToken?.trim() ? `&access=${encodeURIComponent(accessToken.trim())}` : ""}`}
+          className="btn-primary mt-6 inline-block px-6 py-2.5 text-sm font-semibold"
+        >
+          {t("manageScheduleCta")}
+        </Link>
         <p className="mt-6 text-sm text-slate-600">{t("redeemSuccessFooter")}</p>
-        <Link href="/cart/plans" className="btn-primary mt-6 inline-block px-6 py-2.5 text-sm font-semibold">
+        <Link href="/cart/plans" className="mt-4 inline-block text-sm font-semibold text-[#00104E] underline">
           {t("goPlans")}
         </Link>
       </div>
@@ -67,9 +77,13 @@ export function CartRedeemClient({
 
   return (
     <div className="ui-card mx-auto w-full max-w-md p-6 sm:p-8">
-      <Link href={`/cart/paid?purchaseId=${encodeURIComponent(purchaseId)}`} className="text-sm text-[#00104E] underline">
-        {t("backCart")}
-      </Link>
+      {accessToken?.trim() ? (
+        <p className="text-xs text-slate-500">{t("redeemDirectLinkHint")}</p>
+      ) : (
+        <Link href={`/cart/paid?purchaseId=${encodeURIComponent(purchaseId)}`} className="text-sm text-[#00104E] underline">
+          {t("backCart")}
+        </Link>
+      )}
       <h1 className="mt-4 text-xl font-bold text-slate-900">{t("redeemTitle")}</h1>
       <p className="mt-2 text-sm text-slate-600">{t("redeemSubtitle")}</p>
 

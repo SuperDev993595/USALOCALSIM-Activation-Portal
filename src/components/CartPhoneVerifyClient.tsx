@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-export function CartPhoneVerifyClient({ resumeQuery }: { resumeQuery: string | null }) {
+export function CartPhoneVerifyClient({
+  resumeQuery,
+  prepaidSerialFromQr,
+}: {
+  resumeQuery: string | null;
+  /** From physical card QR (`/cart?serial=` or `/pay?serial=`). Sent with OTP verify to bind phone + serial. */
+  prepaidSerialFromQr?: string | null;
+}) {
   const t = useTranslations("cart");
   const router = useRouter();
   const [phone, setPhone] = useState("");
@@ -48,7 +55,11 @@ export function CartPhoneVerifyClient({ resumeQuery }: { resumeQuery: string | n
       const res = await fetch("/api/cart/phone/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code }),
+        body: JSON.stringify({
+          phone,
+          code,
+          ...(prepaidSerialFromQr?.trim() ? { prepaidSerial: prepaidSerialFromQr.trim() } : {}),
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; redirectTo?: string };
       if (!res.ok) {
@@ -73,6 +84,11 @@ export function CartPhoneVerifyClient({ resumeQuery }: { resumeQuery: string | n
       <p className="mt-2 text-sm text-slate-600">{t("subtitle")}</p>
       {resumeBanner ? (
         <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">{resumeBanner}</p>
+      ) : null}
+      {prepaidSerialFromQr?.trim() ? (
+        <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
+          {t("serialQrBanner")}
+        </p>
       ) : null}
 
       {step === "phone" ? (

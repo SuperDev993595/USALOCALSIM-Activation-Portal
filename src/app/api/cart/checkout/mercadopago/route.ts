@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
 import { mercadoPagoCartStubResponse } from "@/lib/mercadopago-cart";
+import { isPlanAllowedForPrepaidCard, loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -31,6 +32,14 @@ export async function POST(req: Request) {
   });
   if (!plan) {
     return NextResponse.json({ error: "Plan not found." }, { status: 404 });
+  }
+
+  const prepaid = await loadPrepaidCardClaimedBySession(cartSession.id);
+  if (prepaid && !isPlanAllowedForPrepaidCard(prepaid, plan.id)) {
+    return NextResponse.json(
+      { error: "This plan is not available for the card you scanned. Choose the included plan or the upgrade." },
+      { status: 400 },
+    );
   }
 
   if (plan.priceCents <= 0) {

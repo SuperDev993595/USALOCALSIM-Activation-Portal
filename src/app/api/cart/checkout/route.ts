@@ -6,7 +6,9 @@ import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/car
 import {
   STRIPE_CART_CHECKOUT_FLOW,
   STRIPE_CART_SESSION_METADATA_KEY,
+  STRIPE_PREPAID_CARD_METADATA_KEY,
 } from "@/lib/stripe-cart-flow";
+import { isPlanAllowedForPrepaidCard, loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -35,6 +37,14 @@ export async function POST(req: Request) {
   });
   if (!plan) {
     return NextResponse.json({ error: "Plan not found." }, { status: 404 });
+  }
+
+  const prepaid = await loadPrepaidCardClaimedBySession(cartSession.id);
+  if (prepaid && !isPlanAllowedForPrepaidCard(prepaid, plan.id)) {
+    return NextResponse.json(
+      { error: "This plan is not available for the card you scanned. Choose the included plan or the upgrade." },
+      { status: 400 },
+    );
   }
 
   if (plan.priceCents <= 0) {
@@ -72,6 +82,7 @@ export async function POST(req: Request) {
       [STRIPE_CART_SESSION_METADATA_KEY]: cartSession.id,
       planId: plan.id,
       customerEmail: body.email.trim(),
+      ...(prepaid ? { [STRIPE_PREPAID_CARD_METADATA_KEY]: prepaid.id } : {}),
     },
   });
 

@@ -6,6 +6,9 @@ export const STRIPE_CART_CHECKOUT_FLOW = "cart_voucher";
 /** Current Stripe Checkout metadata key for the verified phone session id. */
 export const STRIPE_CART_SESSION_METADATA_KEY = "cartSessionId";
 
+/** Optional PrepaidCard id when checkout started from a QR serial flow. */
+export const STRIPE_PREPAID_CARD_METADATA_KEY = "prepaidCardId";
+
 /** ActivationRequest.scenario for redemptions from this flow. */
 export const ACTIVATION_SCENARIO_CART_VOUCHER = "cart_voucher";
 
@@ -30,4 +33,12 @@ export function readCartSessionIdFromStripeMetadata(
   const legacy = m[LEGACY_SESSION_KEY];
   if (typeof legacy === "string" && legacy.trim()) return legacy.trim();
   return "";
+}
+
+export function readPrepaidCardIdFromStripeMetadata(
+  metadata: Stripe.Metadata | null | undefined,
+): string {
+  const m = (metadata ?? {}) as Record<string, string | undefined>;
+  const v = m[STRIPE_PREPAID_CARD_METADATA_KEY];
+  return typeof v === "string" ? v.trim() : "";
 }

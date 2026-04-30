@@ -18,18 +18,46 @@ export default async function CartPlansPage() {
     redirect("/cart");
   }
 
-  const plans = await prisma.plan.findMany({
-    where: { planType: "physical_sim" },
-    orderBy: [{ market: "asc" }, { durationDays: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      dataAllowance: true,
-      durationDays: true,
-      priceCents: true,
-      market: true,
+  const prepaid = await prisma.prepaidCard.findFirst({
+    where: { claimedCartSessionId: sid },
+    include: {
+      basePlan: {
+        select: {
+          id: true,
+          name: true,
+          dataAllowance: true,
+          durationDays: true,
+          priceCents: true,
+          market: true,
+        },
+      },
+      upgradePlan: {
+        select: {
+          id: true,
+          name: true,
+          dataAllowance: true,
+          durationDays: true,
+          priceCents: true,
+          market: true,
+        },
+      },
     },
   });
+
+  const plans = prepaid
+    ? [prepaid.basePlan, prepaid.upgradePlan].filter((p): p is NonNullable<typeof p> => p != null)
+    : await prisma.plan.findMany({
+        where: { planType: "physical_sim" },
+        orderBy: [{ market: "asc" }, { durationDays: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          dataAllowance: true,
+          durationDays: true,
+          priceCents: true,
+          market: true,
+        },
+      });
 
   const pendingActivations = await prisma.cartPurchase.count({
     where: { cartSessionId: sid, status: "authorized" },
@@ -37,7 +65,11 @@ export default async function CartPlansPage() {
 
   return (
     <div className="flex flex-1 justify-center py-4 sm:py-8">
-      <CartPlansClient plans={plans} pendingActivations={pendingActivations} />
+      <CartPlansClient
+        plans={plans}
+        pendingActivations={pendingActivations}
+        prepaidUpsell={Boolean(prepaid?.upgradePlanId)}
+      />
     </div>
   );
 }

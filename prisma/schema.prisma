@@ -81,11 +81,21 @@ model Plan {
   vouchers      Voucher[]
   activationRequests ActivationRequest[]
   cartPurchases CartPurchase[]
+  prepaidCardsBase    PrepaidCard[] @relation("PrepaidCardBasePlan")
+  prepaidCardsUpgrade PrepaidCard[] @relation("PrepaidCardUpgradePlan")
 }
 
 model Voucher {
   id                 String   @id @default(cuid())
   code               String   @unique
+  pinCodeHash        String?
+  creditAmountCents  Int      @default(0)
+  customerEmail      String?
+  customerPhone      String?
+  isVerified         Boolean  @default(false)
+  paymentStatus      Boolean  @default(false)
+  linkedIccid        String?
+  fulfillmentType    String?  // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
   status             String   // "inactive" | "activated" | "redeemed"
   type               String   // "top_up" | "esim"
   planId             String
@@ -98,16 +108,34 @@ model Voucher {
   createdAt          DateTime @default(now())
   activationRequest  ActivationRequest?
   cartPurchase CartPurchase?
+  prepaidCard  PrepaidCard?
+}
+
+// Physical prepaid card: QR serial → scratch PIN (Voucher row) → base vs premium upsell at checkout.
+model PrepaidCard {
+  id                   String       @id @default(cuid())
+  serial               String       @unique
+  voucherId            String       @unique
+  voucher              Voucher      @relation(fields: [voucherId], references: [id])
+  basePlanId           String
+  basePlan             Plan         @relation("PrepaidCardBasePlan", fields: [basePlanId], references: [id])
+  upgradePlanId        String?
+  upgradePlan          Plan?        @relation("PrepaidCardUpgradePlan", fields: [upgradePlanId], references: [id])
+  claimedCartSessionId String?      @unique
+  claimedCartSession   CartSession? @relation(fields: [claimedCartSessionId], references: [id])
+  createdAt            DateTime     @default(now())
+  cartPurchase         CartPurchase?
 }
 
 // SMS-verified cart session (physical-card checkout flow). Tables keep legacy names via @@map.
 model CartSession {
-  id         String         @id @default(cuid())
-  phoneE164 String
-  verifiedAt DateTime
-  expiresAt  DateTime
-  createdAt  DateTime       @default(now())
-  purchases  CartPurchase[]
+  id                 String         @id @default(cuid())
+  phoneE164        String
+  verifiedAt       DateTime
+  expiresAt        DateTime
+  createdAt        DateTime       @default(now())
+  purchases        CartPurchase[]
+  claimedPrepaidCard PrepaidCard?
 
   @@index([phoneE164])
   @@map("ShopSession")
@@ -152,6 +180,18 @@ model CartPurchase {
   redeemedAt       DateTime?
   createdAt        DateTime    @default(now())
   resumeToken      CartPurchaseResumeToken?
+  prepaidCardId    String?     @unique
+  prepaidCard      PrepaidCard?  @relation(fields: [prepaidCardId], references: [id])
+  // Opaque token: redeem/schedule UI without SMS (link from payment email).
+  redemptionAccessToken       String?   @unique @db.VarChar(64)
+  redemptionAccessExpiresAt   DateTime?
+  phase2FulfillmentType       String?   // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
+  phase2Iccid                 String?
+  phase2ShippingAddress       String?   @db.Text
+  phase2ShippingCents         Int       @default(0)
+  phase2CreditAppliedCents    Int       @default(0)
+  phase2ExtraPaidCents        Int       @default(0)
+  phase2FinalTotalCents       Int       @default(0)
 
   @@index([cartSessionId])
   @@map("ShopPurchase")

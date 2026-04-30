@@ -42,6 +42,11 @@ const sections: {
         label: "Voucher tracking",
         active: (p) => p.startsWith("/admin/vouchers/tracking"),
       },
+      {
+        href: "/api/admin/prepaid-sprint-report",
+        label: "Prepaid sprint export (CSV)",
+        active: () => false,
+      },
     ],
   },
   {

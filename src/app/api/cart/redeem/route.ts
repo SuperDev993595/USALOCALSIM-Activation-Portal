@@ -10,6 +10,8 @@ const bodySchema = z.object({
   purchaseId: z.string().min(1),
   voucherCode: z.string().min(1),
   activationDate: z.string().min(1),
+  /** From payment email — same row as `redemptionAccessToken`; no cart session cookie required. */
+  accessToken: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -17,11 +19,6 @@ export async function POST(req: Request) {
   const { allowed } = await checkRateLimit(key);
   if (!allowed) {
     return NextResponse.json({ error: "Too many attempts. Try again in an hour." }, { status: 429 });
-  }
-
-  const cartSession = await getVerifiedCartSessionByRequest(req);
-  if (!cartSession) {
-    return NextResponse.json({ error: "Session expired. Start again from the cart." }, { status: 401 });
   }
 
   let body: z.infer<typeof bodySchema>;
@@ -32,16 +29,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  const access = body.accessToken?.trim();
+  const cartSession = access ? null : await getVerifiedCartSessionByRequest(req);
+  if (!access && !cartSession) {
+    return NextResponse.json({ error: "Session expired. Open the link from your payment email or start again from the cart." }, { status: 401 });
+  }
+
   const serviceStart = new Date(body.activationDate);
   if (Number.isNaN(serviceStart.getTime())) {
     await recordFailedAttempt(key);
     return NextResponse.json({ error: "Invalid activation date." }, { status: 400 });
   }
 
-  const purchase = await prisma.cartPurchase.findFirst({
-    where: { id: body.purchaseId, cartSessionId: cartSession.id },
-    include: { plan: true },
-  });
+  const now = new Date();
+  const purchase = access
+    ? await prisma.cartPurchase.findFirst({
+        where: {
+          id: body.purchaseId,
+          redemptionAccessToken: access,
+          redemptionAccessExpiresAt: { gt: now },
+          status: "authorized",
+        },
+        include: { plan: true, prepaidCard: { include: { voucher: true } } },
+      })
+    : await prisma.cartPurchase.findFirst({
+        where: { id: body.purchaseId, cartSessionId: cartSession!.id },
+        include: { plan: true, prepaidCard: { include: { voucher: true } } },
+      });
 
   if (!purchase || purchase.status !== "authorized") {
     await recordFailedAttempt(key);
@@ -49,6 +63,12 @@ export async function POST(req: Request) {
   }
 
   const codeUpper = body.voucherCode.trim().toUpperCase();
+
+  if (purchase.prepaidCard && purchase.prepaidCard.voucher.code.toUpperCase() !== codeUpper) {
+    await recordFailedAttempt(key);
+    return NextResponse.json({ error: "That PIN does not match this card." }, { status: 400 });
+  }
+
   const voucher = await prisma.voucher.findUnique({
     where: { code: codeUpper },
     include: { plan: true },
@@ -78,7 +98,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "This voucher cannot be used in the cart flow." }, { status: 400 });
   }
 
-  const redeemedBy = `${purchase.customerEmail} · cart · ${cartSession.phoneE164}`;
+  const phonePart = cartSession?.phoneE164 ?? "direct-link";
+  const redeemedBy = `${purchase.customerEmail} · cart · ${phonePart}`;
 
   try {
     await prisma.$transaction(async (tx) => {

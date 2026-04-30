@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { newCartSessionExpiry } from "./cart-session";
 import { preludeCheckPhoneVerification, preludeStartPhoneVerification } from "./prelude-verify";
+import { bindPrepaidSerialToCartSession, normalizePrepaidSerial } from "./prepaid-cart";
 
 const RESEND_COOLDOWN_MS = 90 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
@@ -33,6 +34,7 @@ export async function createCartPhoneOtp(phoneE164: string): Promise<
 export async function verifyCartPhoneOtpAndCreateSession(
   phoneE164: string,
   rawCode: string,
+  opts?: { prepaidSerial?: string | null },
 ): Promise<{ ok: true; sessionId: string } | { ok: false; error: string }> {
   const code = normalizeCode(rawCode);
   if (code.length !== 6) {
@@ -68,22 +70,48 @@ export async function verifyCartPhoneOtpAndCreateSession(
   const verifiedAt = new Date();
   const expiresAt = newCartSessionExpiry();
 
-  const session = await prisma.$transaction(async (tx) => {
-    await tx.cartPhoneOtp.delete({ where: { phoneE164 } });
-    const existing = await tx.cartSession.findFirst({
-      where: { phoneE164, expiresAt: { gt: new Date() } },
-      orderBy: { verifiedAt: "desc" },
-    });
-    if (existing) {
-      return tx.cartSession.update({
-        where: { id: existing.id },
-        data: { expiresAt },
+  try {
+    const session = await prisma.$transaction(async (tx) => {
+      await tx.cartPhoneOtp.delete({ where: { phoneE164 } });
+      const existing = await tx.cartSession.findFirst({
+        where: { phoneE164, expiresAt: { gt: new Date() } },
+        orderBy: { verifiedAt: "desc" },
       });
-    }
-    return tx.cartSession.create({
-      data: { phoneE164, verifiedAt, expiresAt },
-    });
-  });
+      const row =
+        existing != null
+          ? await tx.cartSession.update({
+              where: { id: existing.id },
+              data: { expiresAt },
+            })
+          : await tx.cartSession.create({
+              data: { phoneE164, verifiedAt, expiresAt },
+            });
 
-  return { ok: true, sessionId: session.id };
+      if (opts?.prepaidSerial?.trim()) {
+        const serialNorm = normalizePrepaidSerial(opts.prepaidSerial);
+        if (!serialNorm) {
+          const err = new Error("Invalid card link from the QR code.");
+          err.name = "PrepaidSerialInvalid";
+          throw err;
+        }
+        const bound = await bindPrepaidSerialToCartSession(tx, row.id, serialNorm);
+        if (!bound.ok) {
+          const err = new Error(bound.error);
+          err.name = "PrepaidBindError";
+          throw err;
+        }
+      }
+
+      return row;
+    });
+    return { ok: true, sessionId: session.id };
+  } catch (e) {
+    if (e instanceof Error && e.name === "PrepaidSerialInvalid") {
+      return { ok: false, error: e.message };
+    }
+    if (e instanceof Error && e.name === "PrepaidBindError") {
+      return { ok: false, error: e.message };
+    }
+    throw e;
+  }
 }

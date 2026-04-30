@@ -8,6 +8,7 @@ import { deletePendingActivationRequestsForIccid, normalizeIccid } from "@/lib/a
 import {
   isStripeCartVoucherFlow,
   readCartSessionIdFromStripeMetadata,
+  readPrepaidCardIdFromStripeMetadata,
 } from "@/lib/stripe-cart-flow";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { sendCartPurchasePaidEmail } from "@/lib/email";
@@ -69,7 +70,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
-    const cartSession = await prisma.cartSession.findUnique({ where: { id: cartSessionId } });
+    const cartSession = await prisma.cartSession.findUnique({
+      where: { id: cartSessionId },
+      include: { claimedPrepaidCard: true },
+    });
     if (!cartSession) {
       await prisma.auditLog.create({
         data: {
@@ -93,7 +97,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
+    const metaPrepaidId = readPrepaidCardIdFromStripeMetadata(session.metadata);
+    let verifiedPrepaidId: string | null = null;
+    if (metaPrepaidId) {
+      if (cartSession.claimedPrepaidCard?.id === metaPrepaidId) {
+        verifiedPrepaidId = metaPrepaidId;
+      } else {
+        await prisma.auditLog.create({
+          data: {
+            action: "cart_webhook_prepaid_metadata_mismatch",
+            metadata: JSON.stringify({
+              stripePaymentId: paymentId,
+              cartSessionId,
+              metaPrepaidId,
+              claimedPrepaidId: cartSession.claimedPrepaidCard?.id ?? null,
+            }),
+          },
+        });
+      }
+    }
+
     const resumeToken = generateOpaqueResumeToken();
+    const redemptionAccessToken = generateOpaqueResumeToken();
+    const redemptionAccessExpiresAt = newResumeTokenExpiresAt();
+
     const createdPurchase = await prisma.$transaction(async (tx) => {
       const purchase = await tx.cartPurchase.create({
         data: {
@@ -103,6 +130,9 @@ export async function POST(req: Request) {
           amountPaidCents: session.amount_total ?? 0,
           customerEmail: email,
           status: "authorized",
+          prepaidCardId: verifiedPrepaidId,
+          redemptionAccessToken,
+          redemptionAccessExpiresAt,
         },
       });
       await tx.cartPurchaseResumeToken.create({
@@ -134,12 +164,14 @@ export async function POST(req: Request) {
 
     const appBase = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "") || "http://localhost:3000";
     const resumeUrl = `${appBase}/api/cart/resume?t=${encodeURIComponent(resumeToken)}`;
+    const directRedeemUrl = `${appBase}/redeem?purchaseId=${encodeURIComponent(createdPurchase.id)}&access=${encodeURIComponent(redemptionAccessToken)}`;
     const isSyntheticReconcileEmail = /^reconcile\+/i.test(email) && /@usalocalsim\.com$/i.test(email);
     if (!isSyntheticReconcileEmail) {
       const mail = await sendCartPurchasePaidEmail({
         to: email,
         planName: plan.name,
         resumeUrl,
+        directRedeemUrl,
       });
       if (!mail.ok) {
         await prisma.auditLog.create({
@@ -156,6 +188,29 @@ export async function POST(req: Request) {
       }
     }
 
+    return NextResponse.json({ received: true });
+  }
+
+  if (flow === "cart_voucher_upgrade") {
+    const purchaseId = session.metadata?.purchaseId?.trim();
+    if (!purchaseId) {
+      return NextResponse.json({ received: true });
+    }
+    const amount = session.amount_total ?? 0;
+    await prisma.cartPurchase.updateMany({
+      where: { id: purchaseId, status: "authorized" },
+      data: { phase2ExtraPaidCents: { increment: amount } },
+    });
+    await prisma.auditLog.create({
+      data: {
+        action: "stripe_cart_phase2_upgrade_paid",
+        metadata: JSON.stringify({
+          cartPurchaseId: purchaseId,
+          stripePaymentId: paymentId,
+          amountTotal: amount,
+        }),
+      },
+    });
     return NextResponse.json({ received: true });
   }
 

@@ -355,7 +355,18 @@
     "successBody": "Your voucher is redeemed and your request is queued. Our team will activate service for your chosen start date. Watch your email for updates.",
     "redeemSuccessFooter": "You are all set for this purchase. Use the plans page if you want to buy another plan on the same verified phone.",
     "backRedeem": "← Main redeem portal",
-    "errorGeneric": "Something went wrong. Try again."
+    "errorGeneric": "Something went wrong. Try again.",
+    "serialQrBanner": "We detected your card from the QR link. After SMS verification, this phone number will be linked to that card for checkout.",
+    "upsellTitle": "Upgrade offer",
+    "upsellBody": "Your card includes the Basic plan below. You can pay the difference now to upgrade to Premium before checkout.",
+    "manageScheduleCta": "Manage service start date",
+    "redeemDirectLinkHint": "You opened a secure link from email — no SMS step on this page. Enter your PIN and start date below.",
+    "scheduleTitle": "Service start date",
+    "scheduleSubtitle": "You can change the scheduled start date until 72 hours before activation. After that, the date is locked for provisioning.",
+    "schedule72hHint": "Changes are blocked within 72 hours of your current scheduled start.",
+    "scheduleSave": "Save new date",
+    "scheduleLocked": "This date is locked because your activation is within 72 hours. Contact support if you need help.",
+    "scheduleSaved": "Your new start date has been saved."
   }
 }
 

@@ -249,22 +249,32 @@ export async function sendCartPurchasePaidEmail(opts: {
   to: string;
   planName: string;
   resumeUrl: string;
+  /** PIN + date only — no SMS step (keep this link private). */
+  directRedeemUrl?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const subject = `USALOCALSIM — payment received (${opts.planName})`;
+  const direct = opts.directRedeemUrl?.trim();
   const text =
     `Thank you for your purchase.\n\n` +
     `Plan: ${opts.planName}\n\n` +
     `Next step: enter the PIN from your physical card and your service start date.\n\n` +
-    `If this page did not open after payment, use this link on the same phone number you verified at checkout:\n` +
+    (direct
+      ? `Open this link on any device to continue (no SMS code on this step — PIN only):\n${direct}\n\n`
+      : "") +
+    `If you need to recover on the phone you verified at checkout, use:\n` +
     `${opts.resumeUrl}\n\n` +
-    `The link expires in 30 days. If you did not make this purchase, contact support.\n`;
+    `These links expire in 30 days. If you did not make this purchase, contact support.\n`;
   const html =
     `<p>Thank you for your purchase.</p>` +
     `<p><strong>Plan:</strong> ${escapeHtml(opts.planName)}</p>` +
     `<p>Next step: enter the PIN from your physical card and your service start date.</p>` +
-    `<p>If the site did not open after payment, open this link on the <strong>same phone number</strong> you verified at checkout:</p>` +
-    `<p><a href="${escapeHtml(opts.resumeUrl)}">Continue to activation</a></p>` +
-    `<p style="font-size:12px;color:#555">This link expires in 30 days. If you did not make this purchase, contact support.</p>`;
+    (direct
+      ? `<p><a href="${escapeHtml(direct)}">Open activation (PIN only, no SMS)</a></p>` +
+        `<p style="font-size:12px;color:#555">Anyone with this link can use your paid activation step — treat it like cash.</p>`
+      : "") +
+    `<p>If the site did not open after payment, you can open this link on the <strong>same phone number</strong> you verified at checkout (SMS code required there):</p>` +
+    `<p><a href="${escapeHtml(opts.resumeUrl)}">Continue with phone verification</a></p>` +
+    `<p style="font-size:12px;color:#555">Links expire in 30 days. If you did not make this purchase, contact support.</p>`;
   return deliverSimpleMail({ to: opts.to, subject, text, html });
 }
 

@@ -44,7 +44,7 @@ export function CartPaidClient({
         <p className="mt-2 text-xs text-slate-600">{t("paidPlanReadOnlyHint")}</p>
       </div>
       <Link
-        href={`/cart/redeem?purchaseId=${encodeURIComponent(purchaseId)}`}
+        href={`/redeem?purchaseId=${encodeURIComponent(purchaseId)}`}
         className="btn-primary mt-8 inline-block px-8 py-3 text-sm font-semibold"
       >
         {t("proceedActivation")}

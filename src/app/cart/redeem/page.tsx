@@ -2,16 +2,37 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
-import { CartRedeemClient } from "@/components/CartRedeemClient";
 
 export default async function CartRedeemPage({
   searchParams,
 }: {
-  searchParams: { purchaseId?: string };
+  searchParams: { purchaseId?: string | string[]; access?: string | string[] };
 }) {
-  const purchaseId = searchParams.purchaseId;
+  const purchaseId = Array.isArray(searchParams.purchaseId)
+    ? searchParams.purchaseId[0]
+    : searchParams.purchaseId;
+  const access = Array.isArray(searchParams.access) ? searchParams.access[0] : searchParams.access;
+
   if (!purchaseId) {
     redirect("/cart/plans");
+  }
+
+  const now = new Date();
+
+  if (access?.trim()) {
+    const purchase = await prisma.cartPurchase.findFirst({
+      where: {
+        id: purchaseId,
+        redemptionAccessToken: access.trim(),
+        redemptionAccessExpiresAt: { gt: now },
+        status: "authorized",
+      },
+      include: { plan: true },
+    });
+    if (!purchase) {
+      redirect("/cart?resume=invalid");
+    }
+    redirect(`/redeem?purchaseId=${encodeURIComponent(purchase.id)}&access=${encodeURIComponent(access.trim())}`);
   }
 
   const cookieStore = await cookies();
@@ -31,17 +52,5 @@ export default async function CartRedeemPage({
     redirect(`/cart/paid?purchaseId=${encodeURIComponent(purchase.id)}`);
   }
 
-  return (
-    <div className="flex flex-1 justify-center py-8">
-      <CartRedeemClient
-        purchaseId={purchase.id}
-        plan={{
-          name: purchase.plan.name,
-          dataAllowance: purchase.plan.dataAllowance,
-          durationDays: purchase.plan.durationDays,
-          market: purchase.plan.market,
-        }}
-      />
-    </div>
-  );
+  redirect(`/redeem?purchaseId=${encodeURIComponent(purchase.id)}`);
 }
