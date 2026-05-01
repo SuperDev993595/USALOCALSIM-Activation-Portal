@@ -336,7 +336,7 @@
     "prepaidCreditDueLabel": "Bundled data pack",
     "prepaidCreditDueHint": "This is the price of the data pack included with your card (e.g. $50). One line at checkout; after payment it is locked to your verified phone and email and applies as credit when you redeem with your PIN.",
     "cartPayAmountLabel": "Amount to pay (USD)",
-    "cartPayAmountHint": "Enter the amount in USD for this card (typically 50.00 for the bundled pack). The value must match what is on file for your voucher; use a decimal point as needed.",
+    "cartPayAmountHint": "Enter the amount in USD you are paying now (typically 50.00 for the bundled pack). Plan choice happens later at redemption; use a decimal point as needed.",
     "cartPayAmountInvalid": "Enter a valid dollar amount greater than zero.",
     "customerNameLabel": "Full name",
     "emailLabel": "Email for receipts & updates",

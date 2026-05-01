@@ -94,14 +94,6 @@ export async function loadPrepaidCardClaimedBySession(sessionId: string) {
   });
 }
 
-/**
- * Prepaid physical-card cart: charge amount is **voucher `credit_amount` only** (bundled pack face value, e.g. $50).
- * Not derived from the linked plan’s list price.
- */
-export function prepaidCartChargeCents(voucherCreditCents: number): number {
-  return voucherCreditCents > 0 ? voucherCreditCents : 0;
-}
-
 export function isPlanAllowedForPrepaidCard(
   prepaid: { basePlanId: string; upgradePlanId: string | null },
   planId: string,

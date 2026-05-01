@@ -8,13 +8,13 @@ import {
   STRIPE_CART_SESSION_METADATA_KEY,
   STRIPE_PREPAID_CARD_METADATA_KEY,
 } from "@/lib/stripe-cart-flow";
-import { loadPrepaidCardClaimedBySession, prepaidCartChargeCents } from "@/lib/prepaid-cart";
+import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
   email: z.string().email(),
   customerName: z.string().min(2).max(120),
-  /** Must match voucher Phase 1 charge (bundled pack cents). */
+  /** Customer-entered USD cents; prepaid cart does not validate against voucher credit (plan is chosen at redemption). */
   payAmountCents: z.number().int().positive(),
 });
 
@@ -59,26 +59,6 @@ export async function POST(req: Request) {
     );
   }
 
-  const expectedPayCents = prepaidCartChargeCents(prepaid.voucher.creditAmountCents);
-  if (expectedPayCents <= 0) {
-    return NextResponse.json(
-      {
-        error:
-          "This card’s voucher has no credit amount configured (Phase 1 uses voucher credit only, not plan price). Contact support or your dealer.",
-      },
-      { status: 400 },
-    );
-  }
-
-  if (body.payAmountCents !== expectedPayCents) {
-    return NextResponse.json(
-      {
-        error: `Pay amount must be exactly $${(expectedPayCents / 100).toFixed(2)} for this voucher (entered cents: ${body.payAmountCents}).`,
-      },
-      { status: 400 },
-    );
-  }
-
   await prisma.voucher.update({
     where: { id: prepaid.voucherId },
     data: {
@@ -110,7 +90,7 @@ export async function POST(req: Request) {
         price_data: {
           currency: "usd",
           product_data: stripeProduct,
-          unit_amount: expectedPayCents,
+          unit_amount: body.payAmountCents,
         },
         quantity: 1,
       },

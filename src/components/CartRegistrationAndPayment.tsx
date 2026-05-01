@@ -38,7 +38,7 @@ function parseUsdInputToCents(raw: string): number | null {
   return cents;
 }
 
-/** Prepaid cart: name, email, USD pay amount, then Stripe / Mercado Pago. Server validates amount against the voucher. */
+/** Prepaid cart: name, email, USD pay amount, then Stripe / Mercado Pago. */
 export function CartRegistrationAndPayment({ plans }: { plans: CartPlanRow[] }) {
   const t = useTranslations("cart");
   const [customerName, setCustomerName] = useState("");
@@ -114,16 +114,16 @@ export function CartRegistrationAndPayment({ plans }: { plans: CartPlanRow[] }) 
 
   return (
     <div className="mx-auto w-full max-w-lg">
-      <div className="mb-6">
+      <div className="mb-3">
         <Link href="/cart" className="text-sm text-[#00104E] underline">
           {t("backCart")}
         </Link>
-        <h1 className="mt-4 text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
+        <h1 className="mt-1.5 text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
+        <p className="mt-1.5 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
       </div>
 
-      <div className="ui-card mt-6 p-5">
-        <label className="mb-1 mt-1 block text-sm font-medium text-slate-800" htmlFor="cart-name">
+      <div className="ui-card mt-3 p-5">
+        <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="cart-name">
           {t("customerNameLabel")}
         </label>
         <input

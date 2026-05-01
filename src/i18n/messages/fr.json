@@ -336,7 +336,7 @@
     "prepaidCreditDueLabel": "Forfait data groupé",
     "prepaidCreditDueHint": "Prix du pack data fourni avec votre carte (ex. 50 $). Une ligne au paiement ; après validation, lié à votre téléphone et e-mail vérifiés et utilisable comme crédit à l’échange avec le PIN.",
     "cartPayAmountLabel": "Montant à payer (USD)",
-    "cartPayAmountHint": "Saisissez le montant en USD pour cette carte (souvent 50,00 pour le forfait groupé). Il doit correspondre au montant enregistré sur votre bon ; utilisez un point décimal si besoin.",
+    "cartPayAmountHint": "Saisissez le montant en USD que vous payez maintenant (souvent 50,00 pour le pack). Le choix de forfait intervient plus tard à l’échange ; utilisez un point décimal si besoin.",
     "cartPayAmountInvalid": "Saisissez un montant valide en dollars, supérieur à zéro.",
     "customerNameLabel": "Nom complet",
     "emailLabel": "Email for receipts & updates",

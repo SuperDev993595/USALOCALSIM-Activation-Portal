@@ -31,7 +31,6 @@ export default async function CartPlansPage() {
           market: true,
         },
       },
-      voucher: { select: { creditAmountCents: true } },
     },
   });
 
@@ -39,14 +38,10 @@ export default async function CartPlansPage() {
     redirect("/cart?needSerial=1");
   }
 
-  if (prepaid.voucher.creditAmountCents <= 0) {
-    redirect("/cart?needVoucherCredit=1");
-  }
-
   const plans = [prepaid.basePlan];
 
   return (
-    <div className="flex flex-1 justify-center py-4 sm:py-8">
+    <div className="flex flex-1 justify-center pb-6 pt-1 sm:pb-8 sm:pt-2">
       <CartRegistrationAndPayment plans={plans} />
     </div>
   );

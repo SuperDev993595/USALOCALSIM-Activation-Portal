@@ -336,7 +336,7 @@
     "prepaidCreditDueLabel": "Gebundeld datapakket",
     "prepaidCreditDueHint": "Prijs van het datapakket bij je kaart (bijv. $ 50). Eén regel bij de betaling; na betaling gekoppeld aan je geverifieerde telefoon en e-mail en als tegoed bij inwisseling met PIN.",
     "cartPayAmountLabel": "Te betalen bedrag (USD)",
-    "cartPayAmountHint": "Vul het bedrag in USD voor deze kaart in (vaak 50,00 voor het gebundelde pakket). Het moet overeenkomen met het bedrag op uw voucher; gebruik zo nodig een decimaalteken.",
+    "cartPayAmountHint": "Vul het bedrag in USD in dat u nu betaalt (vaak 50,00 voor het pakket). Abonnementskeuze volgt later bij inwisseling; gebruik zo nodig een decimaalteken.",
     "cartPayAmountInvalid": "Voer een geldig dollardedrag groter dan nul in.",
     "customerNameLabel": "Volledige naam",
     "emailLabel": "Email for receipts & updates",

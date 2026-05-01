@@ -331,7 +331,7 @@
     "prepaidCreditDueLabel": "Pacote de dados incluído",
     "prepaidCreditDueHint": "Preço do pacote de dados incluído com o seu cartão (ex.: 50 $). Uma linha no pagamento; após confirmação, fica associado ao telefone e e-mail verificados e conta como crédito ao resgatar com o PIN.",
     "cartPayAmountLabel": "Montante a pagar (USD)",
-    "cartPayAmountHint": "Indique o montante em USD para este cartão (normalmente 50,00 para o pacote incluído). Deve coincidir com o valor registado no voucher; use ponto decimal se necessário.",
+    "cartPayAmountHint": "Indique o montante em USD que está a pagar agora (normalmente 50,00 pelo pacote). A escolha do plano é mais tarde no resgate; use ponto decimal se necessário.",
     "cartPayAmountInvalid": "Indique um montante válido em dólares, superior a zero.",
     "customerNameLabel": "Nome completo",
     "emailLabel": "Email for receipts & updates",

@@ -331,7 +331,7 @@
     "prepaidCreditDueLabel": "Gebündeltes Datenpaket",
     "prepaidCreditDueHint": "Preis des mit Ihrer Karte gebündelten Datenpakets (z. B. 50 $). Eine Zeile im Checkout; nach der Zahlung mit Telefon und E‑Mail verknüpft und beim Einlösen mit PIN als Guthaben nutzbar.",
     "cartPayAmountLabel": "Zu zahlender Betrag (USD)",
-    "cartPayAmountHint": "Geben Sie den Betrag in USD für diese Karte ein (üblich 50,00 für das Paket). Der Betrag muss mit Ihrem Voucher übereinstimmen; verwenden Sie bei Bedarf einen Dezimalpunkt.",
+    "cartPayAmountHint": "Geben Sie den jetzt zu zahlenden Betrag in USD ein (üblich 50,00 für das Paket). Die Tarifwahl erfolgt später bei der Einlösung; bei Bedarf Dezimalpunkt verwenden.",
     "cartPayAmountInvalid": "Bitte einen gültigen Dollarbetrag größer als null eingeben.",
     "customerNameLabel": "Vollständiger Name",
     "emailLabel": "Email for receipts & updates",
