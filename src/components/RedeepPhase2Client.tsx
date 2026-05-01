@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
@@ -41,6 +42,55 @@ function initialWizardStep(
   return 1;
 }
 
+const REDEEM_TOTAL_STEPS = 5;
+const NAV_STEP_KEYS = ["navStep1", "navStep2", "navStep3", "navStep4", "navStep5"] as const;
+
+function RedeemStepNav({
+  currentStep,
+  t,
+}: {
+  currentStep: WizardStep;
+  t: ReturnType<typeof useTranslations<"redeemWizard">>;
+}) {
+  return (
+    <nav aria-label={t("navAria")} className="mb-6 border-b border-white/10 pb-5">
+      <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
+        {t("stepProgress", { current: currentStep, total: REDEEM_TOTAL_STEPS })}
+      </p>
+      <ol className="flex items-start justify-between gap-0.5 sm:gap-1">
+        {NAV_STEP_KEYS.map((key, idx) => {
+          const stepNum = (idx + 1) as WizardStep;
+          const isCurrent = stepNum === currentStep;
+          const isPast = stepNum < currentStep;
+          return (
+            <li key={key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition ${
+                  isCurrent
+                    ? "border-white bg-white/20 text-white ring-2 ring-white/25 ring-offset-2 ring-offset-slate-950"
+                    : isPast
+                      ? "border-emerald-500/45 bg-emerald-500/15 text-emerald-200"
+                      : "border-white/15 text-slate-500"
+                }`}
+                aria-current={isCurrent ? "step" : undefined}
+              >
+                {isPast ? "✓" : stepNum}
+              </span>
+              <span
+                className={`hidden max-w-[4.5rem] truncate px-0.5 text-center text-[10px] font-medium leading-tight sm:block ${
+                  isCurrent ? "text-white" : isPast ? "text-emerald-200/90" : "text-slate-500"
+                }`}
+              >
+                {t(key)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 export function RedeepPhase2Client({
   purchaseId: purchaseIdProp,
   accessToken: accessTokenProp,
@@ -54,6 +104,7 @@ export function RedeepPhase2Client({
   /** Server: Phase 2 redeemer phone already verified on this purchase. */
   redemptionPhoneVerifiedInitial?: boolean;
 }) {
+  const t = useTranslations("redeemWizard");
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
   const [voucherCode, setVoucherCode] = useState("");
@@ -82,6 +133,7 @@ export function RedeepPhase2Client({
   const [redeemOtpUiStep, setRedeemOtpUiStep] = useState<"phone" | "code">("phone");
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
+  const iccidDigitCount = useMemo(() => iccid.replace(/\D/g, "").length, [iccid]);
 
   useEffect(() => {
     if (wizardStep === 4 && plans.length === 0) {
@@ -105,7 +157,7 @@ export function RedeepPhase2Client({
         creditAmountCents?: number;
       };
       if (!startRes.ok || !startData.purchaseId) {
-        setError(typeof startData.error === "string" ? startData.error : "Unable to start redemption from this PIN.");
+        setError(typeof startData.error === "string" ? startData.error : t("errors.startPin"));
         return;
       }
       setPurchaseId(startData.purchaseId);
@@ -122,7 +174,7 @@ export function RedeepPhase2Client({
 
   async function unlockAndQuote(planId?: string, fType?: FulfillmentType) {
     if (!purchaseId.trim()) {
-      setError("Unlock credit with your PIN first.");
+      setError(t("errors.unlockFirst"));
       return;
     }
     setError(null);
@@ -153,7 +205,7 @@ export function RedeepPhase2Client({
         } | null;
       };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Failed to load quote.");
+        setError(typeof data.error === "string" ? data.error : t("errors.quote"));
         return;
       }
       setCreditCents(data.creditAmountCents ?? 0);
@@ -184,7 +236,7 @@ export function RedeepPhase2Client({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Could not send SMS.");
+        setError(typeof data.error === "string" ? data.error : t("errors.sms"));
         return;
       }
       setRedeemOtpUiStep("code");
@@ -210,7 +262,7 @@ export function RedeepPhase2Client({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Verification failed.");
+        setError(typeof data.error === "string" ? data.error : t("errors.verify"));
         return;
       }
       if (resumeAfterPaidUpgrade) {
@@ -243,7 +295,7 @@ export function RedeepPhase2Client({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; zeroDue?: boolean; url?: string };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Failed to continue checkout.");
+        setError(typeof data.error === "string" ? data.error : t("errors.checkout"));
         return;
       }
       if (data.zeroDue) {
@@ -275,7 +327,7 @@ export function RedeepPhase2Client({
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Failed to activate.");
+        setError(typeof data.error === "string" ? data.error : t("errors.activate"));
         return;
       }
       setDone(true);
@@ -298,29 +350,33 @@ export function RedeepPhase2Client({
   if (done) {
     return (
       <div className={`${panelClass} text-center`}>
-        <h1 className="text-2xl font-bold text-white">Redemption complete</h1>
-        <p className="mt-3 text-sm text-slate-300">
-          Voucher redeemed successfully. Activation is queued and will run on your selected date.
-        </p>
+        <h1 className="text-2xl font-bold text-white">{t("doneTitle")}</h1>
+        <p className="mt-3 text-sm text-slate-300">{t("doneBody")}</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <section className={panelClass}>
+      <section className={panelClass} aria-labelledby={`redeem-step${wizardStep}-heading`}>
+        <RedeemStepNav currentStep={wizardStep} t={t} />
+        <div role="status" aria-live="polite" aria-atomic="true" className="mb-5 min-h-0">
+          {error ? (
+            <p className="rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
+          ) : null}
+        </div>
         {wizardStep === 1 ? (
           <>
             <h2 id="redeem-step1-heading" className="text-lg font-semibold text-white">
-              Credit unlock
+              {t("step1Title")}
             </h2>
-            <p className="mt-2 text-sm text-slate-300">
-              Enter the scratch-off PIN from your card. Whoever redeems may differ from who paid in Phase 1—the next
-              step verifies the phone number for this service.
-            </p>
-            <div className="mt-5">
-              <label className="mb-1 block text-sm font-medium text-slate-200">PIN / voucher code</label>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step1Body")}</p>
+            <div className="mt-5 space-y-2.5">
+              <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-pin-input">
+                {t("pinLabel")}
+              </label>
               <input
+                id="redeem-pin-input"
                 value={voucherCode}
                 onChange={(e) => setVoucherCode(e.target.value)}
                 onKeyDown={(e) => {
@@ -331,13 +387,14 @@ export function RedeepPhase2Client({
                 }}
                 className={`${redeepPanelInputClass} uppercase`}
               />
+              <p className="text-xs text-slate-400">{t("pinHint")}</p>
               <button
                 type="button"
-                className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-60"
+                className="btn-primary mt-2 px-4 py-2 text-sm disabled:opacity-60"
                 disabled={loading !== null || !voucherCode.trim()}
                 onClick={() => void redeemStartFromPin()}
               >
-                {loading === "unlock" ? "Unlocking..." : "Unlock credit"}
+                {loading === "unlock" ? t("unlocking") : t("unlockCredit")}
               </button>
             </div>
           </>
@@ -349,7 +406,7 @@ export function RedeepPhase2Client({
               <button
                 type="button"
                 className={backArrowButtonClass}
-                aria-label="Back to credit unlock"
+                aria-label={t("backUnlock")}
                 disabled={loading !== null}
                 onClick={() => {
                   setRedeemOtpUiStep("phone");
@@ -359,19 +416,19 @@ export function RedeepPhase2Client({
                 <RedeemBackChevronIcon />
               </button>
               <h2 id="redeem-step2-heading" className="text-lg font-semibold text-white">
-                Service phone
+                {t("step2Title")}
               </h2>
             </div>
-            <p className="mt-2 text-sm text-slate-300">
-              Enter the mobile number you want to use for this line. We send a one-time code to verify you control it.
-              This becomes the active number on the voucher after verification.
-            </p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step2Body")}</p>
             <div className="mt-5 space-y-4">
               {redeemOtpUiStep === "phone" ? (
                 <>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-200">Phone number</label>
+                  <div className="space-y-2.5">
+                    <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-phone-input">
+                      {t("phoneLabel")}
+                    </label>
                     <input
+                      id="redeem-phone-input"
                       value={redeemPhone}
                       onChange={(e) => setRedeemPhone(e.target.value)}
                       onKeyDown={(e) => {
@@ -382,9 +439,10 @@ export function RedeepPhase2Client({
                       }}
                       disabled={loading !== null}
                       className={redeepPanelInputClass}
-                      placeholder="+1… or country code"
+                      placeholder={t("phonePlaceholder")}
                       autoComplete="tel"
                     />
+                    <p className="text-xs text-slate-400">{t("phoneFieldHint")}</p>
                   </div>
                   <button
                     type="button"
@@ -392,14 +450,17 @@ export function RedeepPhase2Client({
                     disabled={loading !== null || !redeemPhone.trim() || !purchaseId.trim()}
                     onClick={() => void sendRedeemSms()}
                   >
-                    {loading === "sms" ? "Sending…" : "Send verification code"}
+                    {loading === "sms" ? t("sendingSms") : t("sendCode")}
                   </button>
                 </>
               ) : (
                 <>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-200">6-digit code</label>
+                  <div className="space-y-2.5">
+                    <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-otp-input">
+                      {t("otpLabel")}
+                    </label>
                     <input
+                      id="redeem-otp-input"
                       value={redeemOtpCode}
                       onChange={(e) => setRedeemOtpCode(e.target.value)}
                       onKeyDown={(e) => {
@@ -413,6 +474,7 @@ export function RedeepPhase2Client({
                       inputMode="numeric"
                       autoComplete="one-time-code"
                     />
+                    <p className="text-xs text-slate-400">{t("otpHint")}</p>
                   </div>
                   <button
                     type="button"
@@ -420,7 +482,7 @@ export function RedeepPhase2Client({
                     disabled={loading !== null || redeemOtpCode.trim().length < 4}
                     onClick={() => void verifyRedeemSms()}
                   >
-                    {loading === "verifyPhone" ? "Verifying…" : "Verify & continue"}
+                    {loading === "verifyPhone" ? t("verifying") : t("verifyContinue")}
                   </button>
                   <button
                     type="button"
@@ -431,7 +493,7 @@ export function RedeepPhase2Client({
                       setRedeemOtpCode("");
                     }}
                   >
-                    Use a different number
+                    {t("useDifferentNumber")}
                   </button>
                 </>
               )}
@@ -445,24 +507,25 @@ export function RedeepPhase2Client({
               <button
                 type="button"
                 className={backArrowButtonClass}
-                aria-label="Back to service phone"
+                aria-label={t("backPhone")}
                 disabled={loading !== null}
                 onClick={() => setWizardStep(2)}
               >
                 <RedeemBackChevronIcon />
               </button>
               <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white">
-                How you&apos;ll connect
+                {t("step3Title")}
               </h2>
             </div>
-            <p className="mt-2 text-sm text-slate-300">
-              Choose hardware fulfillment. We use this for SIM matching, shipping, or eSIM delivery.
-            </p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step3Body")}</p>
 
             <div className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-200">How will you connect?</label>
+              <div className="space-y-2.5">
+                <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-fulfillment-select">
+                  {t("fulfillmentLabel")}
+                </label>
                 <select
+                  id="redeem-fulfillment-select"
                   value={fulfillmentType}
                   onChange={(e) => {
                     const next = e.target.value as FulfillmentType;
@@ -482,28 +545,36 @@ export function RedeepPhase2Client({
                   disabled={loading !== null}
                   className={redeepPanelInputClass}
                 >
-                  <option value="EXISTING_SIM">I already have the Physical SIM</option>
-                  <option value="NEW_SIM_SHIPPING">I need a new Physical SIM (shipping)</option>
-                  <option value="ESIM">I want eSIM (digital)</option>
+                  <option value="EXISTING_SIM">{t("optExistingSim")}</option>
+                  <option value="NEW_SIM_SHIPPING">{t("optShipping")}</option>
+                  <option value="ESIM">{t("optEsim")}</option>
                 </select>
               </div>
 
               {fulfillmentType === "EXISTING_SIM" ? (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-200">ICCID</label>
+                <div className="space-y-2.5">
+                  <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-iccid-input">
+                    {t("iccidLabel")}
+                  </label>
                   <input
+                    id="redeem-iccid-input"
                     value={iccid}
                     onChange={(e) => setIccid(e.target.value)}
                     disabled={loading !== null}
                     className={redeepPanelInputClass}
-                    placeholder="19–20 digits on your SIM"
+                    placeholder={t("iccidPlaceholder")}
                   />
+                  <p className="text-xs text-slate-400">{t("iccidHint")}</p>
+                  <p className="text-xs text-slate-500">{t("iccidCount", { count: iccidDigitCount })}</p>
                 </div>
               ) : null}
               {fulfillmentType === "NEW_SIM_SHIPPING" ? (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-200">Shipping address</label>
+                <div className="space-y-2.5">
+                  <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-shipping-textarea">
+                    {t("shippingLabel")}
+                  </label>
                   <textarea
+                    id="redeem-shipping-textarea"
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
                     disabled={loading !== null}
@@ -524,7 +595,7 @@ export function RedeepPhase2Client({
                   void unlockAndQuote(undefined, fulfillmentType);
                 }}
               >
-                Continue to plan selection
+                {t("continuePlans")}
               </button>
             </div>
           </>
@@ -536,47 +607,41 @@ export function RedeepPhase2Client({
               <button
                 type="button"
                 className={backArrowButtonClass}
-                aria-label="Back to fulfillment"
+                aria-label={t("backFulfillment")}
                 disabled={loading !== null}
                 onClick={() => setWizardStep(3)}
               >
                 <RedeemBackChevronIcon />
               </button>
               <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white">
-                Plan &amp; payment
+                {t("step4Title")}
               </h2>
             </div>
-            <p className="mt-2 text-sm text-slate-300">
-              {fulfillmentType === "ESIM" ? (
-                <>
-                  Plans listed are <strong className="text-white">eSIM</strong> options for your market, matching your
-                  choice to connect digitally.
-                </>
-              ) : (
-                <>
-                  Plans listed are <strong className="text-white">physical SIM</strong> options for your market,
-                  matching your choice to use or receive a plastic SIM.
-                </>
-              )}{" "}
-              Select one below (required). You pay only the balance after voucher credit (plus shipping if applicable).
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">
+              <span className="inline">
+                {fulfillmentType === "ESIM"
+                  ? t.rich("step4BodyEsim", { kind: (chunks) => <strong className="text-white">{chunks}</strong> })
+                  : t.rich("step4BodyPhysical", {
+                      kind: (chunks) => <strong className="text-white">{chunks}</strong>,
+                    })}
+              </span>{" "}
+              <span>{t("step4BodyTail")}</span>
             </p>
 
             <div className="mt-5 space-y-4">
               <div className="rounded border border-white/[0.08] bg-black/15 px-3 py-2 text-sm text-slate-200">
                 <p>
-                  Store credit: <strong className="text-white">${(creditCents / 100).toFixed(2)}</strong>
+                  {t("creditLabel")}{" "}
+                  <strong className="text-white">${(creditCents / 100).toFixed(2)}</strong>
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Dollars you paid in Phase 1 for this voucher&apos;s bundled pack—used here as checkout credit, not
-                  the bundled plan&apos;s list price.
-                </p>
+                <p className="mt-1 text-xs text-slate-400">{t("creditExplain")}</p>
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-200">Choose data plan — required</p>
+                <p className="text-sm font-medium text-slate-200">{t("choosePlan")}</p>
                 {!selectedPlan ? (
                   <p className="rounded border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-                    Pick one plan to see your totals and enable checkout.
+                    {t("pickPlanHint")}
                   </p>
                 ) : null}
                 {plans.map((p) => (
@@ -604,11 +669,17 @@ export function RedeepPhase2Client({
 
               {totals ? (
                 <div className="rounded border border-white/[0.08] bg-black/15 p-4 text-sm text-slate-200">
-                  <p>Plan total: ${(totals.finalTotalCents / 100).toFixed(2)}</p>
-                  <p>Credit applied: -${(totals.creditAppliedCents / 100).toFixed(2)}</p>
-                  <p>Shipping: ${(totals.shippingCents / 100).toFixed(2)}</p>
+                  <p>
+                    {t("planTotal")} ${(totals.finalTotalCents / 100).toFixed(2)}
+                  </p>
+                  <p>
+                    {t("creditApplied")} -${(totals.creditAppliedCents / 100).toFixed(2)}
+                  </p>
+                  <p>
+                    {t("shippingLine")} ${(totals.shippingCents / 100).toFixed(2)}
+                  </p>
                   <p className="mt-1 font-semibold text-white">
-                    Balance due: ${(totals.balanceDueCents / 100).toFixed(2)}
+                    {t("balanceDue")} ${(totals.balanceDueCents / 100).toFixed(2)}
                   </p>
                 </div>
               ) : null}
@@ -619,7 +690,7 @@ export function RedeepPhase2Client({
                 disabled={loading !== null || !selectedPlan || !voucherCode.trim()}
                 onClick={() => void checkoutBalance()}
               >
-                {loading === "checkout" ? "Processing..." : "Apply credit & continue"}
+                {loading === "checkout" ? t("processingCheckout") : t("applyCredit")}
               </button>
             </div>
           </>
@@ -632,7 +703,7 @@ export function RedeepPhase2Client({
                 <button
                   type="button"
                   className={backArrowButtonClass}
-                  aria-label="Back to plan and payment"
+                  aria-label={t("backPlan")}
                   disabled={loading !== null}
                   onClick={() => setWizardStep(4)}
                 >
@@ -642,17 +713,26 @@ export function RedeepPhase2Client({
                 <span className="inline-flex h-9 w-9 shrink-0" aria-hidden />
               )}
               <h2 id="redeem-step5-heading" className="text-lg font-semibold text-white">
-                Activation date
+                {t("step5Title")}
               </h2>
             </div>
-            <p className="mt-2 text-sm text-slate-300">
-              Choose the date your service should start. After you confirm, activation is queued for that day.
-            </p>
+            {resumeAfterPaidUpgrade ? (
+              <p
+                className="mt-3 rounded border border-emerald-500/30 bg-emerald-950/35 px-3 py-2 text-sm text-emerald-100"
+                role="status"
+              >
+                {t("stripePaidBanner")}
+              </p>
+            ) : null}
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step5Body")}</p>
 
             <div className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-200">Service start date</label>
+              <div className="space-y-2.5">
+                <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-activation-date">
+                  {t("dateLabel")}
+                </label>
                 <input
+                  id="redeem-activation-date"
                   type="date"
                   value={activationDate}
                   onChange={(e) => setActivationDate(e.target.value)}
@@ -662,12 +742,13 @@ export function RedeepPhase2Client({
               </div>
 
               {!voucherCode.trim() ? (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-200">PIN / voucher code</label>
-                  <p className="mb-2 text-xs text-slate-400">
-                    Re-enter your scratch PIN if this page reloaded after payment (needed to finalize).
-                  </p>
+                <div className="space-y-2.5">
+                  <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-pin-again-input">
+                    {t("pinAgainLabel")}
+                  </label>
+                  <p className="text-xs text-slate-400">{t("pinAgainHint")}</p>
                   <input
+                    id="redeem-pin-again-input"
                     value={voucherCode}
                     onChange={(e) => setVoucherCode(e.target.value)}
                     disabled={loading !== null}
@@ -682,14 +763,12 @@ export function RedeepPhase2Client({
                 disabled={loading !== null || !activationDate || !voucherCode.trim()}
                 onClick={() => void activate()}
               >
-                {loading === "activate" ? "Submitting..." : "Finalize activation"}
+                {loading === "activate" ? t("submitting") : t("finalize")}
               </button>
             </div>
           </>
         ) : null}
       </section>
-
-      {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
     </div>
   );
 }
