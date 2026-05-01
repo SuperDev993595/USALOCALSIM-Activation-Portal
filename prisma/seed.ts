@@ -86,7 +86,14 @@ async function main() {
         status: "inactive",
         type: "top_up",
         planId: prepaidBasic.id,
+        /** Prepaid cart charges voucher credit only (e.g. $50 bundled pack), not the linked plan list price. */
+        creditAmountCents: 5000,
       },
+    });
+  } else {
+    demoVoucher = await prisma.voucher.update({
+      where: { id: demoVoucher.id },
+      data: { creditAmountCents: 5000 },
     });
   }
   const demoSerial = process.env.PREPAID_DEMO_SERIAL?.trim() || "USALOCALDEMO123";

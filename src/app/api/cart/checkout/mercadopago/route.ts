@@ -3,12 +3,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
 import { mercadoPagoCartStubResponse } from "@/lib/mercadopago-cart";
-import { loadPrepaidCardClaimedBySession, phase1PrepaidChargeCents } from "@/lib/prepaid-cart";
+import { loadPrepaidCardClaimedBySession, prepaidCartChargeCents } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
   email: z.string().email(),
   customerName: z.string().min(2).max(120),
+  payAmountCents: z.number().int().positive(),
 });
 
 /**
@@ -25,7 +26,10 @@ export async function POST(req: Request) {
   try {
     body = bodySchema.parse(await req.json());
   } catch {
-    return NextResponse.json({ error: "Invalid request: planId, name, and email required." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request: planId, name, email, and payAmountCents required." },
+      { status: 400 },
+    );
   }
 
   const plan = await prisma.plan.findFirst({
@@ -49,10 +53,34 @@ export async function POST(req: Request) {
     );
   }
 
-  const chargeCents = phase1PrepaidChargeCents(prepaid.voucher.creditAmountCents, plan.priceCents);
-  if (chargeCents <= 0) {
-    return NextResponse.json({ error: "No payable credit is configured for this card." }, { status: 400 });
+  const expectedPayCents = prepaidCartChargeCents(prepaid.voucher.creditAmountCents);
+  if (expectedPayCents <= 0) {
+    return NextResponse.json(
+      {
+        error:
+          "This card’s voucher has no credit amount configured (Phase 1 uses voucher credit only, not plan price). Contact support or your dealer.",
+      },
+      { status: 400 },
+    );
   }
+
+  if (body.payAmountCents !== expectedPayCents) {
+    return NextResponse.json(
+      {
+        error: `Pay amount must be exactly $${(expectedPayCents / 100).toFixed(2)} for this voucher (entered cents: ${body.payAmountCents}).`,
+      },
+      { status: 400 },
+    );
+  }
+
+  await prisma.voucher.update({
+    where: { id: prepaid.voucherId },
+    data: {
+      declaredPayCents: body.payAmountCents,
+      customerName: body.customerName.trim(),
+      customerEmail: body.email.trim(),
+    },
+  });
 
   await prisma.cartSession.update({
     where: { id: cartSession.id },

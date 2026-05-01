@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { getRequestClientMeta } from "@/lib/request-meta";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
+import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
 
 const bodySchema = z.object({
@@ -76,7 +77,11 @@ export async function POST(req: Request) {
 
   if (!voucher) {
     await recordFailedAttempt(key);
-    return NextResponse.json({ error: "Invalid PIN or voucher code." }, { status: 400 });
+    const serialHint = await messageIfPinLooksLikePrepaidSerial(body.voucherCode);
+    return NextResponse.json(
+      { error: serialHint ?? "Invalid PIN or voucher code." },
+      { status: 400 },
+    );
   }
 
   // Physical cart flow: PIN is neutral at import — plan comes from CartPurchase after payment.

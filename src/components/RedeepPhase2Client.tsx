@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 
+/** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
+const redeepPanelInputClass =
+  "w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-none placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40 [color-scheme:light] [&:-webkit-autofill]:[-webkit-box-shadow:inset_0_0_0_1000px_rgb(255_255_255)] [&:-webkit-autofill]:[-webkit-text-fill-color:rgb(15_23_42)]";
+
 type PlanRow = {
   id: string;
   name: string;
@@ -61,7 +65,7 @@ export function RedeepPhase2Client({
           accessToken?: string;
         };
         if (!startRes.ok || !startData.purchaseId) {
-          setError(typeof startData.error === "string" ? startData.error : "Unable to start Phase 2 from this PIN.");
+          setError(typeof startData.error === "string" ? startData.error : "Unable to start redemption from this PIN.");
           return;
         }
         pid = startData.purchaseId;
@@ -199,7 +203,7 @@ export function RedeepPhase2Client({
             if (loading !== null || !voucherCode.trim()) return;
             void unlockAndQuote();
           }}
-          className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm uppercase text-slate-900 placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40"
+          className={`${redeepPanelInputClass} uppercase`}
         />
         <button
           type="button"
@@ -226,7 +230,7 @@ export function RedeepPhase2Client({
                 setFulfillmentType(next);
                 if (selectedPlanId) void unlockAndQuote(selectedPlanId, next);
               }}
-              className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
+              className={redeepPanelInputClass}
             >
               <option value="EXISTING_SIM">I already have the Physical SIM</option>
               <option value="NEW_SIM_SHIPPING">I need a new Physical SIM (shipping)</option>
@@ -240,7 +244,7 @@ export function RedeepPhase2Client({
               <input
                 value={iccid}
                 onChange={(e) => setIccid(e.target.value)}
-                className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
+                className={redeepPanelInputClass}
               />
             </div>
           ) : null}
@@ -250,7 +254,7 @@ export function RedeepPhase2Client({
               <textarea
                 value={shippingAddress}
                 onChange={(e) => setShippingAddress(e.target.value)}
-                className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
+                className={redeepPanelInputClass}
                 rows={3}
               />
             </div>
@@ -305,7 +309,7 @@ export function RedeepPhase2Client({
               type="date"
               value={activationDate}
               onChange={(e) => setActivationDate(e.target.value)}
-              className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
+              className={redeepPanelInputClass}
             />
           </div>
           <button

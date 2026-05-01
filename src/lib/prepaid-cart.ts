@@ -9,6 +9,18 @@ export function normalizePrepaidSerial(raw: string | null | undefined): string |
   return t;
 }
 
+/** If input matches a physical card serial, the user likely pasted the QR value instead of the scratch PIN. */
+export async function messageIfPinLooksLikePrepaidSerial(raw: string): Promise<string | null> {
+  const serialNorm = normalizePrepaidSerial(raw);
+  if (!serialNorm) return null;
+  const card = await prisma.prepaidCard.findUnique({
+    where: { serial: serialNorm },
+    select: { id: true },
+  });
+  if (!card) return null;
+  return "That value is your card's QR serial, not the scratch PIN. Enter the scratch-off PIN from your card.";
+}
+
 type Db = Prisma.TransactionClient;
 
 /**
@@ -74,6 +86,7 @@ export async function loadPrepaidCardClaimedBySession(sessionId: string) {
     where: { claimedCartSessionId: sessionId },
     select: {
       id: true,
+      voucherId: true,
       basePlanId: true,
       upgradePlanId: true,
       voucher: { select: { creditAmountCents: true } },
@@ -81,9 +94,12 @@ export async function loadPrepaidCardClaimedBySession(sessionId: string) {
   });
 }
 
-/** Phase 1 amount: spec `credit_amount` on voucher when set; else bundled plan list price. */
-export function phase1PrepaidChargeCents(voucherCreditCents: number, basePlanPriceCents: number): number {
-  return voucherCreditCents > 0 ? voucherCreditCents : basePlanPriceCents;
+/**
+ * Prepaid physical-card cart: charge amount is **voucher `credit_amount` only** (bundled pack face value, e.g. $50).
+ * Not derived from the linked plan’s list price.
+ */
+export function prepaidCartChargeCents(voucherCreditCents: number): number {
+  return voucherCreditCents > 0 ? voucherCreditCents : 0;
 }
 
 export function isPlanAllowedForPrepaidCard(

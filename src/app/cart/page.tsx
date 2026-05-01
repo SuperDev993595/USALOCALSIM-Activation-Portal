@@ -8,15 +8,22 @@ function firstParam(v: string | string[] | undefined): string | null {
 export default function CartPage({
   searchParams,
 }: {
-  searchParams: { resume?: string | string[]; serial?: string | string[]; needSerial?: string | string[] };
+  searchParams: {
+    resume?: string | string[];
+    serial?: string | string[];
+    needSerial?: string | string[];
+    needVoucherCredit?: string | string[];
+  };
 }) {
   const needSerial = firstParam(searchParams.needSerial);
+  const needVoucherCredit = firstParam(searchParams.needVoucherCredit);
   return (
     <div className="flex flex-1 items-start justify-center pt-4 sm:pt-8">
       <CartPhoneVerifyClient
         resumeQuery={firstParam(searchParams.resume)}
         prepaidSerialFromQr={firstParam(searchParams.serial)}
         needSerialBanner={needSerial === "1"}
+        needVoucherCreditBanner={needVoucherCredit === "1"}
       />
     </div>
   );

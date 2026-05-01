@@ -9,12 +9,15 @@ export function CartPhoneVerifyClient({
   resumeQuery,
   prepaidSerialFromQr,
   needSerialBanner,
+  needVoucherCreditBanner,
 }: {
   resumeQuery: string | null;
   /** From physical card QR (`/cart?serial=` or `/pay?serial=`). Sent with OTP verify to bind phone + serial. */
   prepaidSerialFromQr?: string | null;
   /** Opened /cart after hitting payment step without a linked card (e.g. /cart/plans redirect). */
   needSerialBanner?: boolean;
+  /** Voucher has no `credit_amount` — Phase 1 does not use plan list price. */
+  needVoucherCreditBanner?: boolean;
 }) {
   const t = useTranslations("cart");
   const router = useRouter();
@@ -96,17 +99,21 @@ export function CartPhoneVerifyClient({
       {resumeBanner ? (
         <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">{resumeBanner}</p>
       ) : null}
-      {needSerialBanner ? (
+      {needVoucherCreditBanner ? (
+        <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
+          {t("needVoucherCreditBanner")}
+        </p>
+      ) : needSerialBanner ? (
         <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
           {t("needSerialBanner")}
         </p>
       ) : null}
-      {!needSerialBanner && prepaidSerialFromQr?.trim() ? (
+      {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() ? (
         <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
           {t("serialQrBanner")}
         </p>
       ) : null}
-      {!needSerialBanner && !prepaidSerialFromQr?.trim() ? (
+      {!needSerialBanner && !needVoucherCreditBanner && !prepaidSerialFromQr?.trim() ? (
         <p className="mt-4 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
           {t("cartSerialRequiredHint")}
         </p>

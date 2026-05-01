@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
+import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -49,7 +50,8 @@ export async function POST(req: Request) {
     voucher = await resolveVoucherByPin(pin);
   }
   if (!voucher) {
-    return NextResponse.json({ error: "Invalid PIN." }, { status: 400 });
+    const serialHint = await messageIfPinLooksLikePrepaidSerial(pin);
+    return NextResponse.json({ error: serialHint ?? "Invalid PIN." }, { status: 400 });
   }
   if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });

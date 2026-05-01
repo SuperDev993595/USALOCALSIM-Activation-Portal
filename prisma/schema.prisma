@@ -91,6 +91,8 @@ model Voucher {
   pinCodeHash        String?
   pinLast4           String?  @db.VarChar(8)
   creditAmountCents  Int      @default(0)
+  /// USD cents the customer entered at prepaid cart checkout (must match Stripe charged amount).
+  declaredPayCents Int?
   customerName       String?
   customerEmail      String?
   customerPhone      String?
@@ -190,13 +192,13 @@ model CartPurchase {
   // Opaque token: redeem/schedule UI without SMS (link from payment email).
   redemptionAccessToken       String?   @unique @db.VarChar(64)
   redemptionAccessExpiresAt   DateTime?
-  phase2FulfillmentType       String?   // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
-  phase2Iccid                 String?
-  phase2ShippingAddress       String?   @db.Text
-  phase2ShippingCents         Int       @default(0)
-  phase2CreditAppliedCents    Int       @default(0)
-  phase2ExtraPaidCents        Int       @default(0)
-  phase2FinalTotalCents       Int       @default(0)
+  redemptionFulfillmentType String? // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
+  redemptionIccid           String?
+  redemptionShippingAddress String? @db.Text
+  redemptionShippingCents   Int     @default(0)
+  redemptionCreditAppliedCents Int  @default(0)
+  redemptionExtraPaidCents  Int     @default(0)
+  redemptionFinalTotalCents Int     @default(0)
 
   @@index([cartSessionId])
   @@map("ShopPurchase")

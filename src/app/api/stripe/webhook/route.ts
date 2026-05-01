@@ -151,6 +151,21 @@ export async function POST(req: Request) {
           include: { voucher: true },
         });
         if (prepaid?.voucher) {
+          const paidCents = session.amount_total ?? 0;
+          const declared = prepaid.voucher.declaredPayCents;
+          if (declared != null && declared !== paidCents) {
+            await tx.auditLog.create({
+              data: {
+                action: "cart_webhook_declared_pay_vs_stripe_total",
+                metadata: JSON.stringify({
+                  voucherId: prepaid.voucher.id,
+                  declared,
+                  paidCents,
+                  stripePaymentId: paymentId,
+                }),
+              },
+            });
+          }
           await tx.voucher.update({
             where: { id: prepaid.voucher.id },
             data: {
@@ -159,6 +174,7 @@ export async function POST(req: Request) {
               customerEmail: email,
               customerName: customerName || null,
               customerPhone: cartSession.phoneE164,
+              declaredPayCents: paidCents,
               creditAmountCents:
                 prepaid.voucher.creditAmountCents > 0
                   ? prepaid.voucher.creditAmountCents
@@ -223,11 +239,11 @@ export async function POST(req: Request) {
     const amount = session.amount_total ?? 0;
     await prisma.cartPurchase.updateMany({
       where: { id: purchaseId, status: "authorized" },
-      data: { phase2ExtraPaidCents: { increment: amount } },
+      data: { redemptionExtraPaidCents: { increment: amount } },
     });
     await prisma.auditLog.create({
       data: {
-        action: "stripe_cart_phase2_upgrade_paid",
+        action: "stripe_cart_redemption_upgrade_paid",
         metadata: JSON.stringify({
           cartPurchaseId: purchaseId,
           stripePaymentId: paymentId,

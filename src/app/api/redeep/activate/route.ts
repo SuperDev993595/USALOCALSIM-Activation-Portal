@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
-import { PHASE2_FULFILLMENT_TYPES } from "@/lib/redeep-phase2";
+import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -61,22 +61,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid or already redeemed PIN." }, { status: 400 });
   }
 
-  const fulfillmentType = purchase.phase2FulfillmentType;
+  const fulfillmentType = purchase.redemptionFulfillmentType;
   if (!fulfillmentType) {
     return NextResponse.json({ error: "Choose how customer connects before activation." }, { status: 400 });
   }
-  if (fulfillmentType === PHASE2_FULFILLMENT_TYPES.EXISTING_SIM && !purchase.phase2Iccid?.trim()) {
+  if (fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM && !purchase.redemptionIccid?.trim()) {
     return NextResponse.json({ error: "ICCID is required for existing physical SIM." }, { status: 400 });
   }
   if (
-    fulfillmentType === PHASE2_FULFILLMENT_TYPES.NEW_SIM_SHIPPING &&
-    !purchase.phase2ShippingAddress?.trim()
+    fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING &&
+    !purchase.redemptionShippingAddress?.trim()
   ) {
     return NextResponse.json({ error: "Shipping address is required for physical SIM delivery." }, { status: 400 });
   }
 
-  const paidTowardPhase2 = purchase.phase2CreditAppliedCents + purchase.phase2ExtraPaidCents;
-  if (purchase.phase2FinalTotalCents > paidTowardPhase2) {
+  const paidTowardRedemption = purchase.redemptionCreditAppliedCents + purchase.redemptionExtraPaidCents;
+  if (purchase.redemptionFinalTotalCents > paidTowardRedemption) {
     return NextResponse.json({ error: "Remaining balance must be paid before activation." }, { status: 400 });
   }
 
@@ -86,13 +86,13 @@ export async function POST(req: Request) {
       data: {
         status: "redeemed",
         redeemedAt: new Date(),
-        redeemedBy: `${purchase.customerEmail} · phase2`,
+        redeemedBy: `${purchase.customerEmail} · cart-redeem`,
         paymentStatus: true,
         isVerified: true,
         customerName: purchase.customerName ?? voucher.customerName,
         customerEmail: purchase.customerEmail,
         customerPhone: cartSession?.phoneE164 ?? voucher.customerPhone,
-        linkedIccid: purchase.phase2Iccid?.trim() || null,
+        linkedIccid: purchase.redemptionIccid?.trim() || null,
         fulfillmentType,
       },
     });
@@ -115,13 +115,13 @@ export async function POST(req: Request) {
         planId: purchase.planId,
         voucherCode: voucherCode,
         voucherId: voucher.id,
-        amountPaidCents: purchase.phase2FinalTotalCents,
+        amountPaidCents: purchase.redemptionFinalTotalCents,
         travelDate: serviceStart,
         status: "scheduled",
-        iccid: purchase.phase2Iccid?.trim() || null,
-        hasPartnerSim: fulfillmentType === PHASE2_FULFILLMENT_TYPES.EXISTING_SIM,
+        iccid: purchase.redemptionIccid?.trim() || null,
+        hasPartnerSim: fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
         hardwareDeductionCents: 0,
-        shippingDeductionCents: purchase.phase2ShippingCents,
+        shippingDeductionCents: purchase.redemptionShippingCents,
       },
     });
   });

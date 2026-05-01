@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
-import { PHASE2_FULFILLMENT_TYPES, computePhase2Totals } from "@/lib/redeep-phase2";
+import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -11,9 +11,9 @@ const bodySchema = z.object({
   voucherCode: z.string().min(1),
   planId: z.string().min(1),
   fulfillmentType: z.enum([
-    PHASE2_FULFILLMENT_TYPES.EXISTING_SIM,
-    PHASE2_FULFILLMENT_TYPES.NEW_SIM_SHIPPING,
-    PHASE2_FULFILLMENT_TYPES.ESIM,
+    REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
+    REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING,
+    REDEMPTION_FULFILLMENT_TYPES.ESIM,
   ]),
   iccid: z.string().optional(),
   shippingAddress: z.string().optional(),
@@ -56,10 +56,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Purchase not found for this session." }, { status: 404 });
   }
 
-  if (body.fulfillmentType === PHASE2_FULFILLMENT_TYPES.EXISTING_SIM && !body.iccid?.trim()) {
+  if (body.fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM && !body.iccid?.trim()) {
     return NextResponse.json({ error: "ICCID is required when customer already has a SIM." }, { status: 400 });
   }
-  if (body.fulfillmentType === PHASE2_FULFILLMENT_TYPES.NEW_SIM_SHIPPING && !body.shippingAddress?.trim()) {
+  if (body.fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING && !body.shippingAddress?.trim()) {
     return NextResponse.json({ error: "Shipping address is required for physical SIM delivery." }, { status: 400 });
   }
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   }
 
   const creditAmountCents = voucher.creditAmountCents > 0 ? voucher.creditAmountCents : voucher.plan.priceCents;
-  const totals = computePhase2Totals({
+  const totals = computeRedemptionTotals({
     planPriceCents: plan.priceCents,
     creditAmountCents,
     fulfillmentType: body.fulfillmentType,
@@ -90,12 +90,12 @@ export async function POST(req: Request) {
     where: { id: purchase.id },
     data: {
       planId: plan.id,
-      phase2FulfillmentType: body.fulfillmentType,
-      phase2Iccid: body.iccid?.trim() || null,
-      phase2ShippingAddress: body.shippingAddress?.trim() || null,
-      phase2ShippingCents: totals.shippingCents,
-      phase2CreditAppliedCents: totals.creditAppliedCents,
-      phase2FinalTotalCents: totals.finalTotalCents,
+      redemptionFulfillmentType: body.fulfillmentType,
+      redemptionIccid: body.iccid?.trim() || null,
+      redemptionShippingAddress: body.shippingAddress?.trim() || null,
+      redemptionShippingCents: totals.shippingCents,
+      redemptionCreditAppliedCents: totals.creditAppliedCents,
+      redemptionFinalTotalCents: totals.finalTotalCents,
     },
   });
 
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
         price_data: {
           currency: "usd",
           product_data: {
-            name: `Phase 2 balance (${plan.name})`,
+            name: `Redemption balance (${plan.name})`,
             description: `Voucher credit applied: $${(totals.creditAppliedCents / 100).toFixed(2)}`,
           },
           unit_amount: totals.balanceDueCents,

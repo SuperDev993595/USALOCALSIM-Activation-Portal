@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
-import { PHASE2_FULFILLMENT_TYPES, computePhase2Totals } from "@/lib/redeep-phase2";
+import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
+import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -11,9 +12,9 @@ const bodySchema = z.object({
   planId: z.string().optional(),
   fulfillmentType: z
     .enum([
-      PHASE2_FULFILLMENT_TYPES.EXISTING_SIM,
-      PHASE2_FULFILLMENT_TYPES.NEW_SIM_SHIPPING,
-      PHASE2_FULFILLMENT_TYPES.ESIM,
+      REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
+      REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING,
+      REDEMPTION_FULFILLMENT_TYPES.ESIM,
     ])
     .optional(),
   accessToken: z.string().optional(),
@@ -63,7 +64,11 @@ export async function POST(req: Request) {
     voucher = await resolveVoucherByPin(pinInput);
   }
   if (!voucher) {
-    return NextResponse.json({ error: "Invalid PIN or voucher code." }, { status: 400 });
+    const serialHint = await messageIfPinLooksLikePrepaidSerial(pinInput);
+    return NextResponse.json(
+      { error: serialHint ?? "Invalid PIN or voucher code." },
+      { status: 400 },
+    );
   }
   if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
@@ -99,11 +104,11 @@ export async function POST(req: Request) {
   const selectedPlan = body.planId ? plans.find((p) => p.id === body.planId) ?? null : null;
   const selectedFulfillment =
     body.fulfillmentType ??
-    (selectedPlan?.planType === "esim" ? PHASE2_FULFILLMENT_TYPES.ESIM : PHASE2_FULFILLMENT_TYPES.EXISTING_SIM);
+    (selectedPlan?.planType === "esim" ? REDEMPTION_FULFILLMENT_TYPES.ESIM : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
 
   const totals =
     selectedPlan != null
-      ? computePhase2Totals({
+      ? computeRedemptionTotals({
           planPriceCents: selectedPlan.priceCents,
           creditAmountCents,
           fulfillmentType: selectedFulfillment,
