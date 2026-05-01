@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
 import { mercadoPagoCartStubResponse } from "@/lib/mercadopago-cart";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
@@ -17,6 +18,10 @@ const bodySchema = z.object({
  * Preferences API + webhook are implemented (see `src/lib/mercadopago-cart.ts`).
  */
 export async function POST(req: Request) {
+  if (!isCartMercadoPagoEnabled()) {
+    return NextResponse.json({ error: "Mercado Pago is not enabled for this deployment." }, { status: 404 });
+  }
+
   const cartSession = await getVerifiedCartSessionByRequest(req);
   if (!cartSession) {
     return NextResponse.json(
