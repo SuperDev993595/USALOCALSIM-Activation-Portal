@@ -169,11 +169,14 @@ export function RedeepPhase2Client({
     }
   }
 
+  const panelClass =
+    "mx-auto h-auto w-full max-w-xl rounded-xl border border-white/[0.12] bg-slate-950/65 p-6 text-slate-100 shadow-[0_16px_40px_-14px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:p-7";
+
   if (done) {
     return (
-      <div className="ui-card mx-auto w-full max-w-2xl p-6 text-center sm:p-8">
-        <h1 className="text-2xl font-bold text-slate-900">Phase 2 complete</h1>
-        <p className="mt-3 text-sm text-slate-600">
+      <div className={`${panelClass} text-center`}>
+        <h1 className="text-2xl font-bold text-white">Redemption complete</h1>
+        <p className="mt-3 text-sm text-slate-300">
           Voucher redeemed successfully. Activation is queued and will run on your selected date.
         </p>
       </div>
@@ -181,23 +184,26 @@ export function RedeepPhase2Client({
   }
 
   return (
-    <div className="ui-card mx-auto w-full max-w-2xl p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-slate-900">Phase 2 · /redeem</h1>
-      <p className="mt-2 text-sm text-slate-600">
+    <div className={panelClass}>
+      <p className="text-sm text-slate-300">
         Enter PIN, choose hardware fulfillment, select a plan, and pay only the balance over voucher credit.
       </p>
       {!purchaseIdProp ? (
-        <p className="mt-1 text-xs text-slate-500">
-          Need the classic voucher flow? <Link href="/redeem/legacy" className="underline">Open legacy redeem</Link>.
+        <p className="mt-1 text-xs text-slate-400">
+          Need the classic voucher flow?{" "}
+          <Link href="/redeem/legacy" className="font-medium text-sky-300 underline decoration-sky-400/50 hover:text-sky-200">
+            Open legacy redeem
+          </Link>
+          .
         </p>
       ) : null}
 
       <div className="mt-6">
-        <label className="mb-1 block text-sm font-medium text-slate-800">PIN / voucher code</label>
+        <label className="mb-1 block text-sm font-medium text-slate-200">PIN / voucher code</label>
         <input
           value={voucherCode}
           onChange={(e) => setVoucherCode(e.target.value)}
-          className="w-full rounded border border-slate-300 px-3 py-2 text-sm uppercase"
+          className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm uppercase text-slate-900 placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40"
         />
         <button
           type="button"
@@ -211,12 +217,12 @@ export function RedeepPhase2Client({
 
       {plans.length > 0 ? (
         <div className="mt-6 space-y-4">
-          <p className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            Voucher credit: <strong>${(creditCents / 100).toFixed(2)}</strong>
+          <p className="rounded border border-white/[0.08] bg-black/15 px-3 py-2 text-sm text-slate-200">
+            Voucher credit: <strong className="text-white">${(creditCents / 100).toFixed(2)}</strong>
           </p>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-800">How will you connect?</label>
+            <label className="mb-1 block text-sm font-medium text-slate-200">How will you connect?</label>
             <select
               value={fulfillmentType}
               onChange={(e) => {
@@ -224,7 +230,7 @@ export function RedeepPhase2Client({
                 setFulfillmentType(next);
                 if (selectedPlanId) void unlockAndQuote(selectedPlanId, next);
               }}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
             >
               <option value="EXISTING_SIM">I already have the Physical SIM</option>
               <option value="NEW_SIM_SHIPPING">I need a new Physical SIM (shipping)</option>
@@ -234,26 +240,33 @@ export function RedeepPhase2Client({
 
           {fulfillmentType === "EXISTING_SIM" ? (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-800">ICCID</label>
-              <input value={iccid} onChange={(e) => setIccid(e.target.value)} className="w-full rounded border border-slate-300 px-3 py-2 text-sm" />
+              <label className="mb-1 block text-sm font-medium text-slate-200">ICCID</label>
+              <input
+                value={iccid}
+                onChange={(e) => setIccid(e.target.value)}
+                className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
+              />
             </div>
           ) : null}
           {fulfillmentType === "NEW_SIM_SHIPPING" ? (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-800">Shipping address</label>
+              <label className="mb-1 block text-sm font-medium text-slate-200">Shipping address</label>
               <textarea
                 value={shippingAddress}
                 onChange={(e) => setShippingAddress(e.target.value)}
-                className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
                 rows={3}
               />
             </div>
           ) : null}
 
           <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-800">Choose data plan</p>
+            <p className="text-sm font-medium text-slate-200">Choose data plan</p>
             {plans.map((p) => (
-              <label key={p.id} className="flex items-center justify-between rounded border border-slate-200 p-3 text-sm">
+              <label
+                key={p.id}
+                className="flex items-center justify-between rounded border border-white/10 bg-black/20 p-3 text-sm text-slate-200"
+              >
                 <span>
                   {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
                 </span>
@@ -273,11 +286,11 @@ export function RedeepPhase2Client({
           </div>
 
           {totals ? (
-            <div className="rounded border border-[#00104E]/20 bg-slate-50 p-4 text-sm">
+            <div className="rounded border border-white/[0.08] bg-black/15 p-4 text-sm text-slate-200">
               <p>Plan total: ${(totals.finalTotalCents / 100).toFixed(2)}</p>
               <p>Credit applied: -${(totals.creditAppliedCents / 100).toFixed(2)}</p>
               <p>Shipping: ${(totals.shippingCents / 100).toFixed(2)}</p>
-              <p className="mt-1 font-semibold">Balance due: ${(totals.balanceDueCents / 100).toFixed(2)}</p>
+              <p className="mt-1 font-semibold text-white">Balance due: ${(totals.balanceDueCents / 100).toFixed(2)}</p>
             </div>
           ) : null}
 
@@ -291,17 +304,17 @@ export function RedeepPhase2Client({
           </button>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-800">Activation date</label>
+            <label className="mb-1 block text-sm font-medium text-slate-200">Activation date</label>
             <input
               type="date"
               value={activationDate}
               onChange={(e) => setActivationDate(e.target.value)}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-white/12 bg-black/15 px-3 py-2 text-sm text-white focus:border-sky-400/60 focus:outline-none focus:ring-1 focus:ring-sky-400/40"
             />
           </div>
           <button
             type="button"
-            className="w-full rounded bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="w-full rounded border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10 disabled:opacity-60"
             disabled={loading !== null || !activationDate || !voucherCode.trim()}
             onClick={() => void activate()}
           >
@@ -309,7 +322,7 @@ export function RedeepPhase2Client({
           </button>
         </div>
       ) : null}
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
     </div>
   );
 }
