@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -13,16 +13,20 @@ export type CartPlanRow = {
   market: string;
 };
 
+/**
+ * Phase 1 (spec): QR → SMS → registration & payment for voucher **credit** only.
+ * `chargeCents` is voucher `credit_amount` when set, else base plan price — must match checkout API.
+ */
 export function CartPlansClient({
   plans,
+  chargeCents,
   pendingActivations = 0,
-  prepaidUpsell = false,
 }: {
   plans: CartPlanRow[];
+  /** Displayed and charged amount (voucher credit_amount or bundled plan price). */
+  chargeCents: number;
   /** Paid but not yet redeemed (same verified session). */
   pendingActivations?: number;
-  /** QR prepaid flow: only base + optional upgrade plans are shown. */
-  prepaidUpsell?: boolean;
 }) {
   const t = useTranslations("cart");
   const [customerName, setCustomerName] = useState("");
@@ -30,6 +34,13 @@ export function CartPlansClient({
   const [planId, setPlanId] = useState<string | null>(plans[0]?.id ?? null);
   const [loading, setLoading] = useState<"stripe" | "mercadopago" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedPlan = useMemo(() => plans.find((p) => p.id === planId) ?? null, [plans, planId]);
+
+  useEffect(() => {
+    const id = plans[0]?.id ?? null;
+    if (id) setPlanId(id);
+  }, [plans]);
 
   async function checkoutStripe() {
     if (!planId) return;
@@ -90,47 +101,21 @@ export function CartPlansClient({
             </Link>
           </div>
         ) : null}
-        <h1 className="mt-4 text-2xl font-bold text-slate-900">{t("plansTitle")}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t("plansSubtitle")}</p>
-        {prepaidUpsell ? (
-          <div className="mt-4 rounded border border-[#00104E]/20 bg-slate-50 px-4 py-3 text-sm text-slate-800">
-            <p className="font-semibold text-slate-900">{t("upsellTitle")}</p>
-            <p className="mt-1 text-slate-700">{t("upsellBody")}</p>
-          </div>
-        ) : null}
+        <h1 className="mt-4 text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
+        <p className="mt-2 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
       </div>
 
-      <div className="space-y-3">
-        {plans.map((p) => (
-          <label
-            key={p.id}
-            className={`flex cursor-pointer items-start gap-3 rounded border p-4 shadow-sm ${
-              planId === p.id ? "border-[#00104E] bg-slate-50 ring-1 ring-[#00104E]" : "border-slate-200 bg-white"
-            }`}
-          >
-            <input
-              type="radio"
-              name="plan"
-              className="mt-1"
-              checked={planId === p.id}
-              onChange={() => setPlanId(p.id)}
-            />
-            <div className="flex-1">
-              <div className="font-semibold text-slate-900">{p.name}</div>
-              <div className="text-sm text-slate-600">
-                {p.dataAllowance} · {p.durationDays} days · {p.market.toUpperCase()}
-              </div>
-              <div className="mt-1 text-sm font-medium text-slate-900">
-                ${(p.priceCents / 100).toFixed(2)} USD
-              </div>
-            </div>
-          </label>
-        ))}
-      </div>
+      {selectedPlan && chargeCents > 0 ? (
+        <div className="mt-6 rounded border border-slate-200 bg-slate-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{t("prepaidCreditDueLabel")}</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">${(chargeCents / 100).toFixed(2)} USD</p>
+          <p className="mt-2 text-sm text-slate-600">{t("prepaidCreditDueHint")}</p>
+        </div>
+      ) : null}
 
       <div className="ui-card mt-6 p-5">
         <label className="mb-1 mt-1 block text-sm font-medium text-slate-800" htmlFor="cart-name">
-          Full name
+          {t("customerNameLabel")}
         </label>
         <input
           id="cart-name"

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
 import { mercadoPagoCartStubResponse } from "@/lib/mercadopago-cart";
-import { isPlanAllowedForPrepaidCard, loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
+import { loadPrepaidCardClaimedBySession, phase1PrepaidChargeCents } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -36,15 +36,22 @@ export async function POST(req: Request) {
   }
 
   const prepaid = await loadPrepaidCardClaimedBySession(cartSession.id);
-  if (prepaid && !isPlanAllowedForPrepaidCard(prepaid, plan.id)) {
+  if (!prepaid) {
     return NextResponse.json(
-      { error: "This plan is not available for the card you scanned. Choose the included plan or the upgrade." },
+      { error: "Physical card checkout requires the QR link from your card. Open that link, verify your phone, then try again." },
+      { status: 400 },
+    );
+  }
+  if (plan.id !== prepaid.basePlanId) {
+    return NextResponse.json(
+      { error: "This payment only accepts the prepaid credit bundled with your card." },
       { status: 400 },
     );
   }
 
-  if (plan.priceCents <= 0) {
-    return NextResponse.json({ error: "This plan cannot be purchased online." }, { status: 400 });
+  const chargeCents = phase1PrepaidChargeCents(prepaid.voucher.creditAmountCents, plan.priceCents);
+  if (chargeCents <= 0) {
+    return NextResponse.json({ error: "No payable credit is configured for this card." }, { status: 400 });
   }
 
   await prisma.cartSession.update({

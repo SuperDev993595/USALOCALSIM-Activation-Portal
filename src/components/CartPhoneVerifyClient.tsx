@@ -8,10 +8,13 @@ import { useTranslations } from "next-intl";
 export function CartPhoneVerifyClient({
   resumeQuery,
   prepaidSerialFromQr,
+  needSerialBanner,
 }: {
   resumeQuery: string | null;
   /** From physical card QR (`/cart?serial=` or `/pay?serial=`). Sent with OTP verify to bind phone + serial. */
   prepaidSerialFromQr?: string | null;
+  /** Opened /cart after hitting payment step without a linked card (e.g. /cart/plans redirect). */
+  needSerialBanner?: boolean;
 }) {
   const t = useTranslations("cart");
   const router = useRouter();
@@ -61,7 +64,11 @@ export function CartPhoneVerifyClient({
           ...(prepaidSerialFromQr?.trim() ? { prepaidSerial: prepaidSerialFromQr.trim() } : {}),
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; redirectTo?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        redirectTo?: string;
+        hasPrepaidCard?: boolean;
+      };
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
         return;
@@ -69,6 +76,10 @@ export function CartPhoneVerifyClient({
       if (typeof data.redirectTo === "string" && data.redirectTo.startsWith("/")) {
         router.push(data.redirectTo);
         router.refresh();
+        return;
+      }
+      if (data.hasPrepaidCard === false) {
+        setError(t("verifyNeedSerialFirst"));
         return;
       }
       router.push("/cart/plans");
@@ -85,9 +96,19 @@ export function CartPhoneVerifyClient({
       {resumeBanner ? (
         <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">{resumeBanner}</p>
       ) : null}
-      {prepaidSerialFromQr?.trim() ? (
+      {needSerialBanner ? (
+        <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
+          {t("needSerialBanner")}
+        </p>
+      ) : null}
+      {!needSerialBanner && prepaidSerialFromQr?.trim() ? (
         <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
           {t("serialQrBanner")}
+        </p>
+      ) : null}
+      {!needSerialBanner && !prepaidSerialFromQr?.trim() ? (
+        <p className="mt-4 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+          {t("cartSerialRequiredHint")}
         </p>
       ) : null}
 
@@ -103,6 +124,12 @@ export function CartPhoneVerifyClient({
               autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                if (loading || !phone.trim()) return;
+                void sendCode();
+              }}
               className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
               placeholder="+1…"
             />
@@ -130,6 +157,12 @@ export function CartPhoneVerifyClient({
               autoComplete="one-time-code"
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                if (loading || code.replace(/\D/g, "").length < 6) return;
+                void verify();
+              }}
               className="w-full rounded border border-slate-300 px-3 py-2 text-sm tracking-widest text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
               placeholder="000000"
             />

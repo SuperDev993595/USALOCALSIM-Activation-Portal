@@ -368,6 +368,21 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                         </p>
                       </div>
                       <p className="text-slate-600">Voucher type recognized automatically from metadata.</p>
+                      <p className="font-semibold text-slate-900">{voucherPlan.name}</p>
+                      <p className="text-slate-600">
+                        {tf("faceValue")}:{" "}
+                        {creditAmountCents != null ? (
+                          <span className="font-semibold">${(creditAmountCents / 100).toFixed(2)}</span>
+                        ) : (
+                          "—"
+                        )}
+                      </p>
+                      <p className="text-slate-600">
+                        {tf("dataPack")}:{" "}
+                        <span className="font-medium">
+                          {voucherPlan.dataAllowance} · {voucherPlan.durationDays} {tf("daysSuffix")}
+                        </span>
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac1")} disabled={loading || validating}>
@@ -395,7 +410,6 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                           : tf("physicalSimVoucher")}
                       </p>
                     </div>
-                    <p className="font-semibold text-slate-900">{voucherPlan.name}</p>
                     <p className="text-slate-600">
                       {tf("faceValue")}:{" "}
                       {creditAmountCents != null ? (
@@ -403,12 +417,6 @@ export function ActivateFlowClient({ flow }: { flow: Flow }) {
                       ) : (
                         "—"
                       )}
-                    </p>
-                    <p className="text-slate-600">
-                      {tf("dataPack")}:{" "}
-                      <span className="font-medium">
-                        {voucherPlan.dataAllowance} · {voucherPlan.durationDays} {tf("daysSuffix")}
-                      </span>
                     </p>
                     <p className="text-slate-600">{tf("prepaidNoCharge")}</p>
                   </div>

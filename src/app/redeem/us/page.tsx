@@ -199,6 +199,14 @@ export default function RedeemUsPage() {
                       <p className="font-semibold text-slate-900">{t("esimProduct")}</p>
                     </div>
                     <p className="text-slate-600">Voucher type recognized automatically from metadata.</p>
+                    <p className="font-semibold text-slate-900">{plan.name}</p>
+                    <p className="text-slate-600">
+                      {t("faceValue")}:{" "}
+                      {creditCents != null ? <span className="font-semibold">${(creditCents / 100).toFixed(2)}</span> : "—"}
+                    </p>
+                    <p className="text-slate-600">
+                      {t("dataPack")}: {plan.dataAllowance} · {plan.durationDays} {t("days")}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac1")} disabled={validating}>
@@ -220,14 +228,11 @@ export default function RedeemUsPage() {
                       </span>
                       <p className="font-semibold text-slate-900">{t("esimProduct")}</p>
                     </div>
-                    <p className="font-semibold text-slate-900">{plan.name}</p>
                     <p className="text-slate-600">
                       {t("faceValue")}:{" "}
                       {creditCents != null ? <span className="font-semibold">${(creditCents / 100).toFixed(2)}</span> : "—"}
                     </p>
-                    <p className="text-slate-600">
-                      {t("dataPack")}: {plan.dataAllowance} · {plan.durationDays} {t("days")}
-                    </p>
+                    <p className="text-slate-600">{t("step3RegistrationHint")}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" className="btn-secondary w-full" onClick={() => setVoucherStage("ac2")} disabled={validating}>

@@ -72,8 +72,18 @@ export async function bindPrepaidSerialToCartSession(
 export async function loadPrepaidCardClaimedBySession(sessionId: string) {
   return prisma.prepaidCard.findFirst({
     where: { claimedCartSessionId: sessionId },
-    select: { id: true, basePlanId: true, upgradePlanId: true },
+    select: {
+      id: true,
+      basePlanId: true,
+      upgradePlanId: true,
+      voucher: { select: { creditAmountCents: true } },
+    },
   });
+}
+
+/** Phase 1 amount: spec `credit_amount` on voucher when set; else bundled plan list price. */
+export function phase1PrepaidChargeCents(voucherCreditCents: number, basePlanPriceCents: number): number {
+  return voucherCreditCents > 0 ? voucherCreditCents : basePlanPriceCents;
 }
 
 export function isPlanAllowedForPrepaidCard(

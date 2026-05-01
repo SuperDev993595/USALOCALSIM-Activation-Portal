@@ -89,7 +89,10 @@ export async function POST(req: Request) {
     }
   }
 
-  const res = NextResponse.json(redirectTo ? { ok: true, redirectTo } : { ok: true });
+  const hasPrepaidCard = Boolean(claimedCard);
+  const res = NextResponse.json(
+    redirectTo ? { ok: true, redirectTo, hasPrepaidCard } : { ok: true, hasPrepaidCard },
+  );
   res.cookies.set(CART_SESSION_COOKIE, result.sessionId, cartSessionCookieOptions());
   if (resumeToken) {
     res.cookies.set(CART_RESUME_COOKIE, "", clearCartResumeCookieOptions());
