@@ -175,10 +175,8 @@ export async function POST(req: Request) {
               customerName: customerName || null,
               customerPhone: cartSession.phoneE164,
               declaredPayCents: paidCents,
-              creditAmountCents:
-                prepaid.voucher.creditAmountCents > 0
-                  ? prepaid.voucher.creditAmountCents
-                  : session.amount_total ?? 0,
+              /** Authoritative locked credit = amount actually charged (do not keep stale plan-list cents). */
+              creditAmountCents: paidCents > 0 ? paidCents : prepaid.voucher.creditAmountCents,
             },
           });
         }

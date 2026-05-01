@@ -27,10 +27,16 @@ function RedeemPageBackground({ children }: { children: ReactNode }) {
 export default async function RedeemPage({
   searchParams,
 }: {
-  searchParams: { purchaseId?: string | string[]; access?: string | string[] };
+  searchParams: {
+    purchaseId?: string | string[];
+    access?: string | string[];
+    upgrade?: string | string[];
+  };
 }) {
   const purchaseId = Array.isArray(searchParams.purchaseId) ? searchParams.purchaseId[0] : searchParams.purchaseId;
   const access = Array.isArray(searchParams.access) ? searchParams.access[0] : searchParams.access;
+  const upgrade = Array.isArray(searchParams.upgrade) ? searchParams.upgrade[0] : searchParams.upgrade;
+  const resumeAfterPaidUpgrade = upgrade?.trim().toLowerCase() === "paid";
   if (!purchaseId) {
     return (
       <RedeemPageBackground>
@@ -54,7 +60,11 @@ export default async function RedeemPage({
     return (
       <RedeemPageBackground>
         <div className="flex w-full justify-center">
-          <RedeepPhase2Client purchaseId={purchase.id} accessToken={access.trim()} />
+          <RedeepPhase2Client
+            purchaseId={purchase.id}
+            accessToken={access.trim()}
+            resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
+          />
         </div>
       </RedeemPageBackground>
     );
@@ -72,7 +82,7 @@ export default async function RedeemPage({
   return (
     <RedeemPageBackground>
       <div className="flex w-full justify-center">
-        <RedeepPhase2Client purchaseId={purchase.id} />
+        <RedeepPhase2Client purchaseId={purchase.id} resumeAfterPaidUpgrade={resumeAfterPaidUpgrade} />
       </div>
     </RedeemPageBackground>
   );

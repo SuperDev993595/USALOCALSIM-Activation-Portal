@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
+import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid or already redeemed voucher." }, { status: 400 });
   }
 
-  const creditAmountCents = voucher.creditAmountCents > 0 ? voucher.creditAmountCents : voucher.plan.priceCents;
+  const creditAmountCents = effectiveVoucherCreditCents(voucher);
   const totals = computeRedemptionTotals({
     planPriceCents: plan.priceCents,
     creditAmountCents,

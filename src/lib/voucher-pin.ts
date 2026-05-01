@@ -32,7 +32,7 @@ export async function resolveVoucherByPin(pinInput: string) {
 
   const direct = await prisma.voucher.findUnique({
     where: { code: pin },
-    include: { plan: true, prepaidCard: true },
+    include: { plan: true, prepaidCard: { include: { basePlan: { select: { market: true } } } } },
   });
   if (direct && (await matchesVoucherPin(direct, pin))) return direct;
 
@@ -44,7 +44,7 @@ export async function resolveVoucherByPin(pinInput: string) {
       status: { in: ["inactive", "activated"] },
       paymentStatus: true,
     },
-    include: { plan: true, prepaidCard: true },
+    include: { plan: true, prepaidCard: { include: { basePlan: { select: { market: true } } } } },
     orderBy: { createdAt: "desc" },
     take: 200,
   });

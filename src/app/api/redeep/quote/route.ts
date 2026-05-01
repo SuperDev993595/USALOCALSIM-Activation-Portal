@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
+import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -74,20 +75,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
   }
 
-  const creditAmountCents = voucher.creditAmountCents > 0 ? voucher.creditAmountCents : voucher.plan.priceCents;
+  const creditAmountCents = effectiveVoucherCreditCents(voucher);
+
+  /** Phase 2: catalog for the voucher's market; plan type follows fulfillment when set (step 2). */
+  const planMarket = voucher.plan.market;
+  const fulfillment = body.fulfillmentType;
+  const planTypeWhere =
+    fulfillment === REDEMPTION_FULFILLMENT_TYPES.ESIM
+      ? { planType: "esim" as const }
+      : fulfillment === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM ||
+          fulfillment === REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING
+        ? { planType: "physical_sim" as const }
+        : { OR: [{ planType: "physical_sim" }, { planType: "esim" }] };
 
   const plans = await prisma.plan.findMany({
     where: {
-      OR: [{ planType: "physical_sim" }, { planType: "esim" }],
-      ...(voucher.prepaidCard
-        ? {
-            id: {
-              in: [voucher.prepaidCard.basePlanId, voucher.prepaidCard.upgradePlanId].filter(
-                (v): v is string => Boolean(v),
-              ),
-            },
-          }
-        : {}),
+      ...planTypeWhere,
+      market: planMarket,
     },
     select: {
       id: true,

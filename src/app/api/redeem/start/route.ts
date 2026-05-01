@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
+import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -96,6 +97,6 @@ export async function POST(req: Request) {
     ok: true,
     purchaseId: matchedPurchase.id,
     accessToken,
-    creditAmountCents: voucher.creditAmountCents > 0 ? voucher.creditAmountCents : voucher.plan.priceCents,
+    creditAmountCents: effectiveVoucherCreditCents(voucher),
   });
 }
