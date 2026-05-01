@@ -20,13 +20,10 @@ export type CartPlanRow = {
 export function CartPlansClient({
   plans,
   chargeCents,
-  pendingActivations = 0,
 }: {
   plans: CartPlanRow[];
   /** Displayed and charged amount (voucher credit_amount or bundled plan price). */
   chargeCents: number;
-  /** Paid but not yet redeemed (same verified session). */
-  pendingActivations?: number;
 }) {
   const t = useTranslations("cart");
   const [customerName, setCustomerName] = useState("");
@@ -93,14 +90,6 @@ export function CartPlansClient({
         <Link href="/cart" className="text-sm text-[#00104E] underline">
           {t("backCart")}
         </Link>
-        {pendingActivations > 0 ? (
-          <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            <p className="font-medium">{t("plansResumeBanner", { count: pendingActivations })}</p>
-            <Link href="/cart/paid" className="mt-2 inline-block font-semibold text-[#00104E] underline">
-              {t("plansResumeCta")}
-            </Link>
-          </div>
-        ) : null}
         <h1 className="mt-4 text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
         <p className="mt-2 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
       </div>

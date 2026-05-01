@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 
 type PlanRow = {
   id: string;
@@ -188,21 +187,18 @@ export function RedeepPhase2Client({
       <p className="text-sm text-slate-300">
         Enter PIN, choose hardware fulfillment, select a plan, and pay only the balance over voucher credit.
       </p>
-      {!purchaseIdProp ? (
-        <p className="mt-1 text-xs text-slate-400">
-          Need the classic voucher flow?{" "}
-          <Link href="/redeem/legacy" className="font-medium text-sky-300 underline decoration-sky-400/50 hover:text-sky-200">
-            Open legacy redeem
-          </Link>
-          .
-        </p>
-      ) : null}
 
       <div className="mt-6">
         <label className="mb-1 block text-sm font-medium text-slate-200">PIN / voucher code</label>
         <input
           value={voucherCode}
           onChange={(e) => setVoucherCode(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            if (loading !== null || !voucherCode.trim()) return;
+            void unlockAndQuote();
+          }}
           className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm uppercase text-slate-900 placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40"
         />
         <button
