@@ -424,7 +424,7 @@ export function RedeepPhase2Client({
                   </button>
                   <button
                     type="button"
-                    className="btn-secondary w-full py-2 text-sm"
+                    className="w-full border-0 bg-transparent py-1 text-center text-sm font-medium text-slate-300 underline decoration-slate-400/70 underline-offset-[3px] transition hover:text-white hover:decoration-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:pointer-events-none disabled:opacity-40"
                     disabled={loading !== null}
                     onClick={() => {
                       setRedeemOtpUiStep("phone");
