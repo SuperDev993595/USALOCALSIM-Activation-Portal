@@ -44,7 +44,7 @@ export async function GET() {
     [
       csvCell(r.prepaidCard?.serial),
       csvCell(r.prepaidCard?.voucher.code),
-      csvCell(r.cartSession.phoneE164),
+      csvCell(r.cartSession?.phoneE164 ?? ""),
       csvCell(r.plan.name),
       csvCell(r.status),
       csvCell(r.amountPaidCents),

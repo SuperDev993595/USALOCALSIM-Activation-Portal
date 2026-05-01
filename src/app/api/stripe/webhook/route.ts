@@ -12,6 +12,7 @@ import {
 } from "@/lib/stripe-cart-flow";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { sendCartPurchasePaidEmail } from "@/lib/email";
+import { normalizePhoneE164 } from "@/lib/phone-e164";
 
 export async function POST(req: Request) {
   if (!stripe) {
@@ -141,7 +142,7 @@ export async function POST(req: Request) {
         data: {
           token: resumeToken,
           cartPurchaseId: purchase.id,
-          phoneE164: cartSession.phoneE164,
+          phoneE164: cartSession.phoneE164 ?? null,
           expiresAt: newResumeTokenExpiresAt(),
         },
       });
@@ -170,10 +171,10 @@ export async function POST(req: Request) {
             where: { id: prepaid.voucher.id },
             data: {
               paymentStatus: true,
-              isVerified: true,
+              isVerified: false,
               customerEmail: email,
               customerName: customerName || null,
-              customerPhone: cartSession.phoneE164,
+              customerPhone: cartSession.phoneE164 ?? null,
               declaredPayCents: paidCents,
               /** Authoritative locked credit = amount actually charged (do not keep stale plan-list cents). */
               creditAmountCents: paidCents > 0 ? paidCents : prepaid.voucher.creditAmountCents,
@@ -269,6 +270,8 @@ export async function POST(req: Request) {
   const hasPartnerSim = session.metadata?.hasPartnerSim === "1";
   const hardwareDeductionCents = Number(session.metadata?.hardwareDeductionCents ?? 0) || 0;
   const shippingDeductionCents = Number(session.metadata?.shippingDeductionCents ?? 0) || 0;
+  const checkoutPhoneRaw = session.customer_details?.phone ?? "";
+  const customerPhoneE164 = normalizePhoneE164(checkoutPhoneRaw);
 
   if (!planId || !email) {
     return NextResponse.json({ error: "Missing planId or email in session" }, { status: 400 });
@@ -291,6 +294,7 @@ export async function POST(req: Request) {
         shippingDeductionCents,
         stripePaymentId: paymentId,
         status: "scheduled",
+        customerPhoneE164: customerPhoneE164 ?? null,
       },
     });
   });

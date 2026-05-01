@@ -54,7 +54,7 @@ export default async function RedeemPage({
         redemptionAccessToken: access.trim(),
         redemptionAccessExpiresAt: { gt: new Date() },
       },
-      select: { id: true },
+      select: { id: true, redemptionPhoneVerifiedAt: true },
     });
     if (!purchase) redirect("/cart?resume=invalid");
     return (
@@ -64,6 +64,7 @@ export default async function RedeemPage({
             purchaseId={purchase.id}
             accessToken={access.trim()}
             resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
+            redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
           />
         </div>
       </RedeemPageBackground>
@@ -75,14 +76,18 @@ export default async function RedeemPage({
   if (!sid) redirect("/cart");
   const purchase = await prisma.cartPurchase.findFirst({
     where: { id: purchaseId, cartSessionId: sid },
-    select: { id: true },
+    select: { id: true, redemptionPhoneVerifiedAt: true },
   });
   if (!purchase) redirect("/cart/plans");
 
   return (
     <RedeemPageBackground>
       <div className="flex w-full justify-center">
-        <RedeepPhase2Client purchaseId={purchase.id} resumeAfterPaidUpgrade={resumeAfterPaidUpgrade} />
+        <RedeepPhase2Client
+          purchaseId={purchase.id}
+          resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
+          redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
+        />
       </div>
     </RedeemPageBackground>
   );

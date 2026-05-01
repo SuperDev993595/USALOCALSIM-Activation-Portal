@@ -57,9 +57,9 @@ export async function POST(req: Request) {
   if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
   }
-  if (!voucher.isVerified || !voucher.paymentStatus) {
+  if (!voucher.paymentStatus) {
     return NextResponse.json(
-      { error: "This voucher is not unlocked yet. Complete Phase 1 verification and payment first." },
+      { error: "This voucher is not paid yet. Complete Phase 1 checkout (load credit) first." },
       { status: 400 },
     );
   }

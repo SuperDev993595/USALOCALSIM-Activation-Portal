@@ -27,9 +27,11 @@ export function CartRedeemClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submissionComplete, setSubmissionComplete] = useState(false);
+  const [redeemPhoneGateUrl, setRedeemPhoneGateUrl] = useState<string | null>(null);
 
   async function submit() {
     setError(null);
+    setRedeemPhoneGateUrl(null);
     setLoading(true);
     try {
       const res = await fetch("/api/cart/redeem", {
@@ -42,8 +44,17 @@ export function CartRedeemClient({
           ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        redeemUrl?: string;
+      };
       if (!res.ok) {
+        if (res.status === 403 && data.code === "REDEEM_PHONE_REQUIRED" && typeof data.redeemUrl === "string") {
+          setRedeemPhoneGateUrl(data.redeemUrl);
+          setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
+          return;
+        }
         setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
         return;
       }
@@ -127,6 +138,14 @@ export function CartRedeemClient({
           <p className="mt-1 text-xs text-slate-500">{t("activationDateHint")}</p>
         </div>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {redeemPhoneGateUrl ? (
+          <Link
+            href={redeemPhoneGateUrl}
+            className="block rounded border border-[#00104E]/30 bg-[#00104E]/5 px-3 py-2 text-center text-sm font-semibold text-[#00104E] underline"
+          >
+            Open redemption (PIN + service phone)
+          </Link>
+        ) : null}
         <button
           type="button"
           className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"

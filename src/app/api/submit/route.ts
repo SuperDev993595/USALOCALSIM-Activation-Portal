@@ -239,6 +239,7 @@ export async function POST(req: Request) {
           physicalSimNumber: normalizedPhysicalSim,
           deviceDetailsImageDataUrl: storedDevicePhotoPath,
           simCardImageDataUrl: storedSimCardPhotoPath,
+          customerPhoneE164: voucher.customerPhone?.trim() || null,
         },
       });
     });

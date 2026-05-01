@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
+import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
@@ -35,26 +36,18 @@ export async function POST(req: Request) {
   const access = body.accessToken?.trim();
   const cartSession = access ? null : await getVerifiedCartSessionByRequest(req);
   if (!access && !cartSession) {
-    return NextResponse.json({ error: "Session expired. Verify phone again on /cart." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Session expired. Open /cart from your card QR or use the access link from your payment email." },
+      { status: 401 },
+    );
   }
 
-  const now = new Date();
-  const purchase = access
-    ? await prisma.cartPurchase.findFirst({
-        where: {
-          id: body.purchaseId,
-          redemptionAccessToken: access,
-          redemptionAccessExpiresAt: { gt: now },
-          status: "authorized",
-        },
-        include: { prepaidCard: { include: { voucher: true } } },
-      })
-    : await prisma.cartPurchase.findFirst({
-        where: { id: body.purchaseId, cartSessionId: cartSession!.id, status: "authorized" },
-        include: { prepaidCard: { include: { voucher: true } } },
-      });
+  const purchase = await loadRedeemAuthorizedPurchase(req, body.purchaseId, access, cartSession?.id ?? null);
   if (!purchase) {
     return NextResponse.json({ error: "Purchase not found for this session." }, { status: 404 });
+  }
+  if (!isRedeemPhoneVerified(purchase)) {
+    return NextResponse.json({ error: redeemPhoneNotVerifiedMessage() }, { status: 403 });
   }
 
   if (body.fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM && !body.iccid?.trim()) {
@@ -68,10 +61,11 @@ export async function POST(req: Request) {
   if (!plan) return NextResponse.json({ error: "Plan not found." }, { status: 404 });
 
   const pinInput = body.voucherCode.trim();
+  const matchedRowVoucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
   let voucher =
-    purchase.prepaidCard?.voucher && (await matchesVoucherPin(purchase.prepaidCard.voucher, pinInput))
+    matchedRowVoucher && (await matchesVoucherPin(matchedRowVoucher, pinInput))
       ? await prisma.voucher.findUnique({
-          where: { id: purchase.prepaidCard.voucher.id },
+          where: { id: matchedRowVoucher.id },
           include: { plan: true },
         })
       : null;

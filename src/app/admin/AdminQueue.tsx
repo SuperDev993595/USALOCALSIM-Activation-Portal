@@ -9,6 +9,7 @@ type Item = {
   iccid: string | null;
   voucherCode: string | null;
   email: string;
+  customerPhoneE164?: string | null;
   scenario: string;
   amountPaidCents: number;
   createdAt: string | Date;
@@ -158,6 +159,12 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
               ) : null}
             </div>
             <p className="break-all text-lg font-semibold tracking-tight text-slate-900">{r.email}</p>
+            {r.customerPhoneE164 ? (
+              <p className="font-mono text-sm text-slate-700">
+                <span className="font-semibold text-slate-800">Service phone: </span>
+                {r.customerPhoneE164}
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
                 {r.plan.name}

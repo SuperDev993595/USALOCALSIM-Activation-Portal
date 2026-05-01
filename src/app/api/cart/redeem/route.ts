@@ -6,6 +6,11 @@ import { getRequestClientMeta } from "@/lib/request-meta";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
+import {
+  isRedeemPhoneVerified,
+  loadRedeemAuthorizedPurchase,
+  redeemPhoneNotVerifiedMessage,
+} from "@/lib/redeem-purchase-auth";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -42,25 +47,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid activation date." }, { status: 400 });
   }
 
-  const now = new Date();
-  const purchase = access
-    ? await prisma.cartPurchase.findFirst({
-        where: {
-          id: body.purchaseId,
-          redemptionAccessToken: access,
-          redemptionAccessExpiresAt: { gt: now },
-          status: "authorized",
-        },
-        include: { plan: true, prepaidCard: { include: { voucher: true } } },
-      })
-    : await prisma.cartPurchase.findFirst({
-        where: { id: body.purchaseId, cartSessionId: cartSession!.id },
-        include: { plan: true, prepaidCard: { include: { voucher: true } } },
-      });
+  const purchase = await loadRedeemAuthorizedPurchase(req, body.purchaseId, access, cartSession?.id ?? null);
 
   if (!purchase || purchase.status !== "authorized") {
     await recordFailedAttempt(key);
     return NextResponse.json({ error: "This purchase is not available for redemption." }, { status: 400 });
+  }
+
+  if (!isRedeemPhoneVerified(purchase)) {
+    return NextResponse.json(
+      {
+        error: redeemPhoneNotVerifiedMessage(),
+        code: "REDEEM_PHONE_REQUIRED",
+        redeemUrl: `/redeem?purchaseId=${encodeURIComponent(purchase.id)}${access ? `&access=${encodeURIComponent(access)}` : ""}`,
+      },
+      { status: 403 },
+    );
   }
 
   const codeUpper = body.voucherCode.trim().toUpperCase();
@@ -103,8 +105,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "This voucher cannot be used in the cart flow." }, { status: 400 });
   }
 
-  const phonePart = cartSession?.phoneE164 ?? "direct-link";
+  const phonePart = purchase.redemptionPhoneE164 ?? cartSession?.phoneE164 ?? "direct-link";
   const redeemedBy = `${purchase.customerEmail} · cart · ${phonePart}`;
+
+  const servicePhoneE164 = purchase.redemptionPhoneE164 ?? voucher.customerPhone ?? null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -116,6 +120,7 @@ export async function POST(req: Request) {
           redeemedBy,
           // Align voucher row with the plan paid for on checkout (neutral inventory → sold plan).
           planId: purchase.planId,
+          customerPhone: servicePhoneE164 ?? undefined,
         },
       });
       if (claimed.count === 0) {
@@ -147,6 +152,7 @@ export async function POST(req: Request) {
           hasPartnerSim: false,
           hardwareDeductionCents: 0,
           shippingDeductionCents: 0,
+          customerPhoneE164: servicePhoneE164,
         },
       });
     });

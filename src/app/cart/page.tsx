@@ -21,6 +21,7 @@ export default function CartPage({
     <div className="flex flex-1 items-start justify-center pt-4 sm:pt-8">
       <CartPhoneVerifyClient
         resumeQuery={firstParam(searchParams.resume)}
+        /** Phase 1: link browser to card from QR serial — SMS OTP only in Phase 2 (/redeem after scratch PIN). */
         prepaidSerialFromQr={firstParam(searchParams.serial)}
         needSerialBanner={needSerial === "1"}
         needVoucherCreditBanner={needVoucherCredit === "1"}

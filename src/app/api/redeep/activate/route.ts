@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
+import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
@@ -24,7 +25,10 @@ export async function POST(req: Request) {
   const access = body.accessToken?.trim();
   const cartSession = access ? null : await getVerifiedCartSessionByRequest(req);
   if (!access && !cartSession) {
-    return NextResponse.json({ error: "Session expired. Verify phone again on /cart." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Session expired. Open /cart from your card QR or use the access link from your payment email." },
+      { status: 401 },
+    );
   }
 
   const serviceStart = new Date(body.activationDate);
@@ -32,29 +36,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid activation date." }, { status: 400 });
   }
 
-  const purchase = access
-    ? await prisma.cartPurchase.findFirst({
-        where: {
-          id: body.purchaseId,
-          redemptionAccessToken: access,
-          redemptionAccessExpiresAt: { gt: new Date() },
-          status: "authorized",
-        },
-        include: { plan: true, prepaidCard: { include: { voucher: true } } },
-      })
-    : await prisma.cartPurchase.findFirst({
-        where: { id: body.purchaseId, cartSessionId: cartSession!.id, status: "authorized" },
-        include: { plan: true, prepaidCard: { include: { voucher: true } } },
-      });
+  const purchase = await loadRedeemAuthorizedPurchase(req, body.purchaseId, access, cartSession?.id ?? null);
   if (!purchase) {
     return NextResponse.json({ error: "Purchase is not available for activation." }, { status: 400 });
+  }
+  if (!isRedeemPhoneVerified(purchase)) {
+    return NextResponse.json({ error: redeemPhoneNotVerifiedMessage() }, { status: 403 });
   }
 
   const pinInput = body.voucherCode.trim();
   const voucherCode = pinInput.toUpperCase();
+  const matchedRowVoucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
   let voucher =
-    purchase.prepaidCard?.voucher && (await matchesVoucherPin(purchase.prepaidCard.voucher, pinInput))
-      ? await prisma.voucher.findUnique({ where: { id: purchase.prepaidCard.voucher.id } })
+    matchedRowVoucher && (await matchesVoucherPin(matchedRowVoucher, pinInput))
+      ? await prisma.voucher.findUnique({ where: { id: matchedRowVoucher.id } })
       : null;
   if (!voucher) voucher = await resolveVoucherByPin(pinInput);
   if (!voucher || voucher.status === "redeemed") {
@@ -91,7 +86,7 @@ export async function POST(req: Request) {
         isVerified: true,
         customerName: purchase.customerName ?? voucher.customerName,
         customerEmail: purchase.customerEmail,
-        customerPhone: cartSession?.phoneE164 ?? voucher.customerPhone,
+        customerPhone: purchase.redemptionPhoneE164 ?? voucher.customerPhone,
         linkedIccid: purchase.redemptionIccid?.trim() || null,
         fulfillmentType,
       },
@@ -108,6 +103,7 @@ export async function POST(req: Request) {
       },
     });
 
+    const servicePhoneE164 = purchase.redemptionPhoneE164 ?? voucher.customerPhone ?? null;
     await tx.activationRequest.create({
       data: {
         email: purchase.customerEmail,
@@ -122,6 +118,7 @@ export async function POST(req: Request) {
         hasPartnerSim: fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
         hardwareDeductionCents: 0,
         shippingDeductionCents: purchase.redemptionShippingCents,
+        customerPhoneE164: servicePhoneE164,
       },
     });
   });

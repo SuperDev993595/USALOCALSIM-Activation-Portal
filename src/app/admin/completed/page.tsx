@@ -46,6 +46,12 @@ export default async function AdminCompletedPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-2">
                   <p className="truncate text-base font-semibold text-slate-900">{r.email}</p>
+                  {r.customerPhoneE164 ? (
+                    <p className="font-mono text-sm text-slate-700">
+                      <span className="font-semibold text-slate-800">Service phone: </span>
+                      {r.customerPhoneE164}
+                    </p>
+                  ) : null}
                   <div className="flex flex-wrap gap-2">
                     <span className="badge badge-success">Active</span>
                     <span className="rounded-none border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-500">

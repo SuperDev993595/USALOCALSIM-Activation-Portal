@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type WizardStep = 1 | 2 | 3 | 4;
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
 const redeepPanelInputClass =
@@ -32,15 +32,27 @@ type PlanRow = {
 
 type FulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
 
+function initialWizardStep(
+  resumeAfterPaidUpgrade: boolean,
+  redemptionPhoneVerifiedInitial: boolean,
+): WizardStep {
+  if (resumeAfterPaidUpgrade && redemptionPhoneVerifiedInitial) return 5;
+  if (resumeAfterPaidUpgrade) return 2;
+  return 1;
+}
+
 export function RedeepPhase2Client({
   purchaseId: purchaseIdProp,
   accessToken: accessTokenProp,
   resumeAfterPaidUpgrade = false,
+  redemptionPhoneVerifiedInitial = false,
 }: {
   purchaseId?: string | null;
   accessToken?: string | null;
-  /** Set when returning from Stripe balance checkout (`?upgrade=paid`). Opens activation-date step. */
+  /** Returning from Stripe balance checkout (`?upgrade=paid`). */
   resumeAfterPaidUpgrade?: boolean;
+  /** Server: Phase 2 redeemer phone already verified on this purchase. */
+  redemptionPhoneVerifiedInitial?: boolean;
 }) {
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
@@ -58,51 +70,70 @@ export function RedeepPhase2Client({
     creditAppliedCents: number;
     balanceDueCents: number;
   } | null>(null);
-  const [loading, setLoading] = useState<"unlock" | "checkout" | "activate" | null>(null);
+  const [loading, setLoading] = useState<"unlock" | "checkout" | "activate" | "sms" | "verifyPhone" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [wizardStep, setWizardStep] = useState<WizardStep>(() => (resumeAfterPaidUpgrade ? 4 : 1));
+  const [wizardStep, setWizardStep] = useState<WizardStep>(() =>
+    initialWizardStep(resumeAfterPaidUpgrade, redemptionPhoneVerifiedInitial),
+  );
+
+  const [redeemPhone, setRedeemPhone] = useState("");
+  const [redeemOtpCode, setRedeemOtpCode] = useState("");
+  const [redeemOtpUiStep, setRedeemOtpUiStep] = useState<"phone" | "code">("phone");
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
 
   useEffect(() => {
-    if ((wizardStep === 2 || wizardStep === 3) && plans.length === 0) {
-      setWizardStep(1);
+    if (wizardStep === 4 && plans.length === 0) {
+      setWizardStep(3);
     }
   }, [wizardStep, plans.length]);
 
-  async function unlockAndQuote(planId?: string, fType?: FulfillmentType) {
+  async function redeemStartFromPin() {
     setError(null);
     setLoading("unlock");
     try {
-      let pid = purchaseId;
-      let at = accessToken;
-      if (!pid) {
-        const startRes = await fetch("/api/redeem/start", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin: voucherCode }),
-        });
-        const startData = (await startRes.json().catch(() => ({}))) as {
-          error?: string;
-          purchaseId?: string;
-          accessToken?: string;
-        };
-        if (!startRes.ok || !startData.purchaseId) {
-          setError(typeof startData.error === "string" ? startData.error : "Unable to start redemption from this PIN.");
-          return;
-        }
-        pid = startData.purchaseId;
-        at = typeof startData.accessToken === "string" ? startData.accessToken : "";
-        setPurchaseId(pid);
-        setAccessToken(at);
+      const startRes = await fetch("/api/redeem/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: voucherCode }),
+      });
+      const startData = (await startRes.json().catch(() => ({}))) as {
+        error?: string;
+        purchaseId?: string;
+        accessToken?: string;
+        creditAmountCents?: number;
+      };
+      if (!startRes.ok || !startData.purchaseId) {
+        setError(typeof startData.error === "string" ? startData.error : "Unable to start redemption from this PIN.");
+        return;
       }
+      setPurchaseId(startData.purchaseId);
+      setAccessToken(typeof startData.accessToken === "string" ? startData.accessToken : "");
+      if (typeof startData.creditAmountCents === "number") {
+        setCreditCents(startData.creditAmountCents);
+      }
+      setWizardStep(2);
+      setRedeemOtpUiStep("phone");
+    } finally {
+      setLoading(null);
+    }
+  }
 
+  async function unlockAndQuote(planId?: string, fType?: FulfillmentType) {
+    if (!purchaseId.trim()) {
+      setError("Unlock credit with your PIN first.");
+      return;
+    }
+    setError(null);
+    setLoading("unlock");
+    try {
+      const at = accessToken.trim();
       const res = await fetch("/api/redeem/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          purchaseId: pid,
+          purchaseId,
           voucherCode,
           ...(planId ? { planId } : {}),
           ...(fType ? { fulfillmentType: fType } : {}),
@@ -113,7 +144,6 @@ export function RedeepPhase2Client({
         error?: string;
         creditAmountCents?: number;
         plans?: PlanRow[];
-        selectedPlanId?: string | null;
         selectedFulfillmentType?: FulfillmentType;
         totals?: {
           shippingCents: number;
@@ -123,18 +153,71 @@ export function RedeepPhase2Client({
         } | null;
       };
       if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : "Failed to unlock PIN.");
+        setError(typeof data.error === "string" ? data.error : "Failed to load quote.");
         return;
       }
       setCreditCents(data.creditAmountCents ?? 0);
       const nextPlans = data.plans ?? [];
       setPlans(nextPlans);
       if (data.selectedFulfillmentType) setFulfillmentType(data.selectedFulfillmentType);
-      // Plan must be chosen explicitly in step 3 — do not apply API `selectedPlanId` here.
       setTotals((prev) =>
         data.totals != null ? data.totals : planId != null && planId !== "" ? prev : null,
       );
-      setWizardStep((step) => (step === 1 && nextPlans.length > 0 ? 2 : step));
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function sendRedeemSms() {
+    if (!purchaseId.trim()) return;
+    setError(null);
+    setLoading("sms");
+    try {
+      const res = await fetch("/api/redeem/phone/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purchaseId,
+          phone: redeemPhone,
+          ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Could not send SMS.");
+        return;
+      }
+      setRedeemOtpUiStep("code");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function verifyRedeemSms() {
+    if (!purchaseId.trim()) return;
+    setError(null);
+    setLoading("verifyPhone");
+    try {
+      const res = await fetch("/api/redeem/phone/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purchaseId,
+          phone: redeemPhone,
+          code: redeemOtpCode,
+          ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Verification failed.");
+        return;
+      }
+      if (resumeAfterPaidUpgrade) {
+        setWizardStep(5);
+      } else {
+        setWizardStep(3);
+      }
     } finally {
       setLoading(null);
     }
@@ -155,7 +238,7 @@ export function RedeepPhase2Client({
           fulfillmentType,
           iccid,
           shippingAddress,
-          ...(accessToken ? { accessToken } : {}),
+          ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; zeroDue?: boolean; url?: string };
@@ -165,7 +248,7 @@ export function RedeepPhase2Client({
       }
       if (data.zeroDue) {
         await unlockAndQuote(selectedPlanId, fulfillmentType);
-        setWizardStep(4);
+        setWizardStep(5);
         return;
       }
       if (typeof data.url === "string" && data.url) {
@@ -187,7 +270,7 @@ export function RedeepPhase2Client({
           purchaseId,
           voucherCode,
           activationDate,
-          ...(accessToken ? { accessToken } : {}),
+          ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -232,7 +315,8 @@ export function RedeepPhase2Client({
               Credit unlock
             </h2>
             <p className="mt-2 text-sm text-slate-300">
-              Enter the scratch-off PIN from your card. We retrieve your verified profile and voucher credit.
+              Enter the scratch-off PIN from your card. Whoever redeems may differ from who paid in Phase 1—the next
+              step verifies the phone number for this service.
             </p>
             <div className="mt-5">
               <label className="mb-1 block text-sm font-medium text-slate-200">PIN / voucher code</label>
@@ -243,7 +327,7 @@ export function RedeepPhase2Client({
                   if (e.key !== "Enter") return;
                   e.preventDefault();
                   if (loading !== null || !voucherCode.trim()) return;
-                  void unlockAndQuote();
+                  void redeemStartFromPin();
                 }}
                 className={`${redeepPanelInputClass} uppercase`}
               />
@@ -251,15 +335,15 @@ export function RedeepPhase2Client({
                 type="button"
                 className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-60"
                 disabled={loading !== null || !voucherCode.trim()}
-                onClick={() => void unlockAndQuote()}
+                onClick={() => void redeemStartFromPin()}
               >
-                {loading === "unlock" ? "Unlocking..." : purchaseId ? "Refresh quote" : "Unlock credit"}
+                {loading === "unlock" ? "Unlocking..." : "Unlock credit"}
               </button>
             </div>
           </>
         ) : null}
 
-        {wizardStep === 2 && plans.length > 0 ? (
+        {wizardStep === 2 ? (
           <>
             <div className="flex items-center gap-3">
               <button
@@ -267,11 +351,107 @@ export function RedeepPhase2Client({
                 className={backArrowButtonClass}
                 aria-label="Back to credit unlock"
                 disabled={loading !== null}
-                onClick={() => setWizardStep(1)}
+                onClick={() => {
+                  setRedeemOtpUiStep("phone");
+                  setWizardStep(1);
+                }}
               >
                 <RedeemBackChevronIcon />
               </button>
               <h2 id="redeem-step2-heading" className="text-lg font-semibold text-white">
+                Service phone
+              </h2>
+            </div>
+            <p className="mt-2 text-sm text-slate-300">
+              Enter the mobile number you want to use for this line. We send a one-time code to verify you control it.
+              This becomes the active number on the voucher after verification.
+            </p>
+            <div className="mt-5 space-y-4">
+              {redeemOtpUiStep === "phone" ? (
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-200">Phone number</label>
+                    <input
+                      value={redeemPhone}
+                      onChange={(e) => setRedeemPhone(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        if (loading !== null || !redeemPhone.trim()) return;
+                        void sendRedeemSms();
+                      }}
+                      disabled={loading !== null}
+                      className={redeepPanelInputClass}
+                      placeholder="+1… or country code"
+                      autoComplete="tel"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                    disabled={loading !== null || !redeemPhone.trim() || !purchaseId.trim()}
+                    onClick={() => void sendRedeemSms()}
+                  >
+                    {loading === "sms" ? "Sending…" : "Send verification code"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-200">6-digit code</label>
+                    <input
+                      value={redeemOtpCode}
+                      onChange={(e) => setRedeemOtpCode(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        if (loading !== null || redeemOtpCode.trim().length < 4) return;
+                        void verifyRedeemSms();
+                      }}
+                      disabled={loading !== null}
+                      className={redeepPanelInputClass}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                    disabled={loading !== null || redeemOtpCode.trim().length < 4}
+                    onClick={() => void verifyRedeemSms()}
+                  >
+                    {loading === "verifyPhone" ? "Verifying…" : "Verify & continue"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary w-full py-2 text-sm"
+                    disabled={loading !== null}
+                    onClick={() => {
+                      setRedeemOtpUiStep("phone");
+                      setRedeemOtpCode("");
+                    }}
+                  >
+                    Use a different number
+                  </button>
+                </>
+              )}
+            </div>
+          </>
+        ) : null}
+
+        {wizardStep === 3 ? (
+          <>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className={backArrowButtonClass}
+                aria-label="Back to service phone"
+                disabled={loading !== null}
+                onClick={() => setWizardStep(2)}
+              >
+                <RedeemBackChevronIcon />
+              </button>
+              <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white">
                 How you&apos;ll connect
               </h2>
             </div>
@@ -340,7 +520,7 @@ export function RedeepPhase2Client({
                 onClick={() => {
                   setSelectedPlanId("");
                   setTotals(null);
-                  setWizardStep(3);
+                  setWizardStep(4);
                   void unlockAndQuote(undefined, fulfillmentType);
                 }}
               >
@@ -350,7 +530,7 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === 3 && plans.length > 0 ? (
+        {wizardStep === 4 && plans.length > 0 ? (
           <>
             <div className="flex items-center gap-3">
               <button
@@ -358,11 +538,11 @@ export function RedeepPhase2Client({
                 className={backArrowButtonClass}
                 aria-label="Back to fulfillment"
                 disabled={loading !== null}
-                onClick={() => setWizardStep(2)}
+                onClick={() => setWizardStep(3)}
               >
                 <RedeemBackChevronIcon />
               </button>
-              <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white">
+              <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white">
                 Plan &amp; payment
               </h2>
             </div>
@@ -445,7 +625,7 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === 4 ? (
+        {wizardStep === 5 ? (
           <>
             <div className="flex items-center gap-3">
               {plans.length > 0 ? (
@@ -454,14 +634,14 @@ export function RedeepPhase2Client({
                   className={backArrowButtonClass}
                   aria-label="Back to plan and payment"
                   disabled={loading !== null}
-                  onClick={() => setWizardStep(3)}
+                  onClick={() => setWizardStep(4)}
                 >
                   <RedeemBackChevronIcon />
                 </button>
               ) : (
                 <span className="inline-flex h-9 w-9 shrink-0" aria-hidden />
               )}
-              <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white">
+              <h2 id="redeem-step5-heading" className="text-lg font-semibold text-white">
                 Activation date
               </h2>
             </div>

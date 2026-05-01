@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
+import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
@@ -32,32 +33,26 @@ export async function POST(req: Request) {
   const access = body.accessToken?.trim();
   const cartSession = access ? null : await getVerifiedCartSessionByRequest(req);
   if (!access && !cartSession) {
-    return NextResponse.json({ error: "Session expired. Verify phone again on /cart." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Session expired. Open /cart from your card QR or use the access link from your payment email." },
+      { status: 401 },
+    );
   }
 
-  const purchase = access
-    ? await prisma.cartPurchase.findFirst({
-        where: {
-          id: body.purchaseId,
-          redemptionAccessToken: access,
-          redemptionAccessExpiresAt: { gt: new Date() },
-          status: "authorized",
-        },
-        include: { prepaidCard: { include: { voucher: true } } },
-      })
-    : await prisma.cartPurchase.findFirst({
-        where: { id: body.purchaseId, cartSessionId: cartSession!.id, status: "authorized" },
-        include: { prepaidCard: { include: { voucher: true } } },
-      });
+  const purchase = await loadRedeemAuthorizedPurchase(req, body.purchaseId, access, cartSession?.id ?? null);
   if (!purchase) {
     return NextResponse.json({ error: "Purchase not found for this session." }, { status: 404 });
   }
+  if (!isRedeemPhoneVerified(purchase)) {
+    return NextResponse.json({ error: redeemPhoneNotVerifiedMessage() }, { status: 403 });
+  }
 
   const pinInput = body.voucherCode.trim();
+  const matchedRowVoucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
   let voucher =
-    purchase.prepaidCard?.voucher && (await matchesVoucherPin(purchase.prepaidCard.voucher, pinInput))
+    matchedRowVoucher && (await matchesVoucherPin(matchedRowVoucher, pinInput))
       ? await prisma.voucher.findUnique({
-          where: { id: purchase.prepaidCard.voucher.id },
+          where: { id: matchedRowVoucher.id },
           include: { plan: true, prepaidCard: true },
         })
       : null;

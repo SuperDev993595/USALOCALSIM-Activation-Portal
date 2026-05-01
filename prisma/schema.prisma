@@ -96,6 +96,7 @@ model Voucher {
   customerName       String?
   customerEmail      String?
   customerPhone      String?
+  /// Set true after Phase 2 redeemer SMS OTP (service line). Phase 1 payment does not use SMS.
   isVerified         Boolean  @default(false)
   paymentStatus      Boolean  @default(false)
   linkedIccid        String?
@@ -133,11 +134,11 @@ model PrepaidCard {
   cartPurchase         CartPurchase?
 }
 
-// SMS-verified cart session (physical-card checkout flow). Tables keep legacy names via @@map.
+// Cart session for physical-card checkout. phoneE164/verifiedAt set only for legacy SMS Phase-1 paths.
 model CartSession {
   id                 String         @id @default(cuid())
-  phoneE164        String
-  verifiedAt       DateTime
+  phoneE164        String?
+  verifiedAt       DateTime?
   expiresAt        DateTime
   createdAt        DateTime       @default(now())
   purchases        CartPurchase[]
@@ -153,7 +154,7 @@ model CartPurchaseResumeToken {
   token          String       @unique @db.VarChar(64)
   cartPurchaseId String       @unique
   cartPurchase   CartPurchase @relation(fields: [cartPurchaseId], references: [id], onDelete: Cascade)
-  phoneE164      String
+  phoneE164      String?
   expiresAt      DateTime
   createdAt      DateTime     @default(now())
 
@@ -199,6 +200,9 @@ model CartPurchase {
   redemptionCreditAppliedCents Int  @default(0)
   redemptionExtraPaidCents  Int     @default(0)
   redemptionFinalTotalCents Int     @default(0)
+  /// Phase 2 redeemer line (feedback-2026-05-01); independent of Phase 1 cart session phone.
+  redemptionPhoneE164        String?
+  redemptionPhoneVerifiedAt DateTime?
 
   @@index([cartSessionId])
   @@map("ShopPurchase")
@@ -209,6 +213,8 @@ model ActivationRequest {
   iccid            String?
   voucherCode      String?
   email            String
+  /// E.164 service phone when known (cart voucher / Phase 2 redeemer; voucher submit uses voucher row).
+  customerPhoneE164 String?
   scenario         String   // "sim_only" | "combo" | "esim_voucher" | "cart_voucher" (legacy rows may differ)
   planId           String
   plan             Plan     @relation(fields: [planId], references: [id])

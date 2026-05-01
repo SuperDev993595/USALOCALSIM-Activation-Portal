@@ -57,8 +57,8 @@ export function generateOpaqueResumeToken(): string {
 export type ResumeConsumeResult = { kind: "attached"; redirectTo: string } | { kind: "noop" };
 
 /**
- * After a verified OTP session exists, attach the purchase to this session if a valid resume cookie is present.
- * Binds to the same phone number used at checkout (stored on the resume row).
+ * After a cart session exists (legacy: post-SMS; current: post–Phase-1 session), attach the purchase if resume cookie matches.
+ * When `phoneE164` was stored at payment time (legacy), it must match the session phone used with OTP resume.
  */
 export async function tryConsumeCartResumeCookie(
   resumeToken: string | null,
@@ -78,7 +78,8 @@ export async function tryConsumeCartResumeCookie(
   if (row.cartPurchase.status !== "authorized") {
     return { kind: "noop" };
   }
-  if (row.phoneE164 !== phoneE164) {
+  const resumePhone = row.phoneE164?.trim();
+  if (resumePhone && resumePhone !== phoneE164) {
     return { kind: "noop" };
   }
 
@@ -104,5 +105,5 @@ export async function tryConsumeCartResumeCookie(
     throw e;
   }
 
-  return { kind: "attached", redirectTo: `/cart/redeem?purchaseId=${encodeURIComponent(purchaseId)}` };
+  return { kind: "attached", redirectTo: `/redeem?purchaseId=${encodeURIComponent(purchaseId)}` };
 }

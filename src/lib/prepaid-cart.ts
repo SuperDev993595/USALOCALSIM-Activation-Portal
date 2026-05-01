@@ -24,7 +24,7 @@ export async function messageIfPinLooksLikePrepaidSerial(raw: string): Promise<s
 type Db = Prisma.TransactionClient;
 
 /**
- * After SMS verification, optionally bind a physical card serial to this cart session (QR → zero typing).
+ * Bind a physical card serial to this cart session (QR link). Used in Phase 1 without SMS.
  */
 export async function bindPrepaidSerialToCartSession(
   tx: Db,

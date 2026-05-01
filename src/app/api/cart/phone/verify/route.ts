@@ -46,11 +46,17 @@ export async function POST(req: Request) {
       where: { token: resumeTokenEarly.trim() },
       select: { phoneE164: true, expiresAt: true },
     });
-    if (resumeRow && resumeRow.expiresAt.getTime() > Date.now() && resumeRow.phoneE164 !== phoneE164) {
+    const resumePhone = resumeRow?.phoneE164?.trim();
+    if (
+      resumeRow &&
+      resumeRow.expiresAt.getTime() > Date.now() &&
+      resumePhone &&
+      resumePhone !== phoneE164
+    ) {
       return NextResponse.json(
         {
           error:
-            "This recovery link was created for a different phone number. Enter the same number you verified during checkout, then request a new SMS code.",
+            "This recovery link was tied to a different phone number. Enter that same number, then request a new SMS code.",
         },
         { status: 400 },
       );
@@ -67,17 +73,8 @@ export async function POST(req: Request) {
 
   const claimedCard = await prisma.prepaidCard.findFirst({
     where: { claimedCartSessionId: result.sessionId },
-    include: { voucher: true },
+    select: { id: true },
   });
-  if (claimedCard?.voucher) {
-    await prisma.voucher.update({
-      where: { id: claimedCard.voucher.id },
-      data: {
-        isVerified: true,
-        customerPhone: phoneE164,
-      },
-    });
-  }
 
   const resumeToken = readResumeTokenFromRequest(req);
   let redirectTo: string | undefined;

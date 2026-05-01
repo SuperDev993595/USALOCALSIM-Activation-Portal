@@ -19,7 +19,10 @@ const bodySchema = z.object({
 export async function POST(req: Request) {
   const cartSession = await getVerifiedCartSessionByRequest(req);
   if (!cartSession) {
-    return NextResponse.json({ error: "Session expired. Verify your phone again." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Session expired. Open the QR link from your card again to continue." },
+      { status: 401 },
+    );
   }
 
   let body: z.infer<typeof bodySchema>;
@@ -42,7 +45,10 @@ export async function POST(req: Request) {
   const prepaid = await loadPrepaidCardClaimedBySession(cartSession.id);
   if (!prepaid) {
     return NextResponse.json(
-      { error: "Physical card checkout requires the QR link from your card. Open that link, verify your phone, then try again." },
+      {
+        error:
+          "Physical card checkout requires the QR link from your card. Open that link so your card serial is linked, then try again.",
+      },
       { status: 400 },
     );
   }
