@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
-import { CART_SESSION_COOKIE, cartSessionCookieOptions } from "@/lib/cart-session";
-import { createCartSessionWithPrepaidSerial } from "@/lib/cart-phase1-session";
+import { CART_SESSION_COOKIE, cartSessionCookieOptions, readCookieFromRequest } from "@/lib/cart-session";
+import { ensureCartSessionWithPrepaidSerial } from "@/lib/cart-phase1-session";
 
 const bodySchema = z.object({
   prepaidSerial: z.string().min(1),
@@ -23,7 +23,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const result = await createCartSessionWithPrepaidSerial(body.prepaidSerial);
+  const cookieSessionId = readCookieFromRequest(req, CART_SESSION_COOKIE);
+  const result = await ensureCartSessionWithPrepaidSerial(body.prepaidSerial, cookieSessionId);
   if (!result.ok) {
     await recordFailedAttempt(ipKey);
     return NextResponse.json({ error: result.error }, { status: 400 });

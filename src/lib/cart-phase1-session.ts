@@ -3,15 +3,39 @@ import { newCartSessionExpiry } from "./cart-session";
 import { bindPrepaidSerialToCartSession, normalizePrepaidSerial } from "./prepaid-cart";
 
 /**
- * Phase 1: open a cart session and bind the physical card from the QR serial — no SMS.
- * Phase 2 redeemer verifies their service phone on /redeem after scratch PIN.
+ * Phase 1: ensure a cart session is linked to this physical card (QR serial) — no SMS.
+ * If the browser already has a valid session that claims this card (e.g. user returns to
+ * `/cart?serial=…` after visiting plans), reuse it and refresh expiry instead of creating a new session.
  */
-export async function createCartSessionWithPrepaidSerial(serialRaw: string): Promise<
-  { ok: true; sessionId: string } | { ok: false; error: string }
-> {
+export async function ensureCartSessionWithPrepaidSerial(
+  serialRaw: string,
+  cookieSessionId: string | null | undefined,
+): Promise<{ ok: true; sessionId: string } | { ok: false; error: string }> {
   const serialNorm = normalizePrepaidSerial(serialRaw);
   if (!serialNorm) {
     return { ok: false, error: "Enter the card code from your QR link or packaging." };
+  }
+
+  const cookieId = cookieSessionId?.trim() || null;
+  const now = new Date();
+
+  if (cookieId) {
+    const card = await prisma.prepaidCard.findUnique({
+      where: { serial: serialNorm },
+      select: { claimedCartSessionId: true },
+    });
+    if (card?.claimedCartSessionId === cookieId) {
+      const session = await prisma.cartSession.findFirst({
+        where: { id: cookieId, expiresAt: { gt: now } },
+      });
+      if (session) {
+        await prisma.cartSession.update({
+          where: { id: session.id },
+          data: { expiresAt: newCartSessionExpiry() },
+        });
+        return { ok: true, sessionId: session.id };
+      }
+    }
   }
 
   try {
