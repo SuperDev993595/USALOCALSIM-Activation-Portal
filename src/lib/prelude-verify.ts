@@ -94,11 +94,12 @@ function mapCreateFailure(
   return "Could not send verification code. Try again later.";
 }
 
+const SHOP_PRELUDE_SKIP = false;
 /** Start SMS verification via Prelude (sends OTP). */
 export async function preludeStartPhoneVerification(
   phoneE164: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (process.env.SHOP_PRELUDE_SKIP === "1") {
+  if (SHOP_PRELUDE_SKIP) {
     console.info(`[SHOP_PRELUDE_SKIP] verification skipped (dev) for ${phoneE164}`);
     return { ok: true };
   }
@@ -143,7 +144,7 @@ export async function preludeCheckPhoneVerification(
 ): Promise<{ ok: true } | PreludeCheckFailure> {
   const code = rawCode.replace(/\D/g, "").slice(0, 6);
 
-  if (process.env.SHOP_PRELUDE_SKIP === "1") {
+  if (SHOP_PRELUDE_SKIP) {
     if (code === "123456") return { ok: true };
     return { ok: false, error: "Incorrect code.", kind: "wrong_code" };
   }
