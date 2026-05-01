@@ -138,9 +138,6 @@ export function CartPhoneVerifyClient({
       {prepaidSerialFromQr?.trim() && !needSerialBanner && !needVoucherCreditBanner && loading ? (
         <p className="mt-4 text-sm text-slate-600">{t("phase1Linking")}</p>
       ) : null}
-      {prepaidSerialFromQr?.trim() && !needSerialBanner && !needVoucherCreditBanner && error ? (
-        <p className="mt-4 text-sm text-red-600">{error}</p>
-      ) : null}
 
       <p className="mt-8 text-center text-xs text-slate-500">
         <Link href="/redeem" className="text-[#00104E] underline">
