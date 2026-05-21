@@ -54,6 +54,11 @@ function StatusBadge({ status }: { status: string }) {
       dot: "bg-emerald-600",
       label: "Activated",
     },
+    eligible: {
+      badge: "border-sky-300 bg-sky-50 text-sky-900",
+      dot: "bg-sky-600",
+      label: "Eligible",
+    },
     inactive: {
       badge: "border-rose-300 bg-rose-50 text-rose-900",
       dot: "bg-rose-500",

@@ -28,10 +28,15 @@ export async function GET() {
 
   const header = [
     "serial",
+    "barcode",
+    "retail_market",
+    "face_value_cents",
     "scratch_pin",
     "phone_e164",
     "plan_name",
     "purchase_status",
+    "payment_source",
+    "external_payment_ref",
     "amount_paid_cents",
     "customer_email",
     "created_at",
@@ -43,10 +48,15 @@ export async function GET() {
   const lines = rows.map((r) =>
     [
       csvCell(r.prepaidCard?.serial),
+      csvCell(r.prepaidCard?.barcodePayload),
+      csvCell(r.prepaidCard?.retailMarket),
+      csvCell(r.prepaidCard?.faceValueCents),
       csvCell(r.prepaidCard?.voucher.code),
       csvCell(r.cartSession?.phoneE164 ?? ""),
       csvCell(r.plan.name),
       csvCell(r.status),
+      csvCell(r.paymentSource),
+      csvCell(r.externalPaymentRef),
       csvCell(r.amountPaidCents),
       csvCell(r.customerEmail),
       csvCell(r.createdAt.toISOString()),

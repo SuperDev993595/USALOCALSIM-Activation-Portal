@@ -2,11 +2,42 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
 const SERIAL_MAX = 64;
+const BARCODE_MAX = 64;
 
 export function normalizePrepaidSerial(raw: string | null | undefined): string | null {
   const t = (raw ?? "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
   if (!t || t.length > SERIAL_MAX) return null;
   return t;
+}
+
+/** POS / GS1 scan value normalization (same charset as serial). */
+export function normalizeBarcodePayload(raw: string | null | undefined): string | null {
+  const t = (raw ?? "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+  if (!t || t.length > BARCODE_MAX) return null;
+  return t;
+}
+
+export type PrepaidScanType = "serial" | "barcode";
+
+/** Resolve physical card from QR serial or barcode (Path B). */
+export async function findPrepaidCardByScan(
+  scanType: PrepaidScanType | "qr",
+  scanValue: string,
+) {
+  const resolved: PrepaidScanType = scanType === "qr" ? "serial" : scanType;
+  const norm =
+    resolved === "barcode" ? normalizeBarcodePayload(scanValue) : normalizePrepaidSerial(scanValue);
+  if (!norm) return null;
+  if (resolved === "barcode") {
+    return prisma.prepaidCard.findFirst({
+      where: { OR: [{ barcodePayload: norm }, { serial: norm }] },
+      include: { voucher: true, basePlan: { select: { id: true, market: true } } },
+    });
+  }
+  return prisma.prepaidCard.findUnique({
+    where: { serial: norm },
+    include: { voucher: true, basePlan: { select: { id: true, market: true } } },
+  });
 }
 
 /** If input matches a physical card serial, the user likely pasted the QR value instead of the scratch PIN. */
@@ -46,9 +77,23 @@ export async function bindPrepaidSerialToCartSession(
   }
 
   const existingPurchase = await tx.cartPurchase.findFirst({
-    where: { prepaidCardId: card.id },
+    where: { prepaidCardId: card.id, status: "authorized" },
   });
   if (existingPurchase) {
+    if (card.voucher.paymentStatus) {
+      await tx.prepaidCard.updateMany({
+        where: {
+          id: card.id,
+          claimedCartSession: { expiresAt: { lt: new Date() } },
+        },
+        data: { claimedCartSessionId: null },
+      });
+      await tx.prepaidCard.update({
+        where: { id: card.id },
+        data: { claimedCartSessionId: sessionId },
+      });
+      return { ok: true };
+    }
     return { ok: false, error: "This card already has a purchase on file." };
   }
 
@@ -89,7 +134,9 @@ export async function loadPrepaidCardClaimedBySession(sessionId: string) {
       voucherId: true,
       basePlanId: true,
       upgradePlanId: true,
-      voucher: { select: { creditAmountCents: true } },
+      retailMarket: true,
+      faceValueCents: true,
+      voucher: { select: { creditAmountCents: true, paymentStatus: true } },
     },
   });
 }

@@ -59,7 +59,11 @@ export async function POST(req: Request) {
   }
   if (!voucher.paymentStatus) {
     return NextResponse.json(
-      { error: "This voucher is not paid yet. Complete Phase 1 checkout (load credit) first." },
+      {
+        error:
+          "This card is not paid yet. Pay at the store where you bought it, or open the QR link on the card to complete checkout online.",
+        code: "NOT_PAID",
+      },
       { status: 400 },
     );
   }

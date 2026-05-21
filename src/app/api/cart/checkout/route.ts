@@ -58,9 +58,31 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (plan.id !== prepaid.basePlanId) {
+  if (prepaid.voucher.paymentStatus) {
     return NextResponse.json(
-      { error: "This payment only accepts the prepaid credit bundled with your card." },
+      {
+        error: "This card is already paid. Open the link from your receipt or go to Redeem and enter your scratch PIN.",
+        code: "ALREADY_PAID",
+      },
+      { status: 409 },
+    );
+  }
+  const planAllowed =
+    plan.id === prepaid.basePlanId ||
+    (plan.planType === "physical_sim" && plan.market === prepaid.retailMarket);
+  if (!planAllowed) {
+    return NextResponse.json(
+      { error: "Selected plan does not match this card's market." },
+      { status: 400 },
+    );
+  }
+
+  if (prepaid.faceValueCents > 0 && body.payAmountCents !== prepaid.faceValueCents) {
+    return NextResponse.json(
+      {
+        error: `This card must be loaded with exactly $${(prepaid.faceValueCents / 100).toFixed(2)}.`,
+        expectedCents: prepaid.faceValueCents,
+      },
       { status: 400 },
     );
   }

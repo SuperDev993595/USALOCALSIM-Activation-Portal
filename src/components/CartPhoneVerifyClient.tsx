@@ -25,6 +25,7 @@ export function CartPhoneVerifyClient({
   const router = useRouter();
   const [manualSerial, setManualSerial] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirectingToRedeem, setRedirectingToRedeem] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const autoStartedRef = useRef(false);
 
@@ -50,9 +51,19 @@ export function CartPhoneVerifyClient({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prepaidSerial: serial }),
         });
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          redirect?: string;
+          alreadyPaid?: boolean;
+        };
         if (!res.ok) {
           setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
+          return;
+        }
+        if (typeof data.redirect === "string" && data.redirect.startsWith("/redeem")) {
+          setRedirectingToRedeem(true);
+          router.push(data.redirect);
+          router.refresh();
           return;
         }
         goPlans();
@@ -103,7 +114,12 @@ export function CartPhoneVerifyClient({
           {t("needSerialBanner")}
         </p>
       ) : null}
-      {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() ? (
+      {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() && redirectingToRedeem ? (
+        <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950">
+          {t("alreadyPaidSerialBanner")}
+        </p>
+      ) : null}
+      {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() && !redirectingToRedeem ? (
         <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
           {t("serialQrBanner")}
         </p>

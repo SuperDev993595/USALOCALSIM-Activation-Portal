@@ -12,6 +12,8 @@ import {
 } from "@/lib/stripe-cart-flow";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { sendCartPurchasePaidEmail } from "@/lib/email";
+import { authorizePrepaidAfterPayment } from "@/lib/prepaid-authorize";
+import { PREPAID_PAYMENT_SOURCES } from "@/lib/prepaid-payment-source";
 import { normalizePhoneE164 } from "@/lib/phone-e164";
 
 export async function POST(req: Request) {
@@ -119,71 +121,76 @@ export async function POST(req: Request) {
       }
     }
 
-    const resumeToken = generateOpaqueResumeToken();
-    const redemptionAccessToken = generateOpaqueResumeToken();
-    const redemptionAccessExpiresAt = newResumeTokenExpiresAt();
+    const paidCents = session.amount_total ?? 0;
+    let createdPurchase: { id: string };
+    let resumeToken: string;
+    let redemptionAccessToken: string;
 
-    const createdPurchase = await prisma.$transaction(async (tx) => {
-      const purchase = await tx.cartPurchase.create({
-        data: {
-          cartSessionId: cartSession.id,
-          planId: plan.id,
-          stripePaymentId: paymentId,
-          amountPaidCents: session.amount_total ?? 0,
-          customerName: customerName || null,
-          customerEmail: email,
-          status: "authorized",
-          prepaidCardId: verifiedPrepaidId,
-          redemptionAccessToken,
-          redemptionAccessExpiresAt,
-        },
+    if (verifiedPrepaidId) {
+      const auth = await authorizePrepaidAfterPayment({
+        prepaidCardId: verifiedPrepaidId,
+        planId: plan.id,
+        amountPaidCents: paidCents,
+        paymentSource: PREPAID_PAYMENT_SOURCES.STRIPE,
+        externalPaymentRef: paymentId,
+        customerEmail: email,
+        customerName: customerName || null,
+        customerPhone: cartSession.phoneE164 ?? null,
+        cartSessionId: cartSession.id,
       });
-      await tx.cartPurchaseResumeToken.create({
-        data: {
-          token: resumeToken,
-          cartPurchaseId: purchase.id,
-          phoneE164: cartSession.phoneE164 ?? null,
-          expiresAt: newResumeTokenExpiresAt(),
-        },
-      });
-      if (verifiedPrepaidId) {
-        const prepaid = await tx.prepaidCard.findUnique({
-          where: { id: verifiedPrepaidId },
-          include: { voucher: true },
+      if (!auth.ok) {
+        await prisma.auditLog.create({
+          data: {
+            action: "cart_webhook_prepaid_authorize_failed",
+            metadata: JSON.stringify({
+              stripePaymentId: paymentId,
+              prepaidCardId: verifiedPrepaidId,
+              error: auth.error,
+              code: auth.code ?? null,
+            }),
+          },
         });
-        if (prepaid?.voucher) {
-          const paidCents = session.amount_total ?? 0;
-          const declared = prepaid.voucher.declaredPayCents;
-          if (declared != null && declared !== paidCents) {
-            await tx.auditLog.create({
-              data: {
-                action: "cart_webhook_declared_pay_vs_stripe_total",
-                metadata: JSON.stringify({
-                  voucherId: prepaid.voucher.id,
-                  declared,
-                  paidCents,
-                  stripePaymentId: paymentId,
-                }),
-              },
-            });
-          }
-          await tx.voucher.update({
-            where: { id: prepaid.voucher.id },
-            data: {
-              paymentStatus: true,
-              isVerified: false,
-              customerEmail: email,
-              customerName: customerName || null,
-              customerPhone: cartSession.phoneE164 ?? null,
-              declaredPayCents: paidCents,
-              /** Authoritative locked credit = amount actually charged (do not keep stale plan-list cents). */
-              creditAmountCents: paidCents > 0 ? paidCents : prepaid.voucher.creditAmountCents,
-            },
-          });
-        }
+        return NextResponse.json({ received: true });
       }
-      return purchase;
-    });
+      createdPurchase = await prisma.cartPurchase.findUniqueOrThrow({
+        where: { id: auth.purchaseId },
+      });
+      resumeToken = auth.resumeToken;
+      redemptionAccessToken = auth.redemptionAccessToken;
+    } else {
+      const resumeTokenLocal = generateOpaqueResumeToken();
+      const redemptionAccessTokenLocal = generateOpaqueResumeToken();
+      const redemptionAccessExpiresAt = newResumeTokenExpiresAt();
+
+      createdPurchase = await prisma.$transaction(async (tx) => {
+        const purchase = await tx.cartPurchase.create({
+          data: {
+            cartSessionId: cartSession.id,
+            planId: plan.id,
+            stripePaymentId: paymentId,
+            paymentSource: PREPAID_PAYMENT_SOURCES.STRIPE,
+            externalPaymentRef: paymentId,
+            amountPaidCents: paidCents,
+            customerName: customerName || null,
+            customerEmail: email,
+            status: "authorized",
+            redemptionAccessToken: redemptionAccessTokenLocal,
+            redemptionAccessExpiresAt,
+          },
+        });
+        await tx.cartPurchaseResumeToken.create({
+          data: {
+            token: resumeTokenLocal,
+            cartPurchaseId: purchase.id,
+            phoneE164: cartSession.phoneE164 ?? null,
+            expiresAt: newResumeTokenExpiresAt(),
+          },
+        });
+        return purchase;
+      });
+      resumeToken = resumeTokenLocal;
+      redemptionAccessToken = redemptionAccessTokenLocal;
+    }
 
     const { ip, userAgent } = getRequestClientMeta(req);
     await prisma.auditLog.create({

@@ -38,6 +38,11 @@ const sections: {
     links: [
       { href: "/admin/vouchers", label: "Import vouchers", active: (p) => p === "/admin/vouchers" },
       {
+        href: "/admin/prepaid",
+        label: "Import prepaid cards",
+        active: (p) => p.startsWith("/admin/prepaid"),
+      },
+      {
         href: "/admin/vouchers/tracking",
         label: "Voucher tracking",
         active: (p) => p.startsWith("/admin/vouchers/tracking"),

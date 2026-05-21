@@ -122,7 +122,11 @@ export default function DealerPage() {
     <div className="mx-auto max-w-5xl">
       <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">Dealer activation</h1>
       <p className="mt-1 text-sm text-slate-600">
-        Use single unlock for one sold voucher, or bulk activation for partner batches.
+        For physical prepaid cards, use{" "}
+        <Link href="/dealer/scan" className="link-accent font-medium">
+          Scan & sell
+        </Link>
+        . Legacy unlock below is for non-prepaid vouchers only.
       </p>
 
       {message && (

@@ -93,6 +93,12 @@ export async function POST(req: Request) {
     }> = [];
 
     for (const candidate of candidates) {
+      const hasPrepaid = await prisma.prepaidCard.findUnique({
+        where: { voucherId: candidate.id },
+        select: { id: true },
+      });
+      if (hasPrepaid) continue;
+
       const now = new Date();
       const updated = await prisma.voucher.updateMany({
         where: { id: candidate.id, status: "inactive" },
@@ -139,13 +145,30 @@ export async function POST(req: Request) {
   const results: Array<{ code: string; outcome: "unlocked" | "not_found" | "not_inactive" }> = [];
 
   for (const code of codes) {
-    const voucher = await prisma.voucher.findUnique({ where: { code } });
+    const voucher = await prisma.voucher.findUnique({
+      where: { code },
+      include: { prepaidCard: { select: { id: true } } },
+    });
     if (!voucher) {
       if ("code" in body) {
         return NextResponse.json({ error: "Voucher code does not exist." }, { status: 404 });
       }
       skipped++;
       results.push({ code, outcome: "not_found" });
+      continue;
+    }
+    if (voucher.prepaidCard) {
+      if ("code" in body) {
+        return NextResponse.json(
+          {
+            error:
+              "Physical prepaid cards are activated at point of sale, not via dealer unlock. Use the POS integration or customer redeem flow.",
+          },
+          { status: 400 },
+        );
+      }
+      skipped++;
+      results.push({ code, outcome: "not_inactive" });
       continue;
     }
     if (voucher.status !== "inactive") {

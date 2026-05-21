@@ -10,14 +10,22 @@ export function CartCheckoutReturnClient() {
   const t = useTranslations("cart");
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const mpPaymentId =
+    searchParams.get("mp_payment_id") ??
+    searchParams.get("payment_id") ??
+    searchParams.get("collection_id");
   const [state, setState] = useState<"loading" | "ok" | "error">("loading");
 
   useEffect(() => {
-    if (!sessionId) {
+    const queryKey = sessionId
+      ? `session_id=${encodeURIComponent(sessionId)}`
+      : mpPaymentId && /^\d+$/.test(mpPaymentId)
+        ? `mp_payment_id=${encodeURIComponent(mpPaymentId)}`
+        : null;
+    if (!queryKey) {
       setState("error");
       return;
     }
-    const sid = sessionId;
 
     let cancelled = false;
     const started = Date.now();
@@ -25,7 +33,7 @@ export function CartCheckoutReturnClient() {
 
     async function poll() {
       while (!cancelled && Date.now() - started < maxMs) {
-        const res = await fetch(`/api/cart/purchase/status?session_id=${encodeURIComponent(sid)}`);
+        const res = await fetch(`/api/cart/purchase/status?${queryKey}`);
         const data = (await res.json().catch(() => ({}))) as {
           paid?: boolean;
           confirmed?: boolean;
@@ -54,9 +62,9 @@ export function CartCheckoutReturnClient() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, mpPaymentId]);
 
-  if (!sessionId) {
+  if (!sessionId && !(mpPaymentId && /^\d+$/.test(mpPaymentId))) {
     return (
       <div className="mx-auto w-full max-w-md">
         <CartPhase1StepNav currentStep={3} />

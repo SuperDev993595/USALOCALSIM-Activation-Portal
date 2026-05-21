@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
-import { mercadoPagoCartStubResponse } from "@/lib/mercadopago-cart";
+import { createMercadoPagoCartPreference } from "@/lib/mercadopago-cart";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
@@ -13,10 +13,7 @@ const bodySchema = z.object({
   payAmountCents: z.number().int().positive(),
 });
 
-/**
- * Validates the same inputs as Stripe cart checkout, then returns 501 until
- * Preferences API + webhook are implemented (see `src/lib/mercadopago-cart.ts`).
- */
+/** Same validation as Stripe cart checkout; creates Mercado Pago Checkout Pro preference. */
 export async function POST(req: Request) {
   if (!isCartMercadoPagoEnabled()) {
     return NextResponse.json({ error: "Mercado Pago is not enabled for this deployment." }, { status: 404 });
@@ -57,9 +54,25 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (plan.id !== prepaid.basePlanId) {
+  if (prepaid.voucher.paymentStatus) {
     return NextResponse.json(
-      { error: "This payment only accepts the prepaid credit bundled with your card." },
+      { error: "This card is already paid. Continue to Redeem with your scratch PIN.", code: "ALREADY_PAID" },
+      { status: 409 },
+    );
+  }
+  const planAllowed =
+    plan.id === prepaid.basePlanId ||
+    (plan.planType === "physical_sim" && plan.market === prepaid.retailMarket);
+  if (!planAllowed) {
+    return NextResponse.json({ error: "Selected plan does not match this card's market." }, { status: 400 });
+  }
+
+  if (prepaid.faceValueCents > 0 && body.payAmountCents !== prepaid.faceValueCents) {
+    return NextResponse.json(
+      {
+        error: `This card must be loaded with exactly $${(prepaid.faceValueCents / 100).toFixed(2)}.`,
+        expectedCents: prepaid.faceValueCents,
+      },
       { status: 400 },
     );
   }
@@ -78,6 +91,20 @@ export async function POST(req: Request) {
     data: { expiresAt: newCartSessionExpiry() },
   });
 
-  const stub = mercadoPagoCartStubResponse();
-  return NextResponse.json(stub, { status: 501 });
+  const pref = await createMercadoPagoCartPreference({
+    cartSessionId: cartSession.id,
+    planId: plan.id,
+    prepaidCardId: prepaid.id,
+    customerName: body.customerName.trim(),
+    customerEmail: body.email.trim(),
+    payAmountCents: body.payAmountCents,
+    retailMarket: prepaid.retailMarket,
+    planName: plan.name,
+  });
+
+  if (!pref.ok) {
+    return NextResponse.json({ error: pref.error }, { status: 503 });
+  }
+
+  return NextResponse.json({ url: pref.initPoint, preferenceId: pref.preferenceId });
 }

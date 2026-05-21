@@ -72,8 +72,8 @@ export async function POST(req: Request) {
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
 
-  /** Phase 2: catalog for the voucher's market; plan type follows fulfillment when set (step 2). */
-  const planMarket = voucher.plan.market;
+  /** Phase 2: catalog for card retail market (Path B) or voucher plan market. */
+  const planMarket = purchase.prepaidCard?.retailMarket ?? voucher.plan.market;
   const fulfillment = body.fulfillmentType;
   const planTypeWhere =
     fulfillment === REDEMPTION_FULFILLMENT_TYPES.ESIM
@@ -83,7 +83,13 @@ export async function POST(req: Request) {
         ? { planType: "physical_sim" as const }
         : { OR: [{ planType: "physical_sim" }, { planType: "esim" }] };
 
-  const plans = await prisma.plan.findMany({
+  const fulfillmentForQuote =
+    body.fulfillmentType ??
+    (body.planId
+      ? undefined
+      : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
+
+  const planRows = await prisma.plan.findMany({
     where: {
       ...planTypeWhere,
       market: planMarket,
@@ -99,6 +105,26 @@ export async function POST(req: Request) {
     },
     orderBy: [{ planType: "asc" }, { priceCents: "asc" }],
   });
+
+  const quoteFulfillment =
+    fulfillmentForQuote ??
+    REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM;
+
+  const plans = planRows
+    .map((p) => {
+      const t = computeRedemptionTotals({
+        planPriceCents: p.priceCents,
+        creditAmountCents,
+        fulfillmentType: quoteFulfillment,
+      });
+      return {
+        ...p,
+        balanceDueCents: t.balanceDueCents,
+        creditAppliedCents: t.creditAppliedCents,
+        fullyCoveredByWallet: t.balanceDueCents <= 0,
+      };
+    })
+    .sort((a, b) => a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents);
 
   const selectedPlan = body.planId ? plans.find((p) => p.id === body.planId) ?? null : null;
   const selectedFulfillment =

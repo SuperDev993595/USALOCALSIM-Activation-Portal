@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     await recordFailedAttempt(key);
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
   }
-  if (voucher.status !== "activated" && voucher.status !== "inactive") {
+  if (!["inactive", "eligible", "activated"].includes(voucher.status)) {
     await recordFailedAttempt(key);
     return NextResponse.json({ error: "This voucher cannot be used in the cart flow." }, { status: 400 });
   }
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
   try {
     await prisma.$transaction(async (tx) => {
       const claimed = await tx.voucher.updateMany({
-        where: { id: voucher.id, status: { in: ["inactive", "activated"] } },
+        where: { id: voucher.id, status: { in: ["inactive", "eligible", "activated"] } },
         data: {
           status: "redeemed",
           redeemedAt: new Date(),

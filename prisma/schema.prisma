@@ -76,7 +76,7 @@ model Plan {
   durationDays  Int
   priceCents    Int
   planType      String   // "physical_sim" | "esim"
-  market        String   // "global" | "us"
+  market        String   // "global" | "us" | "br" | "uk"
   createdAt     DateTime @default(now())
   vouchers      Voucher[]
   activationRequests ActivationRequest[]
@@ -101,7 +101,7 @@ model Voucher {
   paymentStatus      Boolean  @default(false)
   linkedIccid        String?
   fulfillmentType    String?  // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
-  status             String   // "inactive" | "activated" | "redeemed"
+  status             String   // "inactive" | "eligible" | "activated" | "redeemed"
   type               String   // "top_up" | "esim"
   planId             String
   plan               Plan     @relation(fields: [planId], references: [id])
@@ -118,10 +118,17 @@ model Voucher {
   @@index([pinLast4])
 }
 
-// Physical prepaid card: QR serial → scratch PIN (Voucher row) → base vs premium upsell at checkout.
+// Physical prepaid card: QR serial + optional barcode → scratch PIN (Voucher) → wallet credit.
 model PrepaidCard {
   id                   String       @id @default(cuid())
   serial               String       @unique
+  /// GS1 / POS scan value (may equal serial). Unique when set.
+  barcodePayload       String?      @unique
+  gtin                 String?
+  /// Shelf market: us | br | uk (aligns with Plan.market where possible).
+  retailMarket         String       @default("us")
+  /// Denomination loaded into voucher wallet when sold (POS or D2C).
+  faceValueCents       Int          @default(0)
   voucherId            String       @unique
   voucher              Voucher      @relation(fields: [voucherId], references: [id])
   basePlanId           String
@@ -132,6 +139,8 @@ model PrepaidCard {
   claimedCartSession   CartSession? @relation(fields: [claimedCartSessionId], references: [id])
   createdAt            DateTime     @default(now())
   cartPurchase         CartPurchase?
+
+  @@index([retailMarket])
 }
 
 // Cart session for physical-card checkout. phoneE164/verifiedAt set only for legacy SMS Phase-1 paths.
@@ -178,6 +187,10 @@ model CartPurchase {
   planId           String
   plan             Plan        @relation(fields: [planId], references: [id])
   stripePaymentId  String      @unique
+  /// stripe | mercadopago | pos — how Phase 1 wallet was funded.
+  paymentSource    String      @default("stripe")
+  /// Idempotency key (POS txn id, MP payment id). Unique when set.
+  externalPaymentRef String?   @unique
   amountPaidCents  Int
   customerName     String?
   customerEmail    String

@@ -4,9 +4,11 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export function DealerNav({ email }: { email: string }) {
+  const t = useTranslations("dealer");
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
@@ -28,7 +30,7 @@ export function DealerNav({ email }: { email: string }) {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-900 sm:text-sm">
-              Dealer<span className="text-accent"> · </span>Voucher panel
+              {t("navBrand")}
             </span>
             <span className="max-w-[52vw] truncate text-[11px] text-slate-500 sm:max-w-none sm:text-xs" title={email}>
               {email}
@@ -37,24 +39,27 @@ export function DealerNav({ email }: { email: string }) {
 
           <div className="overflow-x-auto">
             <div className="flex min-w-max items-center gap-2 pb-1 text-[11px] sm:text-xs">
+              <Link href="/dealer/scan" className={linkClass(pathname === "/dealer/scan")}>
+                {t("navScan")}
+              </Link>
               <Link href="/dealer" className={linkClass(pathname === "/dealer")}>
-                Activation
+                {t("navLegacy")}
               </Link>
               <Link href="/dealer/tracking" className={linkClass(pathname === "/dealer/tracking")}>
-                Tracking
+                {t("navTracking")}
               </Link>
               <Link
                 href="/dealer/change-password"
                 className={linkClass(pathname === "/dealer/change-password")}
               >
-                Password
+                {t("navPassword")}
               </Link>
               <button
                 type="button"
                 onClick={() => setShowSignOutConfirm(true)}
                 className="rounded-lg px-2.5 py-1.5 font-medium uppercase tracking-wide text-red-600 transition hover:bg-red-50"
               >
-                Sign out
+                {t("navSignOut")}
               </button>
             </div>
           </div>
@@ -63,9 +68,9 @@ export function DealerNav({ email }: { email: string }) {
 
       <ConfirmDialog
         open={showSignOutConfirm}
-        title="Sign out?"
-        confirmLabel="Sign out"
-        cancelLabel="Cancel"
+        title={t("signOutTitle")}
+        confirmLabel={t("signOutConfirm")}
+        cancelLabel={t("signOutCancel")}
         variant="danger"
         initialFocus="cancel"
         loading={signingOut}
@@ -75,7 +80,7 @@ export function DealerNav({ email }: { email: string }) {
         }}
         onConfirm={handleConfirmSignOut}
       >
-        Are you sure you want to sign out and exit your dealer session?
+        {t("signOutBody")}
       </ConfirmDialog>
     </>
   );

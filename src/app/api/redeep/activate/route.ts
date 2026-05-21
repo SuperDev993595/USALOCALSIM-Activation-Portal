@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
   await prisma.$transaction(async (tx) => {
     const claimed = await tx.voucher.updateMany({
-      where: { id: voucher.id, status: { in: ["inactive", "activated"] } },
+      where: { id: voucher.id, status: { in: ["inactive", "eligible", "activated"] } },
       data: {
         status: "redeemed",
         redeemedAt: new Date(),

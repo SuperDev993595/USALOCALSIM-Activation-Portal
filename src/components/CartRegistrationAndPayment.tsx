@@ -18,6 +18,11 @@ export type CartPlanRow = {
 
 const DEFAULT_BUNDLED_PACK_PAY_DOLLARS = "50.00";
 
+function centsToUsdInput(cents: number): string {
+  if (!Number.isFinite(cents) || cents <= 0) return DEFAULT_BUNDLED_PACK_PAY_DOLLARS;
+  return (cents / 100).toFixed(2);
+}
+
 function parseUsdInputToCents(raw: string): number | null {
   let t = raw.trim().replace(/\s/g, "");
   if (t === "") return null;
@@ -42,11 +47,23 @@ function parseUsdInputToCents(raw: string): number | null {
 }
 
 /** Prepaid cart: name, email, USD pay amount, then Stripe / Mercado Pago. */
-export function CartRegistrationAndPayment({ plans }: { plans: CartPlanRow[] }) {
+export function CartRegistrationAndPayment({
+  plans,
+  defaultPayCents,
+  lockPayAmountCents,
+}: {
+  plans: CartPlanRow[];
+  /** From PrepaidCard.faceValueCents (Path B shelf denomination). */
+  defaultPayCents?: number;
+  /** When set, customer cannot change load amount (shelf SKU). */
+  lockPayAmountCents?: number;
+}) {
   const t = useTranslations("cart");
   const [customerName, setCustomerName] = useState("");
   const [email, setEmail] = useState("");
-  const [payDollars, setPayDollars] = useState(DEFAULT_BUNDLED_PACK_PAY_DOLLARS);
+  const [payDollars, setPayDollars] = useState(() =>
+    centsToUsdInput(defaultPayCents ?? 0),
+  );
   const [planId, setPlanId] = useState<string | null>(plans[0]?.id ?? null);
   const [loading, setLoading] = useState<"stripe" | "mercadopago" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -173,12 +190,17 @@ export function CartRegistrationAndPayment({ plans }: { plans: CartPlanRow[] }) 
                   autoComplete="transaction-amount"
                   value={payDollars}
                   onChange={(e) => setPayDollars(e.target.value)}
-                  className="w-full rounded border border-slate-300 py-2 pl-7 pr-3 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
+                  readOnly={lockPayAmountCents != null && lockPayAmountCents > 0}
+                  className="w-full rounded border border-slate-300 py-2 pl-7 pr-3 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E] read-only:bg-slate-100 read-only:text-slate-700"
                   placeholder={DEFAULT_BUNDLED_PACK_PAY_DOLLARS}
                   aria-describedby="cart-pay-hint"
                 />
               </div>
-              <p className="text-xs text-slate-500">{t("prepaidCreditDueHint")}</p>
+              <p className="text-xs text-slate-500" id="cart-pay-hint">
+                {lockPayAmountCents != null && lockPayAmountCents > 0
+                  ? t("cartPayAmountLockedHint", { amount: (lockPayAmountCents / 100).toFixed(2) })
+                  : t("prepaidCreditDueHint")}
+              </p>
             </div>
           </div>
         ) : null}

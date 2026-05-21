@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { CartRegistrationAndPayment } from "@/components/CartRegistrationAndPayment";
+import { getPrepaidPaidRedirect } from "@/lib/prepaid-paid-redirect";
 
 export default async function CartPlansPage() {
   const cookieStore = await cookies();
@@ -38,11 +39,22 @@ export default async function CartPlansPage() {
     redirect("/cart?needSerial=1");
   }
 
+  const paidRedirect = await getPrepaidPaidRedirect(prepaid.id);
+  if (paidRedirect) {
+    redirect(paidRedirect.redirectPath);
+  }
+
   const plans = [prepaid.basePlan];
+  const defaultPayCents =
+    prepaid.faceValueCents > 0 ? prepaid.faceValueCents : prepaid.basePlan.priceCents;
 
   return (
     <div className="flex flex-1 justify-center pb-6 pt-1 sm:pb-8 sm:pt-2">
-      <CartRegistrationAndPayment plans={plans} />
+      <CartRegistrationAndPayment
+        plans={plans}
+        defaultPayCents={defaultPayCents}
+        lockPayAmountCents={prepaid.faceValueCents > 0 ? prepaid.faceValueCents : undefined}
+      />
     </div>
   );
 }

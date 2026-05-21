@@ -41,7 +41,7 @@ export async function resolveVoucherByPin(pinInput: string) {
     where: {
       pinLast4: last4 || undefined,
       pinCodeHash: { not: null },
-      status: { in: ["inactive", "activated"] },
+      status: { in: ["inactive", "eligible", "activated"] },
       paymentStatus: true,
     },
     include: { plan: true, prepaidCard: { include: { basePlan: { select: { market: true } } } } },

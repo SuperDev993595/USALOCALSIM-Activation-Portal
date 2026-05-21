@@ -3,6 +3,8 @@ import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { CART_SESSION_COOKIE, cartSessionCookieOptions, readCookieFromRequest } from "@/lib/cart-session";
 import { ensureCartSessionWithPrepaidSerial } from "@/lib/cart-phase1-session";
+import { getPrepaidPaidRedirectBySerial } from "@/lib/prepaid-paid-redirect";
+import { normalizePrepaidSerial } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
   prepaidSerial: z.string().min(1),
@@ -23,6 +25,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  const serialNorm = normalizePrepaidSerial(body.prepaidSerial);
+  const paidRedirect = serialNorm ? await getPrepaidPaidRedirectBySerial(serialNorm) : null;
+
   const cookieSessionId = readCookieFromRequest(req, CART_SESSION_COOKIE);
   const result = await ensureCartSessionWithPrepaidSerial(body.prepaidSerial, cookieSessionId);
   if (!result.ok) {
@@ -30,7 +35,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  const res = NextResponse.json({ ok: true });
+  const res = NextResponse.json({
+    ok: true,
+    ...(paidRedirect
+      ? {
+          alreadyPaid: true,
+          redirect: paidRedirect.redirectPath,
+          purchaseId: paidRedirect.purchaseId,
+        }
+      : {}),
+  });
   res.cookies.set(CART_SESSION_COOKIE, result.sessionId, cartSessionCookieOptions());
   return res;
 }

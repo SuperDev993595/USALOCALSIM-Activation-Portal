@@ -5,6 +5,8 @@ import { stripe } from "@/lib/stripe";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
+import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
+import { createMercadoPagoUpgradePreference } from "@/lib/mercadopago-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
@@ -98,6 +100,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, zeroDue: true });
   }
 
+  const retailMarket = purchase.prepaidCard?.retailMarket ?? "us";
+  if (retailMarket === "br" && isCartMercadoPagoEnabled()) {
+    const mp = await createMercadoPagoUpgradePreference({
+      purchaseId: purchase.id,
+      planName: plan.name,
+      balanceDueCents: totals.balanceDueCents,
+      retailMarket,
+      customerEmail: purchase.customerEmail,
+      accessToken: access,
+    });
+    if (mp.ok) {
+      return NextResponse.json({ ok: true, zeroDue: false, url: mp.initPoint, provider: "mercadopago" });
+    }
+  }
+
+  if (!stripe) {
+    return NextResponse.json({ error: "Card checkout is not configured for this market." }, { status: 503 });
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -128,5 +149,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ ok: true, zeroDue: false, url: checkoutSession.url });
+  return NextResponse.json({ ok: true, zeroDue: false, url: checkoutSession.url, provider: "stripe" });
 }

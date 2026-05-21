@@ -14,6 +14,21 @@ export async function GET(req: Request) {
     include: {
       plan: { select: { name: true, planType: true } },
       activatedBy: { select: { email: true, name: true } },
+      prepaidCard: {
+        select: {
+          serial: true,
+          barcodePayload: true,
+          retailMarket: true,
+          faceValueCents: true,
+        },
+      },
+      cartPurchase: {
+        select: {
+          paymentSource: true,
+          externalPaymentRef: true,
+          amountPaidCents: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
     take: 200,
@@ -24,6 +39,7 @@ export async function GET(req: Request) {
       code: v.code,
       status: v.status,
       type: v.type,
+      paymentStatus: v.paymentStatus,
       planName: v.plan.name,
       planType: v.plan.planType,
       activatedAt: v.activatedAt,
@@ -31,6 +47,13 @@ export async function GET(req: Request) {
       activatedByName: v.activatedBy?.name ?? null,
       redeemedAt: v.redeemedAt,
       redeemedBy: v.redeemedBy,
+      prepaidSerial: v.prepaidCard?.serial ?? null,
+      prepaidBarcode: v.prepaidCard?.barcodePayload ?? null,
+      retailMarket: v.prepaidCard?.retailMarket ?? null,
+      faceValueCents: v.prepaidCard?.faceValueCents ?? null,
+      purchasePaymentSource: v.cartPurchase?.paymentSource ?? null,
+      purchaseExternalRef: v.cartPurchase?.externalPaymentRef ?? null,
+      amountPaidCents: v.cartPurchase?.amountPaidCents ?? null,
     })),
   });
 }

@@ -18,6 +18,8 @@ type PlanRow = {
   market: string;
   planType: string;
   priceCents: number;
+  balanceDueCents?: number;
+  fullyCoveredByWallet?: boolean;
 };
 
 type FulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
@@ -643,6 +645,13 @@ export function RedeepPhase2Client({
                   >
                     <span>
                       {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
+                      {p.fullyCoveredByWallet ? (
+                        <span className="ml-1 text-emerald-300">· {t("planCoveredByWallet")}</span>
+                      ) : typeof p.balanceDueCents === "number" && p.balanceDueCents > 0 ? (
+                        <span className="ml-1 text-amber-200">
+                          · {t("planUpgradeDue", { amount: (p.balanceDueCents / 100).toFixed(2) })}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="ml-3 flex items-center gap-3">
                       <span>${(p.priceCents / 100).toFixed(2)}</span>

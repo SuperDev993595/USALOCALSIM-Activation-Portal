@@ -25,11 +25,17 @@ async function main() {
 
   console.log("Seeded admin user:", adminEmail);
 
-  // Default plans (Phase 2 will expand; minimal set for Phase 1)
+  // Default plans — include BR / UK physical catalogs (feedback-2026-05-21 §1)
   const plans = [
     { name: "Global 30d", dataAllowance: "Unlimited", durationDays: 30, priceCents: 2999, planType: "physical_sim", market: "global" },
     { name: "Global 60d", dataAllowance: "Unlimited", durationDays: 60, priceCents: 4999, planType: "physical_sim", market: "global" },
     { name: "Global 90d", dataAllowance: "Unlimited", durationDays: 90, priceCents: 6999, planType: "physical_sim", market: "global" },
+    { name: "US Prepaid 30d", dataAllowance: "Unlimited", durationDays: 30, priceCents: 3500, planType: "physical_sim", market: "us" },
+    { name: "US Prepaid 60d", dataAllowance: "Unlimited", durationDays: 60, priceCents: 5000, planType: "physical_sim", market: "us" },
+    { name: "Brazil Prepaid 30d", dataAllowance: "Unlimited", durationDays: 30, priceCents: 3500, planType: "physical_sim", market: "br" },
+    { name: "Brazil Prepaid 60d", dataAllowance: "Unlimited", durationDays: 60, priceCents: 5000, planType: "physical_sim", market: "br" },
+    { name: "UK Prepaid 30d", dataAllowance: "Unlimited", durationDays: 30, priceCents: 3500, planType: "physical_sim", market: "uk" },
+    { name: "UK Prepaid 60d", dataAllowance: "Unlimited", durationDays: 60, priceCents: 5000, planType: "physical_sim", market: "uk" },
     { name: "US eSIM 30d", dataAllowance: "Unlimited", durationDays: 30, priceCents: 2499, planType: "esim", market: "us" },
     { name: "US eSIM 60d", dataAllowance: "Unlimited", durationDays: 60, priceCents: 3999, planType: "esim", market: "us" },
     { name: "US eSIM 90d", dataAllowance: "Unlimited", durationDays: 90, priceCents: 5499, planType: "esim", market: "us" },
@@ -101,11 +107,17 @@ async function main() {
     where: { serial: demoSerial },
     create: {
       serial: demoSerial,
+      barcodePayload: demoSerial,
+      retailMarket: "us",
+      faceValueCents: 5000,
       voucherId: demoVoucher.id,
       basePlanId: prepaidBasic.id,
       upgradePlanId: prepaidPremium.id,
     },
     update: {
+      barcodePayload: demoSerial,
+      retailMarket: "us",
+      faceValueCents: 5000,
       voucherId: demoVoucher.id,
       basePlanId: prepaidBasic.id,
       upgradePlanId: prepaidPremium.id,
