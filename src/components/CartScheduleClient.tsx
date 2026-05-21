@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { cartPhase1BackButtonClass } from "@/components/CartPhase1StepNav";
+import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 
 function toYmd(d: Date) {
   const y = d.getUTCFullYear();
@@ -55,11 +57,15 @@ export function CartScheduleClient({
 
   return (
     <div className="ui-card mx-auto w-full max-w-md p-6 sm:p-8">
-      <Link href="/redeem" className="text-sm text-[#00104E] underline">
-        {t("backRedeem")}
-      </Link>
-      <h1 className="mt-4 text-xl font-bold text-slate-900">{t("scheduleTitle")}</h1>
-      <p className="mt-2 text-sm text-slate-600">{t("scheduleSubtitle")}</p>
+      <div className="flex items-start gap-3">
+        <Link href="/redeem" className={cartPhase1BackButtonClass} aria-label={t("backRedeemAria")}>
+          <BackChevronIcon />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-bold text-slate-900">{t("scheduleTitle")}</h1>
+          <p className="mt-2 text-sm text-slate-600">{t("scheduleSubtitle")}</p>
+        </div>
+      </div>
 
       {locked ? (
         <p className="mt-5 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">{t("scheduleLocked")}</p>

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { CartPhase1StepNav, cartPhase1BackButtonClass } from "@/components/CartPhase1StepNav";
+import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
 
 export type CartPlanRow = {
@@ -116,12 +118,15 @@ export function CartRegistrationAndPayment({ plans }: { plans: CartPlanRow[] }) 
 
   return (
     <div className="mx-auto w-full max-w-lg">
-      <div className="mb-3">
-        <Link href="/cart" className="text-sm text-[#00104E] underline">
-          {t("backCart")}
+      <CartPhase1StepNav currentStep={2} />
+      <div className="mb-3 flex items-start gap-3">
+        <Link href="/cart" className={cartPhase1BackButtonClass} aria-label={t("backCartAria")}>
+          <BackChevronIcon />
         </Link>
-        <h1 className="mt-1.5 text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
-        <p className="mt-1.5 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
+          <p className="mt-1.5 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
+        </div>
       </div>
 
       <div className="ui-card mt-3 space-y-6 p-5">

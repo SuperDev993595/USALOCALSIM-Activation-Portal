@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
 
 export function CartCheckoutReturnClient() {
   const t = useTranslations("cart");
@@ -57,37 +58,46 @@ export function CartCheckoutReturnClient() {
 
   if (!sessionId) {
     return (
-      <div className="ui-card mx-auto max-w-md p-6 text-center">
-        <p className="text-sm text-red-600">{t("returnFailed")}</p>
-        <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
-          {t("returnTryPurchasesList")}
-        </Link>
-        <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
-          {t("goPlans")}
-        </Link>
+      <div className="mx-auto w-full max-w-md">
+        <CartPhase1StepNav currentStep={3} />
+        <div className="ui-card p-6 text-center">
+          <p className="text-sm text-red-600">{t("returnFailed")}</p>
+          <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
+            {t("returnTryPurchasesList")}
+          </Link>
+          <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
+            {t("goPlans")}
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (state === "error") {
     return (
-      <div className="ui-card mx-auto max-w-md p-6 text-center">
-        <p className="text-sm text-slate-700">{t("returnFailed")}</p>
-        <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
-          {t("returnTryPurchasesList")}
-        </Link>
-        <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
-          {t("goPlans")}
-        </Link>
+      <div className="mx-auto w-full max-w-md">
+        <CartPhase1StepNav currentStep={3} />
+        <div className="ui-card p-6 text-center">
+          <p className="text-sm text-slate-700">{t("returnFailed")}</p>
+          <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
+            {t("returnTryPurchasesList")}
+          </Link>
+          <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
+            {t("goPlans")}
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="ui-card mx-auto max-w-md p-8 text-center">
-      <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[#00104E]" aria-hidden />
-      <h1 className="text-lg font-semibold text-slate-900">{t("returnTitle")}</h1>
-      <p className="mt-2 text-sm text-slate-600">{t("returnSubtitle")}</p>
+    <div className="mx-auto w-full max-w-md">
+      <CartPhase1StepNav currentStep={3} />
+      <div className="ui-card p-8 text-center">
+        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[#00104E]" aria-hidden />
+        <h1 className="text-lg font-semibold text-slate-900">{t("returnTitle")}</h1>
+        <p className="mt-2 text-sm text-slate-600">{t("returnSubtitle")}</p>
+      </div>
     </div>
   );
 }

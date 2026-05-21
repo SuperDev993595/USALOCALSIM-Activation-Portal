@@ -2,24 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
 const redeepPanelInputClass =
   "w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-none placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40 [color-scheme:light] [&:-webkit-autofill]:[-webkit-box-shadow:inset_0_0_0_1000px_rgb(255_255_255)] [&:-webkit-autofill]:[-webkit-text-fill-color:rgb(15_23_42)]";
-
-function RedeemBackChevronIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-      <path
-        fillRule="evenodd"
-        d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
-}
 
 type PlanRow = {
   id: string;
@@ -54,6 +43,9 @@ function RedeemStepNav({
 }) {
   return (
     <nav aria-label={t("navAria")} className="mb-6 border-b border-white/10 pb-5">
+      <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+        {t("phase2Banner")}
+      </p>
       <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
         {t("stepProgress", { current: currentStep, total: REDEEM_TOTAL_STEPS })}
       </p>
@@ -413,7 +405,7 @@ export function RedeepPhase2Client({
                   setWizardStep(1);
                 }}
               >
-                <RedeemBackChevronIcon />
+                <BackChevronIcon />
               </button>
               <h2 id="redeem-step2-heading" className="text-lg font-semibold text-white">
                 {t("step2Title")}
@@ -511,7 +503,7 @@ export function RedeepPhase2Client({
                 disabled={loading !== null}
                 onClick={() => setWizardStep(2)}
               >
-                <RedeemBackChevronIcon />
+                <BackChevronIcon />
               </button>
               <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white">
                 {t("step3Title")}
@@ -611,7 +603,7 @@ export function RedeepPhase2Client({
                 disabled={loading !== null}
                 onClick={() => setWizardStep(3)}
               >
-                <RedeemBackChevronIcon />
+                <BackChevronIcon />
               </button>
               <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white">
                 {t("step4Title")}
@@ -707,7 +699,7 @@ export function RedeepPhase2Client({
                   disabled={loading !== null}
                   onClick={() => setWizardStep(4)}
                 >
-                  <RedeemBackChevronIcon />
+                  <BackChevronIcon />
                 </button>
               ) : (
                 <span className="inline-flex h-9 w-9 shrink-0" aria-hidden />

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CartPhase1StepNav, cartPhase1BackButtonClass } from "@/components/CartPhase1StepNav";
+import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 
 export function CartPhoneVerifyClient({
   resumeQuery,
@@ -79,8 +81,16 @@ export function CartPhoneVerifyClient({
 
   return (
     <div className="ui-card mx-auto w-full max-w-md p-6 sm:p-8">
-      <h1 className="text-xl font-bold text-slate-900">{t("title")}</h1>
-      <p className="mt-2 text-sm text-slate-600">{t("subtitle")}</p>
+      <CartPhase1StepNav currentStep={1} />
+      <div className="flex items-start gap-3">
+        <Link href="/redeem" className={cartPhase1BackButtonClass} aria-label={t("backRedeemAria")}>
+          <BackChevronIcon />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-bold text-slate-900">{t("title")}</h1>
+          <p className="mt-2 text-sm text-slate-600">{t("subtitle")}</p>
+        </div>
+      </div>
       {resumeBanner ? (
         <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">{resumeBanner}</p>
       ) : null}
@@ -138,12 +148,6 @@ export function CartPhoneVerifyClient({
       {prepaidSerialFromQr?.trim() && !needSerialBanner && !needVoucherCreditBanner && loading ? (
         <p className="mt-4 text-sm text-slate-600">{t("phase1Linking")}</p>
       ) : null}
-
-      <p className="mt-8 text-center text-xs text-slate-500">
-        <Link href="/redeem" className="text-[#00104E] underline">
-          {t("backRedeem")}
-        </Link>
-      </p>
     </div>
   );
 }
