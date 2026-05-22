@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { sendCartPurchasePaidEmail } from "./email";
+import { getMercadoPagoAccessToken } from "./mercadopago-config";
 import { authorizePrepaidAfterPayment } from "./prepaid-authorize";
 import { PREPAID_PAYMENT_SOURCES } from "./prepaid-payment-source";
 import {
@@ -11,10 +12,7 @@ import {
 
 const MP_API = "https://api.mercadopago.com";
 
-export function getMercadoPagoAccessToken(): string | null {
-  const t = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
-  return t || null;
-}
+export { getMercadoPagoAccessToken } from "./mercadopago-config";
 
 function mpCurrencyForMarket(market: string): "USD" | "BRL" {
   return market === "br" ? "BRL" : "USD";

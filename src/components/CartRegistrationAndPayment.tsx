@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CartPhase1StepNav, cartPhase1BackButtonClass } from "@/components/CartPhase1StepNav";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
-import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
+import { isCartMercadoPagoUiEnabled } from "@/lib/mercadopago-config";
 
 export type CartPlanRow = {
   id: string;
@@ -71,7 +71,7 @@ export function CartRegistrationAndPayment({
   const selectedPlan = useMemo(() => plans.find((p) => p.id === planId) ?? null, [plans, planId]);
   const parsedPayCents = useMemo(() => parseUsdInputToCents(payDollars), [payDollars]);
   const payAmountValid = parsedPayCents !== null && parsedPayCents > 0;
-  const mercadoPagoEnabled = isCartMercadoPagoEnabled();
+  const mercadoPagoEnabled = isCartMercadoPagoUiEnabled();
 
   useEffect(() => {
     const id = plans[0]?.id ?? null;
