@@ -18,6 +18,7 @@
     "@prelude.so/sdk": "^0.10.0",
     "@prisma/client": "^5.22.0",
     "@zxing/browser": "^0.2.0",
+    "@zxing/library": "^0.21.3",
     "bcryptjs": "^2.4.3",
     "libphonenumber-js": "^1.12.41",
     "next": "^14.2.0",
