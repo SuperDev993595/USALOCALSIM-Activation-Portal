@@ -495,7 +495,7 @@
     "startCamera": "Kamera starten",
     "stopCamera": "Kamera stoppen",
     "cameraDenied": "Kamerazugriff verweigert. Bitte manuelle Eingabe unten.",
-    "cameraUnsupported": "Kamera-Scan wird in diesem Browser nicht unterstützt. Code manuell eingeben.",
+    "cameraUnsupported": "Kamerazugriff nicht verfügbar (HTTPS/localhost oder Berechtigung). Code unten manuell eingeben.",
     "scanDetected": "Code erkannt — Details unten prüfen.",
     "manualTitle": "Manuelle Eingabe",
     "scanTypeLabel": "Codetyp",

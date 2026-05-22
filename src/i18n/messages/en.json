@@ -501,7 +501,7 @@
     "startCamera": "Start camera",
     "stopCamera": "Stop camera",
     "cameraDenied": "Camera access was denied. Use manual entry below.",
-    "cameraUnsupported": "Camera scanning is not supported in this browser. Enter the code manually.",
+    "cameraUnsupported": "Camera access is not available (use HTTPS or localhost, or allow camera permission). Enter the code manually below.",
     "scanDetected": "Code detected — review the card details below.",
     "manualTitle": "Manual entry",
     "scanTypeLabel": "Code type",

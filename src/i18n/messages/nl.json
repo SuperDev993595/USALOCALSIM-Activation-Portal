@@ -501,7 +501,7 @@
     "startCamera": "Camera starten",
     "stopCamera": "Camera stoppen",
     "cameraDenied": "Cameratoegang geweigerd. Gebruik handmatige invoer.",
-    "cameraUnsupported": "Camerascan niet ondersteund in deze browser. Voer de code handmatig in.",
+    "cameraUnsupported": "Geen cameratoegang (HTTPS/localhost of toestemming). Voer de code hieronder handmatig in.",
     "scanDetected": "Code gedetecteerd — controleer de details hieronder.",
     "manualTitle": "Handmatige invoer",
     "scanTypeLabel": "Codetype",

@@ -501,7 +501,7 @@
     "startCamera": "Démarrer la caméra",
     "stopCamera": "Arrêter la caméra",
     "cameraDenied": "Accès caméra refusé. Utilisez la saisie manuelle.",
-    "cameraUnsupported": "Scan caméra non pris en charge. Saisissez le code manuellement.",
+    "cameraUnsupported": "Accès caméra indisponible (HTTPS/localhost ou autorisation). Saisissez le code manuellement ci-dessous.",
     "scanDetected": "Code détecté — vérifiez les détails ci-dessous.",
     "manualTitle": "Saisie manuelle",
     "scanTypeLabel": "Type de code",

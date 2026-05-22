@@ -27,6 +27,7 @@ export function DealerScanClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanLoopRef = useRef<number | null>(null);
+  const scannerControlsRef = useRef<import("@zxing/browser").IScannerControls | null>(null);
   const regionId = useId();
 
   const [scanType, setScanType] = useState<ScanType>("serial");
@@ -42,7 +43,9 @@ export function DealerScanClient() {
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
-    setCameraSupported(typeof window !== "undefined" && "BarcodeDetector" in window);
+    setCameraSupported(
+      typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function",
+    );
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -50,8 +53,12 @@ export function DealerScanClient() {
       window.cancelAnimationFrame(scanLoopRef.current);
       scanLoopRef.current = null;
     }
+    scannerControlsRef.current?.stop();
+    scannerControlsRef.current = null;
     streamRef.current?.getTracks().forEach((tr) => tr.stop());
     streamRef.current = null;
+    const video = videoRef.current;
+    if (video) video.srcObject = null;
     setCameraOn(false);
   }, []);
 
@@ -64,21 +71,17 @@ export function DealerScanClient() {
     setMessage(null);
   }, []);
 
-  const startCamera = useCallback(async () => {
-    setCameraError(null);
-    stopCamera();
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      const video = videoRef.current;
-      if (!video) return;
-      video.srcObject = stream;
-      await video.play();
-      setCameraOn(true);
+  const onCodeDetected = useCallback(
+    (raw: string, isLikelyQr: boolean) => {
+      applyScanValue(raw, isLikelyQr ? "serial" : "barcode");
+      stopCamera();
+      setMessage({ type: "ok", text: t("scanDetected") });
+    },
+    [applyScanValue, stopCamera, t],
+  );
 
+  const startNativeScanner = useCallback(
+    (video: HTMLVideoElement) => {
       // @ts-expect-error BarcodeDetector is not in all TS libs
       const detector = new BarcodeDetector({
         formats: ["qr_code", "ean_13", "ean_8", "code_128", "upc_a", "upc_e"],
@@ -91,9 +94,7 @@ export function DealerScanClient() {
           const raw = codes[0]?.rawValue?.trim();
           if (raw) {
             const isLikelyQr = codes[0].format?.toLowerCase().includes("qr");
-            applyScanValue(raw, isLikelyQr ? "serial" : "barcode");
-            stopCamera();
-            setMessage({ type: "ok", text: t("scanDetected") });
+            onCodeDetected(raw, isLikelyQr);
             return;
           }
         } catch {
@@ -102,11 +103,55 @@ export function DealerScanClient() {
         scanLoopRef.current = window.requestAnimationFrame(tick);
       };
       scanLoopRef.current = window.requestAnimationFrame(tick);
+    },
+    [onCodeDetected],
+  );
+
+  const startZxingScanner = useCallback(
+    async (video: HTMLVideoElement) => {
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const reader = new BrowserMultiFormatReader();
+      scannerControlsRef.current = await reader.decodeFromVideoDevice(undefined, video, (result) => {
+        if (!result) return;
+        const raw = result.getText()?.trim();
+        if (!raw) return;
+        const format = result.getBarcodeFormat()?.toString().toLowerCase() ?? "";
+        onCodeDetected(raw, format.includes("qr"));
+      });
+    },
+    [onCodeDetected],
+  );
+
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    stopCamera();
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      setCameraOn(true);
+      if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        streamRef.current = stream;
+        video.srcObject = stream;
+        await video.play();
+        startNativeScanner(video);
+      } else {
+        await startZxingScanner(video);
+        streamRef.current = (video.srcObject as MediaStream | null) ?? null;
+        if (!streamRef.current) {
+          throw new Error("no camera stream");
+        }
+      }
     } catch {
       setCameraError(t("cameraDenied"));
       setCameraOn(false);
+      stopCamera();
     }
-  }, [applyScanValue, stopCamera, t]);
+  }, [startNativeScanner, startZxingScanner, stopCamera, t]);
 
   async function lookupCard() {
     const value = scanValue.trim();

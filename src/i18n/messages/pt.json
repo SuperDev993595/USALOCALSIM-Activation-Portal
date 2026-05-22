@@ -495,7 +495,7 @@
     "startCamera": "Iniciar câmara",
     "stopCamera": "Parar câmara",
     "cameraDenied": "Acesso à câmara negado. Use entrada manual.",
-    "cameraUnsupported": "Digitalização por câmara não suportada neste browser. Introduza o código manualmente.",
+    "cameraUnsupported": "Câmara indisponível (HTTPS/localhost ou permissão). Introduza o código manualmente abaixo.",
     "scanDetected": "Código detetado — reveja os detalhes abaixo.",
     "manualTitle": "Entrada manual",
     "scanTypeLabel": "Tipo de código",
