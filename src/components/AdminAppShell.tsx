@@ -123,6 +123,24 @@ function sectionForPath(pathname: string): NavSection {
   return sections.find((s) => s.links.some((l) => linkActive(pathname, l))) ?? sections[0];
 }
 
+function pageLabelForPath(pathname: string): string {
+  let label = "Overview";
+  let depth = -1;
+
+  function visit(links: NavLink[], level: number) {
+    for (const link of links) {
+      if (link.href.startsWith("/") && link.active(pathname) && level >= depth) {
+        depth = level;
+        label = link.label;
+      }
+      if (link.children?.length) visit(link.children, level + 1);
+    }
+  }
+
+  for (const section of sections) visit(section.links, 0);
+  return label;
+}
+
 function emailInitials(email: string): string {
   const local = email.split("@")[0] ?? "";
   const parts = local.split(/[.\-_]+/).filter(Boolean);
@@ -343,6 +361,7 @@ export function AdminAppShell({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const activeSection = sections.find((s) => s.id === activeSectionId) ?? sections[0];
+  const pageLabel = useMemo(() => pageLabelForPath(pathname), [pathname]);
   const initials = emailInitials(email);
 
   useEffect(() => {
@@ -513,35 +532,65 @@ export function AdminAppShell({
       </aside>
 
       <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="admin-main-site relative z-20 flex h-[3.25rem] shrink-0 items-center gap-3 border-b border-slate-200/80 bg-[#f8f9fb] px-5 md:px-7 lg:px-8">
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-brand-purple/40 hover:text-brand-purple lg:hidden"
-            aria-expanded={mobileNavOpen}
-            aria-controls="admin-sidebar"
-            onClick={() => setMobileNavOpen((o) => !o)}
-          >
-            <MenuIcon open={mobileNavOpen} />
-          </button>
-          <span className="text-sm font-semibold text-slate-900 lg:hidden">Admin</span>
-          <span className="hidden min-w-0 flex-1 items-center gap-2 truncate text-xs text-slate-500 lg:inline">
-            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-              {activeSection.panelTitle}
-            </span>
-            <span className="truncate">
-              Signed in as <span className="font-medium text-slate-900">{email}</span>
-            </span>
-          </span>
-          <Link
-            href="/redeem"
-            className="btn-secondary ml-auto h-9 shrink-0 rounded-lg px-3 py-0 text-xs font-semibold"
-          >
-            View site
-          </Link>
+        <header className="admin-top-bar relative z-20">
+          <div className="admin-top-bar-inner">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                className="admin-top-bar-icon-btn lg:hidden"
+                aria-expanded={mobileNavOpen}
+                aria-controls="admin-sidebar"
+                aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+                onClick={() => setMobileNavOpen((o) => !o)}
+              >
+                <MenuIcon open={mobileNavOpen} />
+              </button>
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900 lg:hidden">{pageLabel}</p>
+                <nav
+                  className="hidden min-w-0 items-center gap-2 text-sm lg:flex"
+                  aria-label="Current location"
+                >
+                  <span className="shrink-0 text-slate-500">{activeSection.panelTitle}</span>
+                  <span className="text-slate-300" aria-hidden>
+                    /
+                  </span>
+                  <span className="truncate font-medium text-slate-900">{pageLabel}</span>
+                </nav>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2 md:gap-3">
+              <Link href="/redeem" className="admin-top-bar-link hidden sm:inline-flex">
+                <ExternalIcon />
+                <span>View site</span>
+              </Link>
+              <Link
+                href="/redeem"
+                className="admin-top-bar-icon-btn sm:hidden"
+                aria-label="View public site"
+              >
+                <ExternalIcon />
+              </Link>
+
+              <span className="hidden h-6 w-px bg-slate-200 md:block" aria-hidden />
+
+              <div
+                className="flex max-w-[min(100%,14rem)] items-center gap-2 rounded-full border border-slate-200/90 bg-white py-1 pl-1 pr-2.5 md:max-w-xs md:pr-3"
+                title={email}
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-purple/15 text-[10px] font-bold text-brand-purple">
+                  {initials}
+                </span>
+                <span className="hidden truncate text-xs text-slate-600 md:inline">{email}</span>
+              </div>
+            </div>
+          </div>
         </header>
 
         <main className="ui-main-scrollbar relative min-h-0 w-full flex-1 overflow-y-auto bg-[#f8f9fb]">
-          <div className="admin-main-site mx-auto w-full max-w-[1440px] space-y-8 px-5 py-8 md:px-7 md:py-10 lg:px-8">
+          <div className="admin-main-inner admin-main-site">
             {children}
           </div>
         </main>
