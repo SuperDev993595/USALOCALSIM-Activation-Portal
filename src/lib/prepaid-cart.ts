@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
 const SERIAL_MAX = 64;
-const BARCODE_MAX = 64;
+const BARCODE_MAX = 128;
 
 export function normalizePrepaidSerial(raw: string | null | undefined): string | null {
   const t = (raw ?? "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");

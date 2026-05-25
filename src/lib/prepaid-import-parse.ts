@@ -1,4 +1,4 @@
-import { validateGtinOptional, validateRetailBarcodePayload } from "./gs1-barcode";
+import { detectBarcodeValidationMode, validateGtinOptional, validateRetailBarcodePayload } from "./gs1-barcode";
 
 export type PrepaidImportRow = {
   serial: string;
@@ -125,7 +125,8 @@ export function parsePrepaidImportText(text: string): { rows: PrepaidImportRow[]
 
     const gtin = idxGtin >= 0 && cells[idxGtin]?.trim() ? cells[idxGtin].trim() : null;
 
-    const barcodeErr = validateRetailBarcodePayload(barcodePayload);
+    const barcodeMode = detectBarcodeValidationMode(barcodePayload);
+    const barcodeErr = validateRetailBarcodePayload(barcodePayload, barcodeMode);
     if (barcodeErr) {
       errors.push(`Line ${i + 1}: ${barcodeErr}`);
       continue;

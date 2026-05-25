@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useCallback, useEffect, useState } from "react";
@@ -78,6 +79,11 @@ export default function AdminPrepaidImportPage() {
       <AdminPageHeader
         title="Import physical prepaid cards"
         description="Bulk-create QR serial + barcode + scratch PIN inventory (Path B). Cards stay inactive until POS or D2C checkout loads the wallet."
+        meta={
+          <Link href="/admin/prepaid/generate" className="text-sm font-medium text-accent hover:underline">
+            Generate QR & barcodes →
+          </Link>
+        }
       />
       <form
         onSubmit={handleImport}

@@ -40,7 +40,12 @@ const sections: {
       {
         href: "/admin/prepaid",
         label: "Import prepaid cards",
-        active: (p) => p.startsWith("/admin/prepaid"),
+        active: (p) => p === "/admin/prepaid",
+      },
+      {
+        href: "/admin/prepaid/generate",
+        label: "Generate QR & barcodes",
+        active: (p) => p.startsWith("/admin/prepaid/generate"),
       },
       {
         href: "/admin/vouchers/tracking",
