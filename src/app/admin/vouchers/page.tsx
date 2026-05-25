@@ -59,10 +59,10 @@ export default function AdminVouchersPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Vouchers" }, { label: "Import vouchers" }]}
         title="Import vouchers"
-        description="Bulk-add voucher codes as inactive inventory. Paste up to 5000 codes per request—one per line or comma-separated."
       />
       <form
         onSubmit={handleImport}

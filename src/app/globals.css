@@ -335,6 +335,56 @@
     @apply border border-slate-200 bg-slate-100 text-slate-600;
   }
 
+  /* Admin page layout — gap between sections, none directly under page header */
+  .admin-page-stack > * + * {
+    @apply mt-10;
+  }
+
+  .admin-page-stack > .admin-page-header + * {
+    @apply mt-0;
+  }
+
+  /* Admin page header — breadcrumb + serif title bar */
+  .admin-page-header {
+    @apply mb-0 rounded-lg bg-[#f8f9fb] px-5 py-4 md:px-6 md:py-5;
+  }
+
+  .admin-page-header-inner {
+    @apply flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6;
+  }
+
+  .admin-page-header-breadcrumbs {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-purple;
+  }
+
+  .admin-page-header-crumb-sep {
+    @apply text-brand-purple/55;
+  }
+
+  .admin-page-header-crumb-link {
+    @apply transition hover:text-brand-purple/80 hover:underline;
+  }
+
+  .admin-page-header-title {
+    @apply mt-1 font-serif text-2xl font-normal leading-tight tracking-tight text-slate-900 md:text-[1.625rem];
+  }
+
+  .admin-page-header-meta {
+    @apply mt-2 flex flex-wrap items-center gap-2;
+  }
+
+  .admin-page-header-actions {
+    @apply flex shrink-0 flex-wrap items-center justify-end gap-2.5;
+  }
+
+  .admin-page-header-control {
+    @apply inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3.5 text-sm text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50;
+  }
+
+  .admin-page-header-actions .btn-primary {
+    @apply h-9 rounded-md px-4 py-0 text-sm shadow-sm;
+  }
+
   /* Admin console — light theme (matches public-site) */
   .admin-panel {
     @apply overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)];
@@ -394,5 +444,52 @@
 
   .ui-btn-ghost {
     @apply inline-flex items-center justify-center border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-45;
+  }
+
+  /* Admin main content — light form controls (same as .public-site) */
+  .admin-main-site .ui-label {
+    @apply text-slate-700;
+  }
+
+  .admin-main-site .ui-input,
+  .admin-main-site .ui-select,
+  .admin-main-site .ui-textarea {
+    @apply rounded-none border-slate-300 bg-white text-slate-900 shadow-none placeholder:text-slate-400 focus:border-accent;
+  }
+
+  .admin-main-site .ui-select option {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  .admin-main-site .btn-secondary {
+    @apply rounded-none border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50;
+  }
+
+  .admin-main-site .btn-primary {
+    @apply rounded-none;
+  }
+
+  .admin-main-site .text-muted {
+    @apply text-slate-600;
+  }
+
+  .admin-main-site .text-muted-dim {
+    @apply text-slate-500;
+  }
+
+  .admin-shell .admin-nav-rail .ui-main-scrollbar::-webkit-scrollbar-thumb,
+  .admin-shell .admin-nav-panel .ui-main-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+  }
+
+  .admin-shell .admin-nav-rail .ui-main-scrollbar::-webkit-scrollbar-thumb:hover,
+  .admin-shell .admin-nav-panel .ui-main-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.4);
+  }
+
+  .admin-nav-link:focus-visible,
+  .admin-nav-group:focus-visible {
+    @apply outline-none ring-2 ring-brand-purple/50 ring-offset-2 ring-offset-[#0b1220];
   }
 }

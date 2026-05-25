@@ -207,10 +207,10 @@ export function AdminPlansClient() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Plans" }]}
         title="Data plans"
-        description="Products used for Buy Plan checkout and voucher import. Changes apply to new checkouts and new vouchers; existing rows keep their linked plan snapshot where applicable."
       />
 
       {error ? (

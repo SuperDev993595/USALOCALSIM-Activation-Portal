@@ -75,10 +75,10 @@ export default function AdminPrepaidImportPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Vouchers" }, { label: "Prepaid cards" }]}
         title="Import physical prepaid cards"
-        description="Bulk-create QR serial + barcode + scratch PIN inventory (Path B). Cards stay inactive until POS or D2C checkout loads the wallet."
         meta={
           <Link href="/admin/prepaid/generate" className="text-sm font-medium text-accent hover:underline">
             Generate QR & barcodes →
@@ -87,7 +87,7 @@ export default function AdminPrepaidImportPage() {
       />
       <form
         onSubmit={handleImport}
-        className="admin-panel max-w-3xl space-y-0 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
+        className="admin-panel w-full max-w-5xl space-y-0 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
       >
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">CSV batch</h2>

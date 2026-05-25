@@ -11,10 +11,10 @@ export default async function AdminCompletedPage() {
     take: 100,
   });
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Activation" }, { label: "Active" }]}
         title="Active activations"
-        description="Most recent 100 requests marked active by admin, newest first, with activation details for support and audits."
         meta={
           <span className="inline-flex items-center gap-2 rounded-none border border-success/30 bg-success/10 px-3.5 py-2 text-xs text-muted">
             Showing <strong className="font-semibold text-success-hover">{completed.length}</strong> records

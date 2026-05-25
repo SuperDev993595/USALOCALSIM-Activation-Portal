@@ -3,22 +3,44 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-const sections: {
-  title: string;
-  links: { href: string; label: string; active: (p: string) => boolean }[];
-}[] = [
+type NavLink = {
+  href: string;
+  label: string;
+  active: (p: string) => boolean;
+  children?: NavLink[];
+};
+
+type NavSection = {
+  id: string;
+  railLabel: string;
+  panelTitle: string;
+  icon: ReactNode;
+  links: NavLink[];
+};
+
+const sections: NavSection[] = [
   {
-    title: "Activation",
+    id: "activation",
+    railLabel: "Activate",
+    panelTitle: "Activation",
+    icon: <QueueIcon />,
     links: [
       { href: "/admin", label: "Queue", active: (p) => p === "/admin" },
-      { href: "/admin/completed", label: "Active", active: (p) => p.startsWith("/admin/completed") },
+      {
+        href: "/admin/completed",
+        label: "Active",
+        active: (p) => p.startsWith("/admin/completed"),
+      },
     ],
   },
   {
-    title: "Catalog",
+    id: "catalog",
+    railLabel: "Catalog",
+    panelTitle: "Catalog",
+    icon: <CatalogIcon />,
     links: [
       { href: "/admin/plans", label: "Plans", active: (p) => p.startsWith("/admin/plans") },
       {
@@ -34,33 +56,53 @@ const sections: {
     ],
   },
   {
-    title: "Vouchers",
+    id: "vouchers",
+    railLabel: "Vouchers",
+    panelTitle: "Vouchers",
+    icon: <VoucherIcon />,
     links: [
-      { href: "/admin/vouchers", label: "Import vouchers", active: (p) => p === "/admin/vouchers" },
       {
-        href: "/admin/prepaid",
-        label: "Import prepaid cards",
-        active: (p) => p === "/admin/prepaid",
+        href: "/admin/vouchers",
+        label: "Import vouchers",
+        active: (p) => p === "/admin/vouchers",
       },
       {
-        href: "/admin/prepaid/generate",
-        label: "Generate QR & barcodes",
-        active: (p) => p.startsWith("/admin/prepaid/generate"),
+        href: "#prepaid",
+        label: "Prepaid cards",
+        active: (p) =>
+          p === "/admin/prepaid" ||
+          p.startsWith("/admin/prepaid/generate") ||
+          p.startsWith("/api/admin/prepaid-sprint-report"),
+        children: [
+          {
+            href: "/admin/prepaid",
+            label: "Import prepaid cards",
+            active: (p) => p === "/admin/prepaid",
+          },
+          {
+            href: "/admin/prepaid/generate",
+            label: "Generate QR & barcodes",
+            active: (p) => p.startsWith("/admin/prepaid/generate"),
+          },
+          {
+            href: "/api/admin/prepaid-sprint-report",
+            label: "Prepaid sprint export (CSV)",
+            active: () => false,
+          },
+        ],
       },
       {
         href: "/admin/vouchers/tracking",
         label: "Voucher tracking",
         active: (p) => p.startsWith("/admin/vouchers/tracking"),
       },
-      {
-        href: "/api/admin/prepaid-sprint-report",
-        label: "Prepaid sprint export (CSV)",
-        active: () => false,
-      },
     ],
   },
   {
-    title: "Administration",
+    id: "administration",
+    railLabel: "Admin",
+    panelTitle: "Administration",
+    icon: <AdminIcon />,
     links: [
       { href: "/admin/users", label: "Users", active: (p) => p.startsWith("/admin/users") },
       {
@@ -71,6 +113,22 @@ const sections: {
     ],
   },
 ];
+
+function linkActive(pathname: string, link: NavLink): boolean {
+  if (link.active(pathname)) return true;
+  return link.children?.some((c) => linkActive(pathname, c)) ?? false;
+}
+
+function sectionForPath(pathname: string): NavSection {
+  return sections.find((s) => s.links.some((l) => linkActive(pathname, l))) ?? sections[0];
+}
+
+function emailInitials(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[.\-_]+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  return (local.slice(0, 2) || "AD").toUpperCase();
+}
 
 function MenuIcon({ open }: { open: boolean }) {
   return (
@@ -100,6 +158,174 @@ function MenuIcon({ open }: { open: boolean }) {
   );
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+      aria-hidden
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function QueueIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h10" />
+    </svg>
+  );
+}
+
+function CatalogIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+      <rect x="4" y="4" width="7" height="7" rx="1" />
+      <rect x="13" y="4" width="7" height="7" rx="1" />
+      <rect x="4" y="13" width="7" height="7" rx="1" />
+      <rect x="13" y="13" width="7" height="7" rx="1" />
+    </svg>
+  );
+}
+
+function VoucherIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+      <path strokeLinecap="round" d="M4 8h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" />
+      <path strokeLinecap="round" d="M9 8v8M15 8v8" />
+    </svg>
+  );
+}
+
+function AdminIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+      <circle cx="12" cy="8" r="3.5" />
+      <path strokeLinecap="round" d="M5 20c1.5-3.5 4.2-5 7-5s5.5 1.5 7 5" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+      <circle cx="12" cy="12" r="3" />
+      <path
+        strokeLinecap="round"
+        d="M12 3v2m0 14v2M3 12h2m14 0h2m-2.8-6.2-1.4 1.4M7.2 16.8l-1.4 1.4m0-11.2 1.4 1.4m9.6 9.6 1.4 1.4"
+      />
+    </svg>
+  );
+}
+
+function ExternalIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+      <path strokeLinecap="round" d="M14 5h5v5M10 14 19 5M5 10v9h9" />
+    </svg>
+  );
+}
+
+function NavTree({
+  links,
+  pathname,
+  depth,
+  expanded,
+  onToggle,
+  onNavigate,
+}: {
+  links: NavLink[];
+  pathname: string;
+  depth: number;
+  expanded: Record<string, boolean>;
+  onToggle: (key: string) => void;
+  onNavigate: () => void;
+}) {
+  return (
+    <ul className={depth === 0 ? "space-y-0.5" : "space-y-0.5"}>
+      {links.map((link) => {
+        const key = `${depth}:${link.href}:${link.label}`;
+        const hasChildren = (link.children?.length ?? 0) > 0;
+        const active = link.active(pathname);
+        const childActive = hasChildren && linkActive(pathname, link);
+        const isOpen = key in expanded ? expanded[key] : childActive;
+
+        if (hasChildren) {
+          return (
+            <li key={key}>
+              <button
+                type="button"
+                onClick={() => onToggle(key)}
+                className={`admin-nav-group flex w-full items-center gap-2 py-2 pr-2 text-left text-sm transition ${
+                  childActive ? "font-semibold text-slate-200" : "text-slate-400 hover:text-slate-200"
+                }`}
+                style={{ paddingLeft: `${12 + depth * 14}px` }}
+                aria-expanded={isOpen}
+              >
+                <span className="min-w-0 flex-1 truncate">{link.label}</span>
+                <ChevronIcon open={isOpen} />
+              </button>
+              {isOpen ? (
+                <div className="relative">
+                  <span
+                    className="pointer-events-none absolute bottom-2 left-[18px] top-2 w-px bg-slate-700/80"
+                    aria-hidden
+                  />
+                  <NavTree
+                    links={link.children!}
+                    pathname={pathname}
+                    depth={depth + 1}
+                    expanded={expanded}
+                    onToggle={onToggle}
+                    onNavigate={onNavigate}
+                  />
+                </div>
+              ) : null}
+            </li>
+          );
+        }
+
+        return (
+          <li key={key} className="relative">
+            {depth > 0 ? (
+              <span
+                className="pointer-events-none absolute bottom-0 left-[18px] top-0 w-px bg-slate-700/80"
+                aria-hidden
+              />
+            ) : null}
+            <Link
+              href={link.href}
+              className={`admin-nav-link relative block py-2 pr-3 text-sm transition ${
+                active
+                  ? "font-medium text-brand-purple"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+              style={{ paddingLeft: `${12 + depth * 14}px` }}
+              aria-current={active ? "page" : undefined}
+              onClick={onNavigate}
+            >
+              {active ? (
+                <span
+                  className="absolute bottom-1.5 left-0 top-1.5 w-[3px] rounded-r bg-brand-purple"
+                  aria-hidden
+                />
+              ) : null}
+              <span className="relative">{link.label}</span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function AdminAppShell({
   email,
   children,
@@ -108,101 +334,169 @@ export function AdminAppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() ?? "";
+  const pathSection = useMemo(() => sectionForPath(pathname), [pathname]);
+  const [activeSectionId, setActiveSectionId] = useState(pathSection.id);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const activeSection = sections.find((s) => s.id === activeSectionId) ?? sections[0];
+  const initials = emailInitials(email);
+
+  useEffect(() => {
+    setActiveSectionId(pathSection.id);
+  }, [pathSection.id]);
 
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  function toggleExpanded(key: string) {
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
 
   async function handleConfirmSignOut() {
     setSigningOut(true);
     await signOut({ callbackUrl: "/login" });
   }
 
-  function navLinkClass(active: boolean) {
-    return active
-      ? "flex rounded-none border border-accent/30 bg-accent/10 px-3 py-2.5 text-sm font-semibold text-accent"
-      : "flex rounded-none border border-transparent px-3 py-2.5 text-sm text-slate-600 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900";
-  }
-
-  const sidebarInner = (
-    <>
-      <div className="relative z-10 border-b border-slate-200 px-4 py-5">
-        <Link
-          href="/redeem"
-          className="flex items-center gap-3 font-semibold tracking-tight text-slate-900 transition hover:opacity-90"
-          onClick={() => setMobileNavOpen(false)}
-        >
-          <span
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-accent/35 bg-accent/10 text-[10px] font-bold uppercase text-accent"
-            aria-hidden
+  const sidebar = (
+    <div className="flex h-full">
+      <div className="admin-nav-rail flex w-[4.25rem] shrink-0 flex-col border-r border-white/[0.06] bg-[#070b14]">
+        <div className="flex justify-center px-2 pb-2 pt-5">
+          <Link
+            href="/redeem"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-purple/40 bg-brand-purple/15 text-[10px] font-bold text-brand-purple transition hover:bg-brand-purple/25"
+            title="USALOCALSIM"
+            onClick={() => setMobileNavOpen(false)}
           >
             US
-          </span>
-          <span className="min-w-0 text-sm leading-tight">
-            USALOCAL<span className="text-accent">SIM</span>
-            <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Admin console
-            </span>
-          </span>
-        </Link>
-      </div>
+          </Link>
+        </div>
 
-      <nav className="ui-main-scrollbar relative z-10 flex-1 overflow-y-auto px-3 py-4" aria-label="Admin">
-        {sections.map((section) => (
-          <div key={section.title} className="mb-7 last:mb-0">
-            <p className="mb-2.5 flex items-center gap-2 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" aria-hidden />
-              <span className="shrink-0">{section.title}</span>
-              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" aria-hidden />
-            </p>
-            <ul className="space-y-1">
-              {section.links.map((l) => {
-                const active = l.active(pathname);
-                return (
-                  <li key={l.href}>
-                    <Link
-                      href={l.href}
-                      className={navLinkClass(active)}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => setMobileNavOpen(false)}
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
+        <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label="Admin sections">
+          {sections.map((section) => {
+            const selected = activeSection.id === section.id;
+            return (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => {
+                  setActiveSectionId(section.id);
+                  setPanelCollapsed(false);
+                }}
+                className={`group flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 transition ${
+                  selected
+                    ? "border border-brand-purple/35 bg-brand-purple/10 text-brand-purple shadow-[inset_0_0_20px_rgba(37,99,235,0.12)]"
+                    : "border border-transparent text-slate-500 hover:border-white/10 hover:bg-white/[0.03] hover:text-slate-300"
+                }`}
+                aria-current={selected ? "true" : undefined}
+              >
+                <span className={selected ? "text-brand-purple" : "text-slate-500 group-hover:text-slate-300"}>
+                  {section.icon}
+                </span>
+                <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-[0.08em]">
+                  {section.railLabel}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
 
-      <div className="relative z-10 border-t border-slate-200 p-4">
-        <div className="rounded-none border border-slate-200 bg-slate-50 p-3">
-          <p className="truncate text-xs font-medium text-slate-900" title={email}>
-            {email}
-          </p>
-          <p className="mt-0.5 text-[10px] uppercase tracking-wider text-slate-500">Signed in</p>
+        <div className="flex flex-col items-center gap-2 border-t border-white/[0.06] px-2 py-4">
+          <Link
+            href="/redeem"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-300"
+            title="View site"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <ExternalIcon />
+          </Link>
+          <Link
+            href="/admin/change-password"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-300"
+            title="Settings"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <SettingsIcon />
+          </Link>
           <button
             type="button"
             onClick={() => setShowSignOutConfirm(true)}
-            className="mt-3 w-full rounded-none border border-red-200 bg-red-50 py-2 text-xs font-semibold uppercase tracking-wide text-red-700 transition hover:border-red-300 hover:bg-red-100"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+            title="Sign out"
           >
-            Sign out
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-5 w-5" aria-hidden>
+              <path strokeLinecap="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
           </button>
+          <div
+            className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-brand-purple/25 text-[10px] font-bold text-brand-purple ring-1 ring-brand-purple/40"
+            title={email}
+          >
+            {initials}
+          </div>
         </div>
       </div>
-    </>
+
+      {!panelCollapsed ? (
+        <div className="admin-nav-panel flex w-[15.5rem] shrink-0 flex-col border-r border-white/[0.06] bg-[#0b1220]">
+          <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+              {activeSection.panelTitle}
+            </p>
+            <button
+              type="button"
+              className="hidden rounded-md p-1 text-slate-500 transition hover:bg-white/[0.04] hover:text-slate-300 lg:inline-flex"
+              aria-label="Collapse navigation panel"
+              onClick={() => setPanelCollapsed(true)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden>
+                <path strokeLinecap="round" d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+          </div>
+
+          <nav className="ui-main-scrollbar flex-1 overflow-y-auto px-2 py-3" aria-label="Admin pages">
+            <NavTree
+              links={activeSection.links}
+              pathname={pathname}
+              depth={0}
+              expanded={expanded}
+              onToggle={toggleExpanded}
+              onNavigate={() => setMobileNavOpen(false)}
+            />
+          </nav>
+
+          <div className="border-t border-white/[0.06] px-4 py-3">
+            <p className="truncate text-xs text-slate-400" title={email}>
+              {email}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="hidden w-8 shrink-0 items-center justify-center border-r border-white/[0.06] bg-[#0b1220] text-slate-500 transition hover:text-slate-300 lg:flex"
+          aria-label="Expand navigation panel"
+          onClick={() => setPanelCollapsed(false)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden>
+            <path strokeLinecap="round" d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      )}
+    </div>
   );
 
   return (
-    <div className="public-site relative flex h-screen overflow-hidden">
+    <div className="admin-shell relative flex h-screen overflow-hidden bg-[#f8f9fb] text-slate-900">
       {mobileNavOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] lg:hidden"
           aria-label="Close menu"
           onClick={() => setMobileNavOpen(false)}
         />
@@ -211,32 +505,28 @@ export function AdminAppShell({
       <aside
         id="admin-sidebar"
         className={
-          "fixed inset-y-0 left-0 z-50 flex w-[min(280px,88vw)] flex-col border-r border-slate-200 bg-white/95 shadow-[4px_0_24px_-8px_rgba(15,23,42,0.12)] backdrop-blur-md transition-transform duration-200 ease-out lg:static lg:z-0 lg:w-[17rem] lg:shrink-0 lg:translate-x-0 lg:shadow-none " +
+          "fixed inset-y-0 left-0 z-50 flex transition-transform duration-200 ease-out lg:static lg:z-0 lg:shrink-0 lg:translate-x-0 " +
           (mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")
         }
       >
-        {sidebarInner}
+        {sidebar}
       </aside>
 
       <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="relative z-20 flex h-[3.25rem] shrink-0 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md lg:px-6">
+        <header className="admin-main-site relative z-20 flex h-[3.25rem] shrink-0 items-center gap-3 border-b border-slate-200/80 bg-[#f8f9fb] px-5 md:px-7 lg:px-8">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-600 transition hover:border-accent/40 hover:text-accent lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-brand-purple/40 hover:text-brand-purple lg:hidden"
             aria-expanded={mobileNavOpen}
             aria-controls="admin-sidebar"
             onClick={() => setMobileNavOpen((o) => !o)}
           >
             <MenuIcon open={mobileNavOpen} />
           </button>
-          <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 lg:hidden">
-            <span className="rounded-none border border-accent/35 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
-              Admin
-            </span>
-          </span>
+          <span className="text-sm font-semibold text-slate-900 lg:hidden">Admin</span>
           <span className="hidden min-w-0 flex-1 items-center gap-2 truncate text-xs text-slate-500 lg:inline">
-            <span className="rounded-none border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-              Session
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+              {activeSection.panelTitle}
             </span>
             <span className="truncate">
               Signed in as <span className="font-medium text-slate-900">{email}</span>
@@ -244,14 +534,16 @@ export function AdminAppShell({
           </span>
           <Link
             href="/redeem"
-            className="btn-secondary ml-auto h-9 shrink-0 rounded-none px-3 py-0 text-xs font-semibold"
+            className="btn-secondary ml-auto h-9 shrink-0 rounded-lg px-3 py-0 text-xs font-semibold"
           >
             View site
           </Link>
         </header>
 
-        <main className="public-main ui-main-scrollbar relative min-h-0 w-full flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-8 md:px-7 md:py-11">{children}</div>
+        <main className="ui-main-scrollbar relative min-h-0 w-full flex-1 overflow-y-auto bg-[#f8f9fb]">
+          <div className="admin-main-site mx-auto w-full max-w-[1440px] space-y-8 px-5 py-8 md:px-7 md:py-10 lg:px-8">
+            {children}
+          </div>
         </main>
       </div>
 

@@ -2,46 +2,65 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminPageRefreshButton } from "@/components/AdminPageRefreshButton";
 
+export type AdminBreadcrumb = {
+  label: string;
+  href?: string;
+};
+
 export function AdminPageHeader({
+  breadcrumbs,
   eyebrow = "Admin",
   title,
-  description,
   meta,
   rightActions,
+  showRefresh = true,
 }: {
+  breadcrumbs?: AdminBreadcrumb[];
   eyebrow?: string;
   title: string;
-  description: string;
   meta?: ReactNode;
   rightActions?: ReactNode;
+  showRefresh?: boolean;
 }) {
+  const crumbs: AdminBreadcrumb[] =
+    breadcrumbs && breadcrumbs.length > 0 ? breadcrumbs : [{ label: eyebrow }];
+
   return (
-    <header className="admin-panel relative overflow-hidden rounded-none p-0">
-      <div
-        className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-accent/[0.06] blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-brand-purple/[0.07] blur-3xl"
-        aria-hidden
-      />
-      <div className="relative border-l-[3px] border-accent bg-gradient-to-br from-white via-slate-50/80 to-white p-6 md:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{eyebrow}</p>
-            <h1 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-900 md:text-[1.75rem] md:leading-tight">
-              {title}
-            </h1>
-            <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-slate-600">{description}</p>
-            {meta ? <div className="mt-6 flex flex-wrap items-center gap-3">{meta}</div> : null}
-          </div>
-          <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:items-end sm:pt-1">
-            <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:flex-col sm:items-end">
-              <AdminPageRefreshButton />
-              {rightActions}
-            </div>
-          </div>
+    <header className="admin-page-header">
+      <div className="admin-page-header-inner">
+        <div className="min-w-0 flex-1">
+          <nav className="admin-page-header-breadcrumbs" aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {crumbs.map((crumb, index) => (
+                <li key={`${crumb.label}-${index}`} className="inline-flex items-center gap-2">
+                  {index > 0 ? (
+                    <span className="admin-page-header-crumb-sep" aria-hidden>
+                      →
+                    </span>
+                  ) : null}
+                  {crumb.href ? (
+                    <Link href={crumb.href} className="admin-page-header-crumb-link">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span>{crumb.label}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          <h1 className="admin-page-header-title">{title}</h1>
+
+          {meta ? <div className="admin-page-header-meta">{meta}</div> : null}
         </div>
+
+        {showRefresh || rightActions ? (
+          <div className="admin-page-header-actions">
+            {showRefresh ? <AdminPageRefreshButton variant="header" /> : null}
+            {rightActions}
+          </div>
+        ) : null}
       </div>
     </header>
   );
@@ -58,7 +77,7 @@ export function AdminPageFooter({
     <footer className="mt-14 border-t border-slate-200 pt-8">
       <Link
         href={href}
-        className="group inline-flex items-center gap-2.5 rounded-none border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm transition hover:border-accent/35 hover:text-accent"
+        className="group inline-flex items-center gap-2.5 rounded-md border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm transition hover:border-brand-purple/35 hover:text-brand-purple"
       >
         <span className="transition group-hover:-translate-x-0.5" aria-hidden>
           ←

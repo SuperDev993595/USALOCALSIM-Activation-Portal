@@ -194,10 +194,10 @@ export default function VoucherTrackingPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Vouchers" }, { label: "Tracking" }]}
         title="Voucher tracking"
-        description="See which dealer or admin unlocked each voucher. Redeemed rows include the customer identifier (email or ICCID) from activation. Inactive rows can be removed with the trash control (activated or redeemed codes cannot be deleted)."
       />
       <div className="admin-panel">
         <div className="admin-panel-head">

@@ -11,10 +11,10 @@ export default async function AdminPage() {
     orderBy: [{ travelDate: "asc" }, { createdAt: "asc" }],
   });
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Activation" }, { label: "Queue" }]}
         title="Scheduled activations"
-        description="Activate requests due today first. The queue is sorted by travel date and refreshes every 30 seconds."
         meta={
           <span className="inline-flex items-center gap-2.5 rounded-none border border-accent/25 bg-accent/10 px-3.5 py-2 text-xs text-slate-600">
             <span

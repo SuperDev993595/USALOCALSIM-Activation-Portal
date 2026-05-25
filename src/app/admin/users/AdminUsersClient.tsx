@@ -383,10 +383,10 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
   const editingUserEdit = editingUser ? edits[editingUser.id] ?? emptyEditable(editingUser) : null;
 
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Administration" }, { label: "Users" }]}
         title="User management"
-        description="Manage account details from the table. Create new accounts from the header action, edit from row actions, and delete users only after email code verification."
         rightActions={
           <button type="button" onClick={() => setCreateOpen(true)} className="btn-primary rounded-none">
             Create account

@@ -5,10 +5,10 @@ export const dynamic = "force-dynamic";
 
 export default function AdminIccidValidationPage() {
   return (
-    <div className="space-y-8">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "ICCID validation" }]}
         title="ICCID validation"
-        description="Control whether ICCIDs must appear on your imported master list, or whether the public site accepts the Luhn-checked 89… pattern when the list is unavailable."
       />
       <section className="admin-panel">
         <div className="admin-panel-head">

@@ -135,10 +135,14 @@ export function AdminPrepaidGenerateClient() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="admin-page-stack">
       <AdminPageHeader
+        breadcrumbs={[
+          { label: "Vouchers" },
+          { label: "Prepaid cards", href: "/admin/prepaid" },
+          { label: "Generate" },
+        ]}
         title="Generate QR & barcodes"
-        description="Compose prepaid card payloads for print and dealer testing. Export CSV for import. Scratch PIN stays separate from the public GS1 barcode."
         meta={
           <Link href="/admin/prepaid" className="text-sm font-medium text-accent hover:underline">
             ← Import prepaid cards

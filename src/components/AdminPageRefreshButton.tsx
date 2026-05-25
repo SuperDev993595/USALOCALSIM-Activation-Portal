@@ -27,7 +27,13 @@ function RefreshIcon({ className }: { className?: string }) {
   );
 }
 
-export function AdminPageRefreshButton({ className = "" }: { className?: string }) {
+export function AdminPageRefreshButton({
+  className = "",
+  variant = "default",
+}: {
+  className?: string;
+  variant?: "default" | "header";
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -38,6 +44,11 @@ export function AdminPageRefreshButton({ className = "" }: { className?: string 
     });
   }, [router, startTransition]);
 
+  const variantClass =
+    variant === "header"
+      ? "admin-page-header-control h-9 min-w-[2.5rem] justify-center px-0"
+      : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-accent/40 hover:bg-accent/5 hover:text-accent";
+
   return (
     <button
       type="button"
@@ -45,9 +56,9 @@ export function AdminPageRefreshButton({ className = "" }: { className?: string 
       disabled={isPending}
       title="Refresh"
       aria-label="Refresh data"
-      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-accent/40 hover:bg-accent/5 hover:text-accent disabled:pointer-events-none disabled:opacity-50 ${className}`.trim()}
+      className={`${variantClass} inline-flex shrink-0 items-center disabled:pointer-events-none disabled:opacity-50 ${className}`.trim()}
     >
-      <RefreshIcon className={`h-5 w-5 ${isPending ? "animate-spin" : ""}`} />
+      <RefreshIcon className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
     </button>
   );
 }
