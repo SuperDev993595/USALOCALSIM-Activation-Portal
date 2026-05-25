@@ -15,16 +15,26 @@ export async function GET(req: Request) {
   }
 
   const type = sp.get("type") === "qr" ? "qr" : "code128";
-  const padding = sp.get("padding");
-  const fontsize = sp.get("fontsize");
-  const scale = sp.get("scale");
+  const paddingRaw = Number(sp.get("padding"));
+  const fontsizeRaw = Number(sp.get("fontsize"));
+  const scaleRaw = Number(sp.get("scale"));
+
+  const padding = Number.isFinite(paddingRaw)
+    ? Math.min(20, Math.max(0, Math.floor(paddingRaw)))
+    : 5;
+  const fontsize = Number.isFinite(fontsizeRaw)
+    ? Math.min(24, Math.max(8, Math.floor(fontsizeRaw)))
+    : 12;
+  const scale = Number.isFinite(scaleRaw)
+    ? Math.min(4, Math.max(1, Math.round(scaleRaw * 2) / 2))
+    : undefined;
 
   const upstream = orcaBarcodeImageUrl({
     type,
     data,
-    padding: padding ? Number(padding) : 5,
-    fontsize: fontsize ? Number(fontsize) : 12,
-    scale: scale ? Number(scale) : undefined,
+    padding,
+    fontsize,
+    scale,
   });
 
   try {

@@ -19,8 +19,10 @@ export function AdminPrepaidGenerateClient() {
   const [lot, setLot] = useState("LOT01");
   const [expiryYymmdd, setExpiryYymmdd] = useState("");
   const [qrUseFullUrl, setQrUseFullUrl] = useState(true);
+  const [qrWidth, setQrWidth] = useState(280);
   const [padding, setPadding] = useState(5);
   const [fontsize, setFontsize] = useState(12);
+  const [barcodeScale, setBarcodeScale] = useState(1);
 
   const [rows, setRows] = useState<PrepaidGeneratedCard[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -35,8 +37,12 @@ export function AdminPrepaidGenerateClient() {
 
   const qrImageSrc = useMemo(() => {
     if (!selected) return null;
-    return `/api/admin/prepaid/qr-image?data=${encodeURIComponent(selected.qrPayload)}`;
-  }, [selected]);
+    const q = new URLSearchParams({
+      data: selected.qrPayload,
+      width: String(qrWidth),
+    });
+    return `/api/admin/prepaid/qr-image?${q}`;
+  }, [selected, qrWidth]);
 
   const barcodeImageSrc = useMemo(() => {
     if (!selected) return null;
@@ -45,9 +51,10 @@ export function AdminPrepaidGenerateClient() {
       type: "code128",
       padding: String(padding),
       fontsize: String(fontsize),
+      scale: String(barcodeScale),
     });
     return `/api/admin/prepaid/barcode-image?${q}`;
-  }, [selected, padding, fontsize]);
+  }, [selected, padding, fontsize, barcodeScale]);
 
   const generate = useCallback(async () => {
     setLoading(true);
@@ -255,30 +262,6 @@ export function AdminPrepaidGenerateClient() {
                 QR encodes full cart URL (/cart?serial=…)
               </label>
             </div>
-            <div className="grid gap-4 pb-5 sm:grid-cols-2">
-              <div>
-                <label className="ui-label">Barcode padding (Orca)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={20}
-                  className="ui-input"
-                  value={padding}
-                  onChange={(e) => setPadding(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="ui-label">Caption fontsize</label>
-                <input
-                  type="number"
-                  min={8}
-                  max={24}
-                  className="ui-input"
-                  value={fontsize}
-                  onChange={(e) => setFontsize(Number(e.target.value))}
-                />
-              </div>
-            </div>
           </div>
           <div className="flex flex-wrap gap-3 border-t border-slate-200 bg-slate-50/90 px-6 py-5 md:px-8">
             <button type="submit" disabled={loading} className="btn-primary">
@@ -325,12 +308,86 @@ export function AdminPrepaidGenerateClient() {
           </div>
           {selected ? (
             <div className="space-y-6 px-6 py-6 md:px-8">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Image size (preview)</p>
+                <p className="mt-1 text-[11px] text-muted">
+                  Adjust then right-click images to save. QR size is PNG pixels; barcode uses Orca scale.
+                </p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="ui-label !mt-0" htmlFor="prepaid-qr-width">
+                      QR width (px) — {qrWidth}
+                    </label>
+                    <input
+                      id="prepaid-qr-width"
+                      type="range"
+                      min={120}
+                      max={640}
+                      step={20}
+                      value={qrWidth}
+                      onChange={(e) => setQrWidth(Number(e.target.value))}
+                      className="w-full accent-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="ui-label !mt-0" htmlFor="prepaid-barcode-scale">
+                      Barcode scale — {barcodeScale}×
+                    </label>
+                    <input
+                      id="prepaid-barcode-scale"
+                      type="range"
+                      min={1}
+                      max={4}
+                      step={0.5}
+                      value={barcodeScale}
+                      onChange={(e) => setBarcodeScale(Number(e.target.value))}
+                      className="w-full accent-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="ui-label !mt-0" htmlFor="prepaid-barcode-padding">
+                      Barcode padding — {padding}
+                    </label>
+                    <input
+                      id="prepaid-barcode-padding"
+                      type="range"
+                      min={0}
+                      max={20}
+                      step={1}
+                      value={padding}
+                      onChange={(e) => setPadding(Number(e.target.value))}
+                      className="w-full accent-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="ui-label !mt-0" htmlFor="prepaid-barcode-fontsize">
+                      Caption font — {fontsize}
+                    </label>
+                    <input
+                      id="prepaid-barcode-fontsize"
+                      type="range"
+                      min={8}
+                      max={24}
+                      step={1}
+                      value={fontsize}
+                      onChange={(e) => setFontsize(Number(e.target.value))}
+                      className="w-full accent-accent"
+                    />
+                  </div>
+                </div>
+              </div>
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">QR (D2C / cart)</p>
                   {qrImageSrc ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={qrImageSrc} alt="QR preview" className="mt-2 max-h-40 rounded border border-slate-200 bg-white p-2" />
+                    <img
+                      src={qrImageSrc}
+                      alt="QR preview"
+                      width={qrWidth}
+                      height={qrWidth}
+                      className="mt-2 rounded border border-slate-200 bg-white p-2"
+                    />
                   ) : null}
                   <p className="mt-2 break-all font-mono text-[10px] text-slate-600">{selected.qrPayload}</p>
                 </div>
@@ -341,7 +398,7 @@ export function AdminPrepaidGenerateClient() {
                     <img
                       src={barcodeImageSrc}
                       alt="Barcode preview"
-                      className="mt-2 max-h-40 w-full rounded border border-slate-200 bg-white object-contain p-2"
+                      className="mt-2 max-w-full rounded border border-slate-200 bg-white object-contain p-2"
                     />
                   ) : null}
                   <p className="mt-2 break-all font-mono text-[10px] text-slate-600">{selected.barcodePayload}</p>
