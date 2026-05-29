@@ -9,6 +9,7 @@ import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
 import { createMercadoPagoUpgradePreference } from "@/lib/mercadopago-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
+import { stripeCheckoutPaymentOptions } from "@/lib/stripe-checkout-options";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -122,7 +123,7 @@ export async function POST(req: Request) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
-    payment_method_types: ["card"],
+    ...stripeCheckoutPaymentOptions(),
     customer_email: purchase.customerEmail,
     line_items: [
       {

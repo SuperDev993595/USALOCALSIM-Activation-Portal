@@ -12,7 +12,11 @@ type PlanRow = {
   priceCents: number;
   planType: string;
   market: string;
+  networkId: string | null;
+  network?: { slug: string; name: string } | null;
 };
+
+type NetworkRow = { id: string; slug: string; name: string };
 
 function EditIcon({ className }: { className?: string }) {
   return (
@@ -77,10 +81,12 @@ const emptyCreate = {
   priceCents: "",
   planType: "physical_sim" as "physical_sim" | "esim",
   market: "global" as "global" | "us",
+  networkId: "",
 };
 
 export function AdminPlansClient() {
   const [plans, setPlans] = useState<PlanRow[]>([]);
+  const [networks, setNetworks] = useState<NetworkRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -92,15 +98,17 @@ export function AdminPlansClient() {
   const loadPlans = useCallback(() => {
     setLoading(true);
     setError(null);
-    return fetch("/api/admin/plans")
-      .then((res) => res.json())
-      .then((data) => {
+    return Promise.all([fetch("/api/admin/plans"), fetch("/api/admin/networks")])
+      .then(async ([plansRes, networksRes]) => {
+        const data = await plansRes.json().catch(() => ({}));
+        const netData = await networksRes.json().catch(() => ({}));
         if (!Array.isArray(data)) {
           setPlans([]);
           setError(typeof data.error === "string" ? data.error : "Could not load plans.");
-          return;
+        } else {
+          setPlans(data);
         }
-        setPlans(data);
+        setNetworks(Array.isArray(netData) ? netData : []);
       })
       .catch(() => {
         setPlans([]);
@@ -148,6 +156,7 @@ export function AdminPlansClient() {
           priceCents,
           planType: createForm.planType,
           market: createForm.market,
+          networkId: createForm.networkId.trim() || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -190,6 +199,7 @@ export function AdminPlansClient() {
           priceCents: editDraft.priceCents,
           planType: editDraft.planType,
           market: editDraft.market,
+          networkId: editDraft.networkId?.trim() || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -289,6 +299,21 @@ export function AdminPlansClient() {
                 <option value="us">US</option>
               </select>
             </div>
+            <div>
+              <label className="ui-label !mt-0">Network (voucher redeem)</label>
+              <select
+                value={createForm.networkId}
+                onChange={(e) => setCreateForm((s) => ({ ...s, networkId: e.target.value }))}
+                className="ui-select !mt-1 rounded-none"
+              >
+                <option value="">Unassigned</option>
+                {networks.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.name} ({n.slug})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <button type="submit" disabled={creating} className="btn-primary rounded-none">
             {creating ? "Creating…" : "Create plan"}
@@ -312,6 +337,7 @@ export function AdminPlansClient() {
               <tr>
                 <th className="pl-5 md:pl-6">Name</th>
                 <th>Market</th>
+                <th>Network</th>
                 <th>Type</th>
                 <th>Data</th>
                 <th>Days</th>
@@ -340,6 +366,22 @@ export function AdminPlansClient() {
                       >
                         <option value="global">global</option>
                         <option value="us">us</option>
+                      </select>
+                    </td>
+                    <td className="align-top">
+                      <select
+                        value={editDraft.networkId ?? ""}
+                        onChange={(e) =>
+                          setEditDraft((d) => (d ? { ...d, networkId: e.target.value || null } : d))
+                        }
+                        className="ui-select !mt-0 text-sm"
+                      >
+                        <option value="">—</option>
+                        {networks.map((n) => (
+                          <option key={n.id} value={n.id}>
+                            {n.name}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td className="align-top">
@@ -418,6 +460,7 @@ export function AdminPlansClient() {
                   <tr key={p.id}>
                     <td className="pl-5 font-medium text-slate-900 md:pl-6">{p.name}</td>
                     <td className="text-slate-600">{p.market}</td>
+                    <td className="text-slate-600">{p.network?.name ?? "—"}</td>
                     <td className="text-slate-600">{p.planType}</td>
                     <td className="text-slate-600">{p.dataAllowance}</td>
                     <td className="text-slate-600">{p.durationDays}</td>

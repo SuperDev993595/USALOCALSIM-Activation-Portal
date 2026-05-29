@@ -11,6 +11,7 @@ export default function AdminPrepaidImportPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [basePlanId, setBasePlanId] = useState("");
   const [upgradePlanId, setUpgradePlanId] = useState("");
+  const [voucherProductType, setVoucherProductType] = useState<"global" | "three_uk">("global");
   const [csvText, setCsvText] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -55,6 +56,7 @@ export default function AdminPrepaidImportPage() {
           text: csvText,
           basePlanId,
           upgradePlanId: upgradePlanId || undefined,
+          voucherProductType,
         }),
       });
       const data = await res.json();
@@ -92,9 +94,9 @@ export default function AdminPrepaidImportPage() {
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">CSV batch</h2>
           <p className="admin-panel-head-desc font-mono text-xs leading-relaxed text-slate-400">
-            Header row (recommended): serial,pin,faceValueCents,retailMarket,barcode,gtin
+            Header row (recommended): serial,pin,faceValueCents,retailMarket,barcode,gtin,voucherProductType
             <br />
-            Example: USALOCAL001,SCRATCH001,5000,us,USALOCAL001,
+            Example: USALOCAL001,SCRATCH001,5000,us,USALOCAL001,,global
             <br />
             faceValueCents is wallet cents (5000 = $50). retailMarket: us | br | uk | global. barcode defaults to
             serial when empty.
@@ -127,6 +129,21 @@ export default function AdminPrepaidImportPage() {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="py-5 md:py-6">
+            <label className="ui-label">Voucher batch type (default for all rows)</label>
+            <select
+              value={voucherProductType}
+              onChange={(e) => setVoucherProductType(e.target.value as "global" | "three_uk")}
+              className="ui-select"
+            >
+              <option value="global">Global — all networks at redeem</option>
+              <option value="three_uk">Three UK exclusive</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Override per row with a <code className="rounded bg-slate-100 px-1">voucherProductType</code> CSV column
+              (<code className="rounded bg-slate-100 px-1">global</code> or <code className="rounded bg-slate-100 px-1">three_uk</code>).
+            </p>
           </div>
           <div className="pt-5 md:pt-6">
             <label className="ui-label">CSV rows</label>

@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { RedeepPhase2Client } from "@/components/RedeepPhase2Client";
-import { networkRequiredForVoucher } from "@/lib/redeem-network";
 
 function RedeemPageBackground({ children }: { children: ReactNode }) {
   return (
@@ -25,7 +22,8 @@ function RedeemPageBackground({ children }: { children: ReactNode }) {
   );
 }
 
-export default async function RedeemPage({
+/** Three UK exclusive vouchers: SMS → plans (network step skipped per feedback 2026-05-28). */
+export default async function RedeemThreeUkPage({
   searchParams,
 }: {
   searchParams: {
@@ -38,61 +36,35 @@ export default async function RedeemPage({
   const access = Array.isArray(searchParams.access) ? searchParams.access[0] : searchParams.access;
   const upgrade = Array.isArray(searchParams.upgrade) ? searchParams.upgrade[0] : searchParams.upgrade;
   const resumeAfterPaidUpgrade = upgrade?.trim().toLowerCase() === "paid";
-  if (!purchaseId) {
+
+  if (!purchaseId?.trim() || !access?.trim()) {
     redirect("/redeem/enter");
   }
 
-  if (access?.trim()) {
-    const purchase = await prisma.cartPurchase.findFirst({
-      where: {
-        id: purchaseId,
-        redemptionAccessToken: access.trim(),
-        redemptionAccessExpiresAt: { gt: new Date() },
-      },
-      select: {
-        id: true,
-        redemptionPhoneVerifiedAt: true,
-        redemptionNetworkSlug: true,
-        prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
-        voucher: { select: { voucherProductType: true, code: true } },
-      },
-    });
-    if (!purchase) redirect("/cart?resume=invalid");
-    const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-    const showNetwork = voucher ? networkRequiredForVoucher(voucher) : true;
-    return (
-      <RedeemPageBackground>
-        <div className="flex w-full justify-center">
-          <RedeepPhase2Client
-            purchaseId={purchase.id}
-            accessToken={access.trim()}
-            resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
-            redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
-            showNetworkStep={showNetwork}
-            skipPinStep
-            initialNetworkSlug={purchase.redemptionNetworkSlug}
-          />
-        </div>
-      </RedeemPageBackground>
-    );
-  }
-
-  const cookieStore = await cookies();
-  const sid = cookieStore.get(CART_SESSION_COOKIE)?.value;
-  if (!sid) redirect("/cart");
   const purchase = await prisma.cartPurchase.findFirst({
-    where: { id: purchaseId, cartSessionId: sid },
+    where: {
+      id: purchaseId.trim(),
+      redemptionAccessToken: access.trim(),
+      redemptionAccessExpiresAt: { gt: new Date() },
+    },
     select: { id: true, redemptionPhoneVerifiedAt: true },
   });
-  if (!purchase) redirect("/cart/plans");
+  if (!purchase) redirect("/redeem/enter?error=session");
 
   return (
     <RedeemPageBackground>
-      <div className="flex w-full justify-center">
+      <div className="flex w-full max-w-xl flex-col items-center gap-4">
+        <p className="rounded-full border border-white/15 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+          THREE UK
+        </p>
         <RedeepPhase2Client
           purchaseId={purchase.id}
+          accessToken={access.trim()}
           resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
+          skipPinStep
+          autoNetworkSlug="three_uk"
+          initialNetworkSlug="three_uk"
         />
       </div>
     </RedeemPageBackground>

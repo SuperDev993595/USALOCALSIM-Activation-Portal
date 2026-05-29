@@ -1,4 +1,5 @@
 import { detectBarcodeValidationMode, validateGtinOptional, validateRetailBarcodePayload } from "./gs1-barcode";
+import { isVoucherProductType, type VoucherProductType } from "./voucher-product-type";
 
 export type PrepaidImportRow = {
   serial: string;
@@ -7,6 +8,7 @@ export type PrepaidImportRow = {
   retailMarket: string;
   barcodePayload: string;
   gtin: string | null;
+  voucherProductType?: VoucherProductType;
 };
 
 const MARKETS = new Set(["us", "br", "uk", "global"]);
@@ -79,6 +81,7 @@ export function parsePrepaidImportText(text: string): { rows: PrepaidImportRow[]
   let idxMarket = 3;
   let idxBarcode = 4;
   let idxGtin = 5;
+  let idxProductType = -1;
 
   if (hasHeader) {
     idxSerial = headerIndex(firstCells, ["serial", "qr", "qrserial"]);
@@ -87,6 +90,12 @@ export function parsePrepaidImportText(text: string): { rows: PrepaidImportRow[]
     idxMarket = headerIndex(firstCells, ["retailmarket", "market", "country"]);
     idxBarcode = headerIndex(firstCells, ["barcode", "barcodepayload", "upc", "ean"]);
     idxGtin = headerIndex(firstCells, ["gtin"]);
+    idxProductType = headerIndex(firstCells, [
+      "voucherproducttype",
+      "producttype",
+      "vouchertype",
+      "batch",
+    ]);
     i0 = 1;
     if (idxSerial < 0 || idxPin < 0) {
       return { rows: [], errors: ["Header row must include serial and pin columns."] };
@@ -125,6 +134,22 @@ export function parsePrepaidImportText(text: string): { rows: PrepaidImportRow[]
 
     const gtin = idxGtin >= 0 && cells[idxGtin]?.trim() ? cells[idxGtin].trim() : null;
 
+    const productRaw = idxProductType >= 0 ? (cells[idxProductType] ?? "").trim().toLowerCase() : "";
+    let voucherProductType: VoucherProductType | undefined;
+    if (productRaw) {
+      const normalized =
+        productRaw === "threeuk" || productRaw === "three_uk" || productRaw === "three-uk"
+          ? "three_uk"
+          : productRaw === "global"
+            ? "global"
+            : productRaw;
+      if (!isVoucherProductType(normalized)) {
+        errors.push(`Line ${i + 1}: voucherProductType must be global or three_uk`);
+        continue;
+      }
+      voucherProductType = normalized;
+    }
+
     const barcodeMode = detectBarcodeValidationMode(barcodePayload);
     const barcodeErr = validateRetailBarcodePayload(barcodePayload, barcodeMode);
     if (barcodeErr) {
@@ -144,6 +169,7 @@ export function parsePrepaidImportText(text: string): { rows: PrepaidImportRow[]
       retailMarket,
       barcodePayload,
       gtin,
+      ...(voucherProductType ? { voucherProductType } : {}),
     });
   }
 

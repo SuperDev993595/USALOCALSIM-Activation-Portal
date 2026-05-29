@@ -5,6 +5,7 @@ import {
   type PublicVoucherSuccessBody,
   REDEEM_INVALID_OR_USED,
 } from "@/lib/voucher-public-validate";
+import { RETAILER_NOT_ACTIVATED_MESSAGE } from "@/lib/voucher-product-type";
 
 export type VoucherRedeemLookupFailure = {
   ok: false;
@@ -46,11 +47,11 @@ export async function resolveVoucherRedeemLookup(
     };
   }
 
-  if (voucher.status === "inactive") {
+  if (voucher.status === "inactive" || !voucher.paymentStatus) {
     return {
       ok: false,
       status: 403,
-      body: { error: "Voucher not yet activated. Please contact your dealer.", code: "VOUCHER_INACTIVE" },
+      body: { error: RETAILER_NOT_ACTIVATED_MESSAGE, code: "VOUCHER_NOT_ACTIVATED" },
       recordFailed: true,
     };
   }

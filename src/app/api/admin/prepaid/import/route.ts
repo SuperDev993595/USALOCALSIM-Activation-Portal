@@ -6,11 +6,13 @@ import { prisma } from "@/lib/db";
 import { getRequestClientMeta } from "@/lib/request-meta";
 import { parsePrepaidImportText } from "@/lib/prepaid-import-parse";
 import { pinLast4 } from "@/lib/voucher-pin";
+import { VOUCHER_PRODUCT_TYPE, isVoucherProductType } from "@/lib/voucher-product-type";
 
 const bodySchema = z.object({
   text: z.string().min(1),
   basePlanId: z.string().min(1),
   upgradePlanId: z.string().optional(),
+  voucherProductType: z.enum(["global", "three_uk"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -78,6 +80,13 @@ export async function POST(req: Request) {
 
     try {
       await prisma.$transaction(async (tx) => {
+        const productType =
+          row.voucherProductType && isVoucherProductType(row.voucherProductType)
+            ? row.voucherProductType
+            : body.voucherProductType && isVoucherProductType(body.voucherProductType)
+              ? body.voucherProductType
+              : VOUCHER_PRODUCT_TYPE.GLOBAL;
+
         const voucher = await tx.voucher.create({
           data: {
             code: pinNorm,
@@ -85,6 +94,7 @@ export async function POST(req: Request) {
             pinLast4: pinLast4(pinNorm),
             status: "inactive",
             type: "top_up",
+            voucherProductType: productType,
             planId: basePlan.id,
             creditAmountCents: row.faceValueCents,
           },

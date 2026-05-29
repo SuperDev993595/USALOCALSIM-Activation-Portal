@@ -409,6 +409,7 @@
     "navAria": "Redemption progress",
     "navStep1": "PIN",
     "navStep2": "Phone",
+    "navStepNetwork": "Network",
     "navStep3": "SIM",
     "navStep4": "Plan",
     "navStep5": "Date",
@@ -421,6 +422,12 @@
     "unlocking": "Unlocking…",
     "step2Title": "Service phone",
     "step2Body": "Enter the mobile number you want to use for this line. We send a one-time code to verify you control it. This becomes the active number on the voucher after verification.",
+    "stepNetworkTitle": "Choose your network",
+    "stepNetworkBody": "Select the mobile network you want to use with your voucher credit. Plans in the next steps depend on this choice.",
+    "loadingNetworks": "Loading networks…",
+    "savingNetwork": "Saving…",
+    "continueAfterNetwork": "Continue",
+    "backNetwork": "Back to network",
     "phoneLabel": "Phone number",
     "phonePlaceholder": "+1… or country code",
     "phoneFieldHint": "International format (+country) works best. US/Canada can use 10 digits.",
@@ -452,6 +459,11 @@
     "choosePlan": "Choose data plan — required",
     "pickPlanHint": "Pick one plan to see your totals and enable checkout.",
     "planCoveredByWallet": "Fully covered by your wallet",
+    "planPerfectMatch": "Uses full voucher — no change",
+    "baselinePlansHeading": "Included with your ${amount} voucher",
+    "upgradePlansHeading": "Upgrade options (pay difference at checkout)",
+    "allPlansHeading": "Available plans",
+    "noPlansForNetwork": "No plans for this network yet. Contact support or try another network.",
     "planUpgradeDue": "+${amount} to checkout",
     "planTotal": "Plan total:",
     "creditApplied": "Credit applied:",
@@ -474,6 +486,7 @@
     "backFulfillment": "Back to fulfillment",
     "backPlan": "Back to plan and payment",
     "errors": {
+      "network": "Could not save network choice.",
       "startPin": "Unable to start redemption from this PIN.",
       "unlockFirst": "Unlock credit with your PIN first.",
       "quote": "Failed to load quote.",
@@ -533,5 +546,20 @@
     "activateFailed": "Activation failed.",
     "lastSale": "Last activated card",
     "customerRedeemLink": "Customer redeem link"
+  },
+  "voucherEntry": {
+    "eyebrow": "USALOCALSIM · Redeem",
+    "title": "Enter your voucher code",
+    "body": "Scratch your card and enter the code from the panel below. We will verify the card was activated at the store before you continue.",
+    "codeLabel": "Voucher code / PIN",
+    "codePlaceholder": "From scratch panel",
+    "codeHint": "Use the code under the scratch-off area on your physical card.",
+    "submit": "Continue",
+    "submitting": "Checking…",
+    "cartLinkPrefix": "Need to pay online first?",
+    "cartLink": "Open checkout",
+    "errors": {
+      "generic": "Unable to verify this voucher. Check the code and try again."
+    }
   }
 }

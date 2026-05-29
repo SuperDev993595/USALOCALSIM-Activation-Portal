@@ -11,6 +11,7 @@ const patchBodySchema = z
     priceCents: z.number().int().min(0).optional(),
     planType: z.enum(["physical_sim", "esim"]).optional(),
     market: z.enum(["global", "us"]).optional(),
+    networkId: z.string().nullable().optional(),
   })
   .strict();
 
@@ -46,6 +47,7 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
       ...(body.priceCents !== undefined ? { priceCents: body.priceCents } : {}),
       ...(body.planType !== undefined ? { planType: body.planType } : {}),
       ...(body.market !== undefined ? { market: body.market } : {}),
+      ...(body.networkId !== undefined ? { networkId: body.networkId?.trim() || null } : {}),
     },
   });
   return NextResponse.json(plan);

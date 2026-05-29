@@ -69,6 +69,16 @@ model VerificationToken {
 }
 
 // App models
+model Network {
+  id           String   @id @default(cuid())
+  slug         String   @unique // three_uk | linkup_att | t_mobile | orange
+  name         String
+  displayOrder Int      @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  plans        Plan[]
+}
+
 model Plan {
   id            String   @id @default(cuid())
   name          String
@@ -77,12 +87,16 @@ model Plan {
   priceCents    Int
   planType      String   // "physical_sim" | "esim"
   market        String   // "global" | "us" | "br" | "uk"
+  networkId     String?
+  network       Network? @relation(fields: [networkId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
   vouchers      Voucher[]
   activationRequests ActivationRequest[]
   cartPurchases CartPurchase[]
   prepaidCardsBase    PrepaidCard[] @relation("PrepaidCardBasePlan")
   prepaidCardsUpgrade PrepaidCard[] @relation("PrepaidCardUpgradePlan")
+
+  @@index([networkId])
 }
 
 model Voucher {
@@ -103,6 +117,8 @@ model Voucher {
   fulfillmentType    String?  // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
   status             String   // "inactive" | "eligible" | "activated" | "redeemed"
   type               String   // "top_up" | "esim"
+  /// global = all networks at redeem; three_uk = Three UK plans only (feedback 2026-05-28).
+  voucherProductType String   @default("global")
   planId             String
   plan               Plan     @relation(fields: [planId], references: [id])
   activatedAt        DateTime?
@@ -216,8 +232,11 @@ model CartPurchase {
   /// Phase 2 redeemer line (feedback-2026-05-01); independent of Phase 1 cart session phone.
   redemptionPhoneE164        String?
   redemptionPhoneVerifiedAt DateTime?
+  /// Carrier chosen after SMS (global voucher) or auto-set for Three UK batch.
+  redemptionNetworkSlug     String?
 
   @@index([cartSessionId])
+  @@index([redemptionNetworkSlug])
   @@map("ShopPurchase")
 }
 

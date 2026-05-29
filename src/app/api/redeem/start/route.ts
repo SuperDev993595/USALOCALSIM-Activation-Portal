@@ -6,6 +6,8 @@ import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-r
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
+import { RETAILER_NOT_ACTIVATED_MESSAGE } from "@/lib/voucher-product-type";
+import { VOUCHER_STATUS } from "@/lib/voucher-status";
 
 const bodySchema = z.object({
   pin: z.string().min(1),
@@ -58,14 +60,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
   }
   if (!voucher.paymentStatus) {
-    return NextResponse.json(
-      {
-        error:
-          "This card is not paid yet. Pay at the store where you bought it, or open the QR link on the card to complete checkout online.",
-        code: "NOT_PAID",
-      },
-      { status: 400 },
-    );
+    const error =
+      voucher.status === VOUCHER_STATUS.INACTIVE
+        ? RETAILER_NOT_ACTIVATED_MESSAGE
+        : "This card is not paid yet. Pay at the store where you bought it, or open the QR link on the card to complete checkout online.";
+    return NextResponse.json({ error, code: "NOT_PAID" }, { status: 400 });
   }
 
   if (!matchedPurchase) {

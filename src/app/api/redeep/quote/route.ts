@@ -6,6 +6,12 @@ import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVeri
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
+import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
+import {
+  networkRequiredForVoucher,
+  planFilterForNetwork,
+  resolveNetworkForRedeem,
+} from "@/lib/redeem-network";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 
 const bodySchema = z.object({
@@ -72,6 +78,17 @@ export async function POST(req: Request) {
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
 
+  const network = await resolveNetworkForRedeem({
+    purchaseNetworkSlug: purchase.redemptionNetworkSlug,
+    voucher,
+  });
+  if (networkRequiredForVoucher(voucher) && !network) {
+    return NextResponse.json(
+      { error: "Select a mobile network before choosing a plan.", code: "NETWORK_REQUIRED" },
+      { status: 403 },
+    );
+  }
+
   /** Phase 2: catalog for card retail market (Path B) or voucher plan market. */
   const planMarket = purchase.prepaidCard?.retailMarket ?? voucher.plan.market;
   const fulfillment = body.fulfillmentType;
@@ -93,6 +110,7 @@ export async function POST(req: Request) {
     where: {
       ...planTypeWhere,
       market: planMarket,
+      ...(network ? planFilterForNetwork(network.id) : {}),
     },
     select: {
       id: true,
@@ -117,24 +135,35 @@ export async function POST(req: Request) {
         creditAmountCents,
         fulfillmentType: quoteFulfillment,
       });
+      const matchesVoucherCredit = isPerfectMatchPlanPrice(p.priceCents, creditAmountCents);
       return {
         ...p,
         balanceDueCents: t.balanceDueCents,
         creditAppliedCents: t.creditAppliedCents,
         fullyCoveredByWallet: t.balanceDueCents <= 0,
+        matchesVoucherCredit,
       };
     })
-    .sort((a, b) => a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents);
+    .sort((a, b) => {
+      if (a.matchesVoucherCredit !== b.matchesVoucherCredit) {
+        return a.matchesVoucherCredit ? -1 : 1;
+      }
+      return a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents;
+    });
+
+  const baselinePlans = plans.filter((p) => p.matchesVoucherCredit);
+  const suggestedPlanId = baselinePlans[0]?.id ?? plans[0]?.id ?? null;
 
   const selectedPlan = body.planId ? plans.find((p) => p.id === body.planId) ?? null : null;
+  const quotePlan = selectedPlan ?? (suggestedPlanId ? plans.find((p) => p.id === suggestedPlanId) ?? null : null);
   const selectedFulfillment =
     body.fulfillmentType ??
-    (selectedPlan?.planType === "esim" ? REDEMPTION_FULFILLMENT_TYPES.ESIM : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
+    (quotePlan?.planType === "esim" ? REDEMPTION_FULFILLMENT_TYPES.ESIM : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
 
   const totals =
-    selectedPlan != null
+    quotePlan != null
       ? computeRedemptionTotals({
-          planPriceCents: selectedPlan.priceCents,
+          planPriceCents: quotePlan.priceCents,
           creditAmountCents,
           fulfillmentType: selectedFulfillment,
         })
@@ -148,6 +177,8 @@ export async function POST(req: Request) {
       fulfillmentType: voucher.fulfillmentType,
     },
     plans,
+    baselinePlanIds: baselinePlans.map((p) => p.id),
+    suggestedPlanId,
     selectedPlanId: selectedPlan?.id ?? null,
     selectedFulfillmentType: selectedFulfillment,
     totals,

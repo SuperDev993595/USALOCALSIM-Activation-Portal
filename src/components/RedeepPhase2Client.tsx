@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
-
-type WizardStep = 1 | 2 | 3 | 4 | 5;
+import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
+import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
 const redeepPanelInputClass =
@@ -20,27 +20,39 @@ type PlanRow = {
   priceCents: number;
   balanceDueCents?: number;
   fullyCoveredByWallet?: boolean;
+  matchesVoucherCredit?: boolean;
 };
 
 type FulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
 
 function initialWizardStep(
+  stepMap: ReturnType<typeof buildRedeemWizardStepMap>,
   resumeAfterPaidUpgrade: boolean,
   redemptionPhoneVerifiedInitial: boolean,
-): WizardStep {
-  if (resumeAfterPaidUpgrade && redemptionPhoneVerifiedInitial) return 5;
-  if (resumeAfterPaidUpgrade) return 2;
-  return 1;
+): number {
+  if (resumeAfterPaidUpgrade && redemptionPhoneVerifiedInitial) return stepMap.date;
+  if (resumeAfterPaidUpgrade) return stepMap.phone;
+  return stepMap.skipPin ? stepMap.phone : stepMap.pin;
 }
 
-const REDEEM_TOTAL_STEPS = 5;
-const NAV_STEP_KEYS = ["navStep1", "navStep2", "navStep3", "navStep4", "navStep5"] as const;
+function navLabelKeys(stepMap: ReturnType<typeof buildRedeemWizardStepMap>): string[] {
+  const keys: string[] = [];
+  if (!stepMap.skipPin) keys.push("navStep1");
+  keys.push("navStep2");
+  if (stepMap.showNetwork) keys.push("navStepNetwork");
+  keys.push("navStep3", "navStep4", "navStep5");
+  return keys;
+}
 
 function RedeemStepNav({
   currentStep,
+  totalSteps,
+  labelKeys,
   t,
 }: {
-  currentStep: WizardStep;
+  currentStep: number;
+  totalSteps: number;
+  labelKeys: string[];
   t: ReturnType<typeof useTranslations<"redeemWizard">>;
 }) {
   return (
@@ -49,11 +61,11 @@ function RedeemStepNav({
         {t("phase2Banner")}
       </p>
       <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-        {t("stepProgress", { current: currentStep, total: REDEEM_TOTAL_STEPS })}
+        {t("stepProgress", { current: currentStep, total: totalSteps })}
       </p>
       <ol className="flex items-start justify-between gap-0.5 sm:gap-1">
-        {NAV_STEP_KEYS.map((key, idx) => {
-          const stepNum = (idx + 1) as WizardStep;
+        {labelKeys.map((key, idx) => {
+          const stepNum = idx + 1;
           const isCurrent = stepNum === currentStep;
           const isPast = stepNum < currentStep;
           return (
@@ -90,6 +102,11 @@ export function RedeepPhase2Client({
   accessToken: accessTokenProp,
   resumeAfterPaidUpgrade = false,
   redemptionPhoneVerifiedInitial = false,
+  initialWizardStep: initialWizardStepProp,
+  skipPinStep = false,
+  showNetworkStep = false,
+  autoNetworkSlug = null,
+  initialNetworkSlug = null,
 }: {
   purchaseId?: string | null;
   accessToken?: string | null;
@@ -97,10 +114,25 @@ export function RedeepPhase2Client({
   resumeAfterPaidUpgrade?: boolean;
   /** Server: Phase 2 redeemer phone already verified on this purchase. */
   redemptionPhoneVerifiedInitial?: boolean;
+  /** Override first wizard step (e.g. Three UK entry after voucher code on /redeem/enter). */
+  initialWizardStep?: number;
+  /** PIN already validated on /redeem/enter — start at SMS step. */
+  skipPinStep?: boolean;
+  /** Global voucher: pick carrier after SMS. */
+  showNetworkStep?: boolean;
+  /** Three UK batch: auto-save network (e.g. three_uk) after SMS. */
+  autoNetworkSlug?: string | null;
+  initialNetworkSlug?: string | null;
 }) {
   const t = useTranslations("redeemWizard");
+  const stepMap = useMemo(
+    () => buildRedeemWizardStepMap({ showNetwork: showNetworkStep, skipPin: skipPinStep }),
+    [showNetworkStep, skipPinStep],
+  );
+  const navKeys = useMemo(() => navLabelKeys(stepMap), [stepMap]);
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
+  const [selectedNetworkSlug, setSelectedNetworkSlug] = useState(initialNetworkSlug ?? "");
   const [voucherCode, setVoucherCode] = useState("");
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
@@ -118,22 +150,47 @@ export function RedeepPhase2Client({
   const [loading, setLoading] = useState<"unlock" | "checkout" | "activate" | "sms" | "verifyPhone" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [wizardStep, setWizardStep] = useState<WizardStep>(() =>
-    initialWizardStep(resumeAfterPaidUpgrade, redemptionPhoneVerifiedInitial),
-  );
+  const [wizardStep, setWizardStep] = useState<number>(() => {
+    if (initialWizardStepProp != null) return initialWizardStepProp;
+    if (skipPinStep && purchaseIdProp?.trim()) {
+      if (!redemptionPhoneVerifiedInitial) return stepMap.phone;
+      if (resumeAfterPaidUpgrade) return stepMap.date;
+      if (showNetworkStep && !initialNetworkSlug) return stepMap.network || stepMap.fulfillment;
+      return stepMap.fulfillment;
+    }
+    return initialWizardStep(stepMap, resumeAfterPaidUpgrade, redemptionPhoneVerifiedInitial);
+  });
 
   const [redeemPhone, setRedeemPhone] = useState("");
   const [redeemOtpCode, setRedeemOtpCode] = useState("");
   const [redeemOtpUiStep, setRedeemOtpUiStep] = useState<"phone" | "code">("phone");
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
+  const baselinePlans = useMemo(() => plans.filter((p) => p.matchesVoucherCredit), [plans]);
+  const upgradePlans = useMemo(() => plans.filter((p) => !p.matchesVoucherCredit), [plans]);
   const iccidDigitCount = useMemo(() => iccid.replace(/\D/g, "").length, [iccid]);
 
   useEffect(() => {
-    if (wizardStep === 4 && plans.length === 0) {
-      setWizardStep(3);
+    if (wizardStep === stepMap.plans && plans.length === 0) {
+      setWizardStep(stepMap.fulfillment);
     }
-  }, [wizardStep, plans.length]);
+  }, [wizardStep, plans.length, stepMap.plans, stepMap.fulfillment]);
+
+  useEffect(() => {
+    if (!autoNetworkSlug?.trim() || !purchaseId.trim()) return;
+    if (selectedNetworkSlug === autoNetworkSlug) return;
+    void fetch("/api/redeem/network/select", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        purchaseId,
+        networkSlug: autoNetworkSlug,
+        ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
+      }),
+    }).then((res) => {
+      if (res.ok) setSelectedNetworkSlug(autoNetworkSlug);
+    });
+  }, [autoNetworkSlug, purchaseId, accessToken, selectedNetworkSlug]);
 
   async function redeemStartFromPin() {
     setError(null);
@@ -159,7 +216,7 @@ export function RedeepPhase2Client({
       if (typeof startData.creditAmountCents === "number") {
         setCreditCents(startData.creditAmountCents);
       }
-      setWizardStep(2);
+      setWizardStep(stepMap.phone);
       setRedeemOtpUiStep("phone");
     } finally {
       setLoading(null);
@@ -190,6 +247,7 @@ export function RedeepPhase2Client({
         error?: string;
         creditAmountCents?: number;
         plans?: PlanRow[];
+        suggestedPlanId?: string | null;
         selectedFulfillmentType?: FulfillmentType;
         totals?: {
           shippingCents: number;
@@ -206,8 +264,11 @@ export function RedeepPhase2Client({
       const nextPlans = data.plans ?? [];
       setPlans(nextPlans);
       if (data.selectedFulfillmentType) setFulfillmentType(data.selectedFulfillmentType);
+      if (!planId && typeof data.suggestedPlanId === "string" && data.suggestedPlanId) {
+        setSelectedPlanId(data.suggestedPlanId);
+      }
       setTotals((prev) =>
-        data.totals != null ? data.totals : planId != null && planId !== "" ? prev : null,
+        data.totals != null ? data.totals : planId != null && planId !== "" ? prev : data.totals ?? prev,
       );
     } finally {
       setLoading(null);
@@ -260,9 +321,11 @@ export function RedeepPhase2Client({
         return;
       }
       if (resumeAfterPaidUpgrade) {
-        setWizardStep(5);
+        setWizardStep(stepMap.date);
+      } else if (showNetworkStep) {
+        setWizardStep(stepMap.network);
       } else {
-        setWizardStep(3);
+        setWizardStep(stepMap.fulfillment);
       }
     } finally {
       setLoading(null);
@@ -294,7 +357,7 @@ export function RedeepPhase2Client({
       }
       if (data.zeroDue) {
         await unlockAndQuote(selectedPlanId, fulfillmentType);
-        setWizardStep(5);
+        setWizardStep(stepMap.date);
         return;
       }
       if (typeof data.url === "string" && data.url) {
@@ -341,6 +404,43 @@ export function RedeepPhase2Client({
     (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
     (fulfillmentType === "NEW_SIM_SHIPPING" && shippingAddress.trim().length > 5);
 
+  function renderPlanOption(p: PlanRow) {
+    return (
+      <label
+        key={p.id}
+        className="flex items-center justify-between rounded border border-white/10 bg-black/20 p-3 text-sm text-slate-200"
+      >
+        <span>
+          {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
+          {p.matchesVoucherCredit ? (
+            <span className="ml-1 text-emerald-300">· {t("planPerfectMatch")}</span>
+          ) : null}
+          {!p.matchesVoucherCredit && p.fullyCoveredByWallet ? (
+            <span className="ml-1 text-emerald-300">· {t("planCoveredByWallet")}</span>
+          ) : null}
+          {!p.matchesVoucherCredit &&
+          typeof p.balanceDueCents === "number" &&
+          p.balanceDueCents > 0 ? (
+            <span className="ml-1 text-amber-200">
+              · {t("planUpgradeDue", { amount: (p.balanceDueCents / 100).toFixed(2) })}
+            </span>
+          ) : null}
+        </span>
+        <span className="ml-3 flex items-center gap-3">
+          <span>${(p.priceCents / 100).toFixed(2)}</span>
+          <input
+            type="radio"
+            checked={selectedPlanId === p.id}
+            onChange={() => {
+              setSelectedPlanId(p.id);
+              void unlockAndQuote(p.id, fulfillmentType);
+            }}
+          />
+        </span>
+      </label>
+    );
+  }
+
   if (done) {
     return (
       <div className={`${panelClass} text-center`}>
@@ -353,13 +453,18 @@ export function RedeepPhase2Client({
   return (
     <div className="mx-auto w-full max-w-xl">
       <section className={panelClass} aria-labelledby={`redeem-step${wizardStep}-heading`}>
-        <RedeemStepNav currentStep={wizardStep} t={t} />
+        <RedeemStepNav
+          currentStep={wizardStep}
+          totalSteps={stepMap.total}
+          labelKeys={navKeys}
+          t={t}
+        />
         <div role="status" aria-live="polite" aria-atomic="true" className="mb-5 min-h-0">
           {error ? (
             <p className="rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
           ) : null}
         </div>
-        {wizardStep === 1 ? (
+        {wizardStep === stepMap.pin && stepMap.pin > 0 ? (
           <>
             <h2 id="redeem-step1-heading" className="text-lg font-semibold text-white">
               {t("step1Title")}
@@ -394,7 +499,7 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === 2 ? (
+        {wizardStep === stepMap.phone ? (
           <>
             <div className="flex items-center gap-3">
               <button
@@ -404,7 +509,7 @@ export function RedeepPhase2Client({
                 disabled={loading !== null}
                 onClick={() => {
                   setRedeemOtpUiStep("phone");
-                  setWizardStep(1);
+                  setWizardStep(stepMap.skipPin ? stepMap.phone : stepMap.pin || stepMap.phone);
                 }}
               >
                 <BackChevronIcon />
@@ -495,15 +600,31 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === 3 ? (
+        {wizardStep === stepMap.network && stepMap.showNetwork ? (
+          <RedeemNetworkStep
+            purchaseId={purchaseId}
+            accessToken={accessToken}
+            initialSlug={selectedNetworkSlug || null}
+            backLabel={t("backPhone")}
+            onBack={() => setWizardStep(stepMap.phone)}
+            onContinue={(slug) => {
+              setSelectedNetworkSlug(slug);
+              setWizardStep(stepMap.fulfillment);
+            }}
+          />
+        ) : null}
+
+        {wizardStep === stepMap.fulfillment ? (
           <>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 className={backArrowButtonClass}
-                aria-label={t("backPhone")}
+                aria-label={stepMap.showNetwork ? t("backNetwork") : t("backPhone")}
                 disabled={loading !== null}
-                onClick={() => setWizardStep(2)}
+                onClick={() =>
+                  setWizardStep(stepMap.showNetwork ? stepMap.network : stepMap.phone)
+                }
               >
                 <BackChevronIcon />
               </button>
@@ -585,7 +706,7 @@ export function RedeepPhase2Client({
                 onClick={() => {
                   setSelectedPlanId("");
                   setTotals(null);
-                  setWizardStep(4);
+                  setWizardStep(stepMap.plans);
                   void unlockAndQuote(undefined, fulfillmentType);
                 }}
               >
@@ -595,7 +716,7 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === 4 && plans.length > 0 ? (
+        {wizardStep === stepMap.plans && plans.length > 0 ? (
           <>
             <div className="flex items-center gap-3">
               <button
@@ -603,7 +724,7 @@ export function RedeepPhase2Client({
                 className={backArrowButtonClass}
                 aria-label={t("backFulfillment")}
                 disabled={loading !== null}
-                onClick={() => setWizardStep(3)}
+                onClick={() => setWizardStep(stepMap.fulfillment)}
               >
                 <BackChevronIcon />
               </button>
@@ -631,41 +752,32 @@ export function RedeepPhase2Client({
                 <p className="mt-1 text-xs text-slate-400">{t("creditExplain")}</p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <p className="text-sm font-medium text-slate-200">{t("choosePlan")}</p>
                 {!selectedPlan ? (
                   <p className="rounded border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
                     {t("pickPlanHint")}
                   </p>
                 ) : null}
-                {plans.map((p) => (
-                  <label
-                    key={p.id}
-                    className="flex items-center justify-between rounded border border-white/10 bg-black/20 p-3 text-sm text-slate-200"
-                  >
-                    <span>
-                      {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
-                      {p.fullyCoveredByWallet ? (
-                        <span className="ml-1 text-emerald-300">· {t("planCoveredByWallet")}</span>
-                      ) : typeof p.balanceDueCents === "number" && p.balanceDueCents > 0 ? (
-                        <span className="ml-1 text-amber-200">
-                          · {t("planUpgradeDue", { amount: (p.balanceDueCents / 100).toFixed(2) })}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="ml-3 flex items-center gap-3">
-                      <span>${(p.priceCents / 100).toFixed(2)}</span>
-                      <input
-                        type="radio"
-                        checked={selectedPlanId === p.id}
-                        onChange={() => {
-                          setSelectedPlanId(p.id);
-                          void unlockAndQuote(p.id, fulfillmentType);
-                        }}
-                      />
-                    </span>
-                  </label>
-                ))}
+                {baselinePlans.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/90">
+                      {t("baselinePlansHeading", { amount: (creditCents / 100).toFixed(2) })}
+                    </p>
+                    {baselinePlans.map(renderPlanOption)}
+                  </div>
+                ) : null}
+                {upgradePlans.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      {baselinePlans.length > 0 ? t("upgradePlansHeading") : t("allPlansHeading")}
+                    </p>
+                    {upgradePlans.map(renderPlanOption)}
+                  </div>
+                ) : null}
+                {plans.length === 0 ? (
+                  <p className="text-sm text-slate-400">{t("noPlansForNetwork")}</p>
+                ) : null}
               </div>
 
               {totals ? (
@@ -697,7 +809,7 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {wizardStep === stepMap.date ? (
           <>
             <div className="flex items-center gap-3">
               {plans.length > 0 ? (
@@ -706,7 +818,7 @@ export function RedeepPhase2Client({
                   className={backArrowButtonClass}
                   aria-label={t("backPlan")}
                   disabled={loading !== null}
-                  onClick={() => setWizardStep(4)}
+                  onClick={() => setWizardStep(stepMap.plans)}
                 >
                   <BackChevronIcon />
                 </button>

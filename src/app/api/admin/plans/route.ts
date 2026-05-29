@@ -10,6 +10,7 @@ const createBodySchema = z.object({
   priceCents: z.number().int().min(0),
   planType: z.enum(["physical_sim", "esim"]),
   market: z.enum(["global", "us"]),
+  networkId: z.string().nullable().optional(),
 });
 
 export async function GET() {
@@ -17,7 +18,10 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const plans = await prisma.plan.findMany({ orderBy: [{ market: "asc" }, { durationDays: "asc" }] });
+  const plans = await prisma.plan.findMany({
+    orderBy: [{ market: "asc" }, { durationDays: "asc" }],
+    include: { network: { select: { slug: true, name: true } } },
+  });
   return NextResponse.json(plans);
 }
 
@@ -43,6 +47,7 @@ export async function POST(req: Request) {
       priceCents: body.priceCents,
       planType: body.planType,
       market: body.market,
+      networkId: body.networkId?.trim() || null,
     },
   });
   return NextResponse.json(plan);

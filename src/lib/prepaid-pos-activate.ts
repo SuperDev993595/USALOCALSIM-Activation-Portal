@@ -80,7 +80,7 @@ export async function activatePrepaidCardAtSale(
   }
 
   const appBase = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "") || "http://localhost:3000";
-  const redeemUrl = `${appBase}/redeem?purchaseId=${encodeURIComponent(auth.purchaseId)}&access=${encodeURIComponent(auth.redemptionAccessToken)}`;
+  const redeemUrl = `${appBase}/redeem/enter`;
 
   return {
     ok: true,
