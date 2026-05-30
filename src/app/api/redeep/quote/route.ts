@@ -7,6 +7,7 @@ import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/red
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
+import { tierRequiresEsimOnly, isCoverageTier } from "@/lib/coverage-tier";
 import {
   networkRequiredForVoucher,
   planFilterForNetwork,
@@ -78,6 +79,14 @@ export async function POST(req: Request) {
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
 
+  const tier = purchase.redemptionCoverageTier?.trim().toLowerCase() ?? "";
+  if (networkRequiredForVoucher(voucher) && !isCoverageTier(tier)) {
+    return NextResponse.json(
+      { error: "Select a coverage tier before continuing.", code: "TIER_REQUIRED" },
+      { status: 403 },
+    );
+  }
+
   const network = await resolveNetworkForRedeem({
     purchaseNetworkSlug: purchase.redemptionNetworkSlug,
     voucher,
@@ -92,8 +101,10 @@ export async function POST(req: Request) {
   /** Phase 2: catalog for card retail market (Path B) or voucher plan market. */
   const planMarket = purchase.prepaidCard?.retailMarket ?? voucher.plan.market;
   const fulfillment = body.fulfillmentType;
-  const planTypeWhere =
-    fulfillment === REDEMPTION_FULFILLMENT_TYPES.ESIM
+  const ultraEsimOnly = isCoverageTier(tier) && tierRequiresEsimOnly(tier);
+  const planTypeWhere = ultraEsimOnly
+    ? { planType: "esim" as const }
+    : fulfillment === REDEMPTION_FULFILLMENT_TYPES.ESIM
       ? { planType: "esim" as const }
       : fulfillment === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM ||
           fulfillment === REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING
@@ -111,6 +122,7 @@ export async function POST(req: Request) {
       ...planTypeWhere,
       market: planMarket,
       ...(network ? planFilterForNetwork(network.id) : {}),
+      ...(isCoverageTier(tier) ? { coverageTier: tier } : {}),
     },
     select: {
       id: true,

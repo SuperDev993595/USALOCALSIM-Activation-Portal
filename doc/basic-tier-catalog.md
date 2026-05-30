@@ -113,7 +113,7 @@ Seed logic: `prisma/seed.ts` → `seedBasicTierCatalog()` — upserts networks (
 | Plans per network (this doc) | ✅ Seeded via `db:seed` |
 | Network picker after SMS | ✅ Global voucher |
 | Perfect-match grouping ($35) | ✅ Quote + redeem UI |
-| Tier step BASIC / PRO / ULTRA | ❌ Not built |
+| Tier step BASIC / PRO / ULTRA | ✅ After SMS on global voucher |
 | T-Mobile add-on checkboxes | ❌ Not built |
 | Brand colors on network step | ❌ Not built |
 

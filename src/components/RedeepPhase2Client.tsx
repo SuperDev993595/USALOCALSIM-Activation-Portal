@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
+import { RedeemTierStep } from "@/components/RedeemTierStep";
+import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
@@ -39,6 +41,7 @@ function navLabelKeys(stepMap: ReturnType<typeof buildRedeemWizardStepMap>): str
   const keys: string[] = [];
   if (!stepMap.skipPin) keys.push("navStep1");
   keys.push("navStep2");
+  if (stepMap.showTier) keys.push("navStepTier");
   if (stepMap.showNetwork) keys.push("navStepNetwork");
   keys.push("navStep3", "navStep4", "navStep5");
   return keys;
@@ -104,9 +107,11 @@ export function RedeepPhase2Client({
   redemptionPhoneVerifiedInitial = false,
   initialWizardStep: initialWizardStepProp,
   skipPinStep = false,
+  showTierStep = false,
   showNetworkStep = false,
   autoNetworkSlug = null,
   initialNetworkSlug = null,
+  initialCoverageTier = null,
 }: {
   purchaseId?: string | null;
   accessToken?: string | null;
@@ -118,21 +123,32 @@ export function RedeepPhase2Client({
   initialWizardStep?: number;
   /** PIN already validated on /redeem/enter — start at SMS step. */
   skipPinStep?: boolean;
-  /** Global voucher: pick carrier after SMS. */
+  /** Global voucher: BASIC / PRO / ULTRA after SMS. */
+  showTierStep?: boolean;
+  /** Global voucher: pick carrier after tier. */
   showNetworkStep?: boolean;
   /** Three UK batch: auto-save network (e.g. three_uk) after SMS. */
   autoNetworkSlug?: string | null;
   initialNetworkSlug?: string | null;
+  initialCoverageTier?: string | null;
 }) {
   const t = useTranslations("redeemWizard");
   const stepMap = useMemo(
-    () => buildRedeemWizardStepMap({ showNetwork: showNetworkStep, skipPin: skipPinStep }),
-    [showNetworkStep, skipPinStep],
+    () =>
+      buildRedeemWizardStepMap({
+        showTier: showTierStep,
+        showNetwork: showNetworkStep,
+        skipPin: skipPinStep,
+      }),
+    [showTierStep, showNetworkStep, skipPinStep],
   );
   const navKeys = useMemo(() => navLabelKeys(stepMap), [stepMap]);
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
+  const [selectedCoverageTier, setSelectedCoverageTier] = useState(initialCoverageTier ?? "");
   const [selectedNetworkSlug, setSelectedNetworkSlug] = useState(initialNetworkSlug ?? "");
+  const ultraEsimOnly =
+    isCoverageTier(selectedCoverageTier) && tierRequiresEsimOnly(selectedCoverageTier);
   const [voucherCode, setVoucherCode] = useState("");
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
@@ -155,6 +171,7 @@ export function RedeepPhase2Client({
     if (skipPinStep && purchaseIdProp?.trim()) {
       if (!redemptionPhoneVerifiedInitial) return stepMap.phone;
       if (resumeAfterPaidUpgrade) return stepMap.date;
+      if (showTierStep && !initialCoverageTier) return stepMap.tier || stepMap.fulfillment;
       if (showNetworkStep && !initialNetworkSlug) return stepMap.network || stepMap.fulfillment;
       return stepMap.fulfillment;
     }
@@ -322,6 +339,8 @@ export function RedeepPhase2Client({
       }
       if (resumeAfterPaidUpgrade) {
         setWizardStep(stepMap.date);
+      } else if (showTierStep) {
+        setWizardStep(stepMap.tier);
       } else if (showNetworkStep) {
         setWizardStep(stepMap.network);
       } else {
@@ -399,10 +418,11 @@ export function RedeepPhase2Client({
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
 
-  const fulfillmentReady =
-    fulfillmentType === "ESIM" ||
-    (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
-    (fulfillmentType === "NEW_SIM_SHIPPING" && shippingAddress.trim().length > 5);
+  const fulfillmentReady = ultraEsimOnly
+    ? true
+    : fulfillmentType === "ESIM" ||
+      (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
+      (fulfillmentType === "NEW_SIM_SHIPPING" && shippingAddress.trim().length > 5);
 
   function renderPlanOption(p: PlanRow) {
     return (
@@ -600,13 +620,32 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
+        {wizardStep === stepMap.tier && stepMap.showTier ? (
+          <RedeemTierStep
+            purchaseId={purchaseId}
+            accessToken={accessToken}
+            initialTier={selectedCoverageTier || null}
+            backLabel={t("backPhone")}
+            onBack={() => setWizardStep(stepMap.phone)}
+            onContinue={(tier) => {
+              setSelectedCoverageTier(tier);
+              setSelectedNetworkSlug("");
+              if (tierRequiresEsimOnly(tier)) {
+                setFulfillmentType("ESIM");
+              }
+              setWizardStep(stepMap.showNetwork ? stepMap.network : stepMap.fulfillment);
+            }}
+          />
+        ) : null}
+
         {wizardStep === stepMap.network && stepMap.showNetwork ? (
           <RedeemNetworkStep
             purchaseId={purchaseId}
             accessToken={accessToken}
+            coverageTier={selectedCoverageTier || null}
             initialSlug={selectedNetworkSlug || null}
-            backLabel={t("backPhone")}
-            onBack={() => setWizardStep(stepMap.phone)}
+            backLabel={t("backTier")}
+            onBack={() => setWizardStep(stepMap.tier || stepMap.phone)}
             onContinue={(slug) => {
               setSelectedNetworkSlug(slug);
               setWizardStep(stepMap.fulfillment);
@@ -620,10 +659,18 @@ export function RedeepPhase2Client({
               <button
                 type="button"
                 className={backArrowButtonClass}
-                aria-label={stepMap.showNetwork ? t("backNetwork") : t("backPhone")}
+                aria-label={
+                  stepMap.showNetwork ? t("backNetwork") : stepMap.showTier ? t("backTier") : t("backPhone")
+                }
                 disabled={loading !== null}
                 onClick={() =>
-                  setWizardStep(stepMap.showNetwork ? stepMap.network : stepMap.phone)
+                  setWizardStep(
+                    stepMap.showNetwork
+                      ? stepMap.network
+                      : stepMap.showTier
+                        ? stepMap.tier
+                        : stepMap.phone,
+                  )
                 }
               >
                 <BackChevronIcon />
@@ -633,40 +680,51 @@ export function RedeepPhase2Client({
               </h2>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step3Body")}</p>
+            {ultraEsimOnly ? (
+              <p className="mt-2 rounded border border-red-500/30 bg-red-950/35 px-3 py-2 text-sm text-red-100">
+                {t("ultraEsimOnlyBanner")}
+              </p>
+            ) : null}
 
             <div className="mt-5 space-y-4">
               <div className="space-y-2.5">
                 <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-fulfillment-select">
                   {t("fulfillmentLabel")}
                 </label>
-                <select
-                  id="redeem-fulfillment-select"
-                  value={fulfillmentType}
-                  onChange={(e) => {
-                    const next = e.target.value as FulfillmentType;
-                    const prevPlan = plans.find((p) => p.id === selectedPlanId);
-                    const incompatible =
-                      Boolean(prevPlan) &&
-                      (next === "ESIM"
-                        ? prevPlan!.planType !== "esim"
-                        : prevPlan!.planType !== "physical_sim");
-                    if (incompatible) {
-                      setSelectedPlanId("");
-                      setTotals(null);
-                    }
-                    setFulfillmentType(next);
-                    if (!incompatible && selectedPlanId) void unlockAndQuote(selectedPlanId, next);
-                  }}
-                  disabled={loading !== null}
-                  className={redeepPanelInputClass}
-                >
-                  <option value="EXISTING_SIM">{t("optExistingSim")}</option>
-                  <option value="NEW_SIM_SHIPPING">{t("optShipping")}</option>
-                  <option value="ESIM">{t("optEsim")}</option>
-                </select>
+                {ultraEsimOnly ? (
+                  <p className="rounded border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-200">
+                    {t("optEsim")} — {t("tierUltraEsimNote")}
+                  </p>
+                ) : (
+                  <select
+                    id="redeem-fulfillment-select"
+                    value={fulfillmentType}
+                    onChange={(e) => {
+                      const next = e.target.value as FulfillmentType;
+                      const prevPlan = plans.find((p) => p.id === selectedPlanId);
+                      const incompatible =
+                        Boolean(prevPlan) &&
+                        (next === "ESIM"
+                          ? prevPlan!.planType !== "esim"
+                          : prevPlan!.planType !== "physical_sim");
+                      if (incompatible) {
+                        setSelectedPlanId("");
+                        setTotals(null);
+                      }
+                      setFulfillmentType(next);
+                      if (!incompatible && selectedPlanId) void unlockAndQuote(selectedPlanId, next);
+                    }}
+                    disabled={loading !== null}
+                    className={redeepPanelInputClass}
+                  >
+                    <option value="EXISTING_SIM">{t("optExistingSim")}</option>
+                    <option value="NEW_SIM_SHIPPING">{t("optShipping")}</option>
+                    <option value="ESIM">{t("optEsim")}</option>
+                  </select>
+                )}
               </div>
 
-              {fulfillmentType === "EXISTING_SIM" ? (
+              {!ultraEsimOnly && fulfillmentType === "EXISTING_SIM" ? (
                 <div className="space-y-2.5">
                   <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-iccid-input">
                     {t("iccidLabel")}
@@ -683,7 +741,7 @@ export function RedeepPhase2Client({
                   <p className="text-xs text-slate-500">{t("iccidCount", { count: iccidDigitCount })}</p>
                 </div>
               ) : null}
-              {fulfillmentType === "NEW_SIM_SHIPPING" ? (
+              {!ultraEsimOnly && fulfillmentType === "NEW_SIM_SHIPPING" ? (
                 <div className="space-y-2.5">
                   <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-shipping-textarea">
                     {t("shippingLabel")}

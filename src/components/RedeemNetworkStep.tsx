@@ -10,6 +10,7 @@ type NetworkRow = { slug: string; name: string };
 export function RedeemNetworkStep({
   purchaseId,
   accessToken,
+  coverageTier,
   initialSlug,
   onBack,
   onContinue,
@@ -17,6 +18,7 @@ export function RedeemNetworkStep({
 }: {
   purchaseId: string;
   accessToken: string;
+  coverageTier: string | null;
   initialSlug: string | null;
   onBack: () => void;
   onContinue: (slug: string) => void;
@@ -32,7 +34,8 @@ export function RedeemNetworkStep({
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch("/api/networks/public");
+        const tierQs = coverageTier?.trim() ? `?tier=${encodeURIComponent(coverageTier.trim())}` : "";
+        const res = await fetch(`/api/networks/public${tierQs}`);
         const data = (await res.json().catch(() => ({}))) as { networks?: NetworkRow[] };
         if (!cancelled) {
           setNetworks(Array.isArray(data.networks) ? data.networks : []);
@@ -44,7 +47,7 @@ export function RedeemNetworkStep({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [coverageTier]);
 
   async function saveAndContinue() {
     if (!selected.trim()) return;

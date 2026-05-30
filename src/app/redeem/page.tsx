@@ -53,6 +53,7 @@ export default async function RedeemPage({
         id: true,
         redemptionPhoneVerifiedAt: true,
         redemptionNetworkSlug: true,
+        redemptionCoverageTier: true,
         prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
         voucher: { select: { voucherProductType: true, code: true } },
       },
@@ -68,8 +69,10 @@ export default async function RedeemPage({
             accessToken={access.trim()}
             resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
             redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
+            showTierStep={showNetwork}
             showNetworkStep={showNetwork}
             skipPinStep
+            initialCoverageTier={purchase.redemptionCoverageTier}
             initialNetworkSlug={purchase.redemptionNetworkSlug}
           />
         </div>

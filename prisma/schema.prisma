@@ -87,6 +87,8 @@ model Plan {
   priceCents    Int
   planType      String   // "physical_sim" | "esim"
   market        String   // "global" | "us" | "br" | "uk"
+  /// Card tier: basic | pro | ultra (feedback card design).
+  coverageTier  String?
   networkId     String?
   network       Network? @relation(fields: [networkId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
@@ -97,6 +99,7 @@ model Plan {
   prepaidCardsUpgrade PrepaidCard[] @relation("PrepaidCardUpgradePlan")
 
   @@index([networkId])
+  @@index([coverageTier])
 }
 
 model Voucher {
@@ -234,9 +237,12 @@ model CartPurchase {
   redemptionPhoneVerifiedAt DateTime?
   /// Carrier chosen after SMS (global voucher) or auto-set for Three UK batch.
   redemptionNetworkSlug     String?
+  /// basic | pro | ultra — card coverage tier (global voucher).
+  redemptionCoverageTier  String?
 
   @@index([cartSessionId])
   @@index([redemptionNetworkSlug])
+  @@index([redemptionCoverageTier])
   @@map("ShopPurchase")
 }
 

@@ -43,6 +43,7 @@ export async function seedBasicTierCatalog(prisma: PrismaClient): Promise<void> 
             dataAllowance: p.dataAllowance,
             durationDays: p.durationDays,
             priceCents: p.priceCents,
+            coverageTier: p.tier,
           },
         });
         skipped++;
@@ -57,6 +58,7 @@ export async function seedBasicTierCatalog(prisma: PrismaClient): Promise<void> 
           planType,
           market: "us",
           networkId,
+          coverageTier: p.tier,
         },
       });
       created++;
