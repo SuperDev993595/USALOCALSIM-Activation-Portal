@@ -124,7 +124,7 @@ export function QaRoadmapHelp() {
                     </li>
                     <li>
                       <Link
-                        href="/redeem/us"
+                        href="/redeem/enter"
                         className="flex items-start gap-2 text-slate-700 underline decoration-slate-300 underline-offset-2 transition hover:text-[#e50914] hover:decoration-[#e50914]/40"
                       >
                         <span className="mt-0.5 text-slate-400" aria-hidden>

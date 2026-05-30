@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { getRequestClientMeta } from "@/lib/request-meta";
 import { parsePrepaidImportText } from "@/lib/prepaid-import-parse";
 import { pinLast4 } from "@/lib/voucher-pin";
-import { VOUCHER_PRODUCT_TYPE, isVoucherProductType } from "@/lib/voucher-product-type";
+import { resolvePrepaidImportProductType } from "@/lib/voucher-product-type";
 
 const bodySchema = z.object({
   text: z.string().min(1),
@@ -80,12 +80,12 @@ export async function POST(req: Request) {
 
     try {
       await prisma.$transaction(async (tx) => {
-        const productType =
-          row.voucherProductType && isVoucherProductType(row.voucherProductType)
-            ? row.voucherProductType
-            : body.voucherProductType && isVoucherProductType(body.voucherProductType)
-              ? body.voucherProductType
-              : VOUCHER_PRODUCT_TYPE.GLOBAL;
+        const productType = resolvePrepaidImportProductType({
+          rowType: row.voucherProductType,
+          bodyDefault: body.voucherProductType,
+          serial: row.serial,
+          pin: pinNorm,
+        });
 
         const voucher = await tx.voucher.create({
           data: {

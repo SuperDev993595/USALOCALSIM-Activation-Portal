@@ -4,7 +4,7 @@ import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { voucherAdminStatusBadge } from "@/lib/voucher-status-display";
+import { VoucherAdminStatusBadge } from "@/components/VoucherAdminStatusBadge";
 
 type VoucherRow = {
   id: string;
@@ -40,19 +40,6 @@ function TrashIcon({ className }: { className?: string }) {
       <line x1="10" x2="10" y1="11" y2="17" />
       <line x1="14" x2="14" y1="11" y2="17" />
     </svg>
-  );
-}
-
-function StatusBadge({ status, paymentStatus }: { status: string; paymentStatus: boolean }) {
-  const style = voucherAdminStatusBadge({ status, paymentStatus });
-  return (
-    <span
-      className={`badge inline-flex items-center gap-1.5 whitespace-nowrap border font-semibold ${style.badge}`}
-      title={`DB status: ${style.dbStatus}${paymentStatus ? " · paid" : ""}`}
-    >
-      <span className={`h-2 w-2 rounded-full ${style.dot}`} aria-hidden />
-      {style.label}
-    </span>
   );
 }
 
@@ -321,7 +308,7 @@ export default function VoucherTrackingPage() {
                   <tr key={v.id}>
                     <td className="pl-5 font-mono text-sm text-slate-900 md:pl-6">{v.code}</td>
                     <td>
-                      <StatusBadge status={v.status} paymentStatus={v.paymentStatus} />
+                      <VoucherAdminStatusBadge status={v.status} paymentStatus={v.paymentStatus} />
                     </td>
                     <td>
                       <span className="rounded-none border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs capitalize text-slate-600">

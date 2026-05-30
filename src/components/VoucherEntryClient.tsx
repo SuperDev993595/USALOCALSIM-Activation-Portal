@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { PaymentMethodsNote } from "@/components/PaymentMethodsNote";
+import { REDEEM_PANEL_CLASS, REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
 
 const inputClass =
   "w-full rounded border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-none placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40 [color-scheme:light] uppercase";
@@ -84,12 +86,14 @@ export function VoucherEntryClient() {
 
         <button
           type="button"
-          className="btn-primary mt-6 w-full py-2.5 text-sm disabled:opacity-60"
+          className={`${REDEEM_PRIMARY_BUTTON_CLASS} mt-6`}
           disabled={loading || !code.trim()}
           onClick={() => void submit()}
         >
           {loading ? t("submitting") : t("submit")}
         </button>
+
+        <PaymentMethodsNote className="mt-4" />
 
         <p className="mt-6 text-center text-xs text-slate-500">
           {t("cartLinkPrefix")}{" "}

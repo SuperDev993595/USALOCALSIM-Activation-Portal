@@ -10,6 +10,10 @@ import { createMercadoPagoUpgradePreference } from "@/lib/mercadopago-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { ensureRedemptionAccessToken } from "@/lib/redemption-access";
 import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
+import {
+  validateRedeemPlanForSelections,
+  validateRedeemWizardSelections,
+} from "@/lib/redeem-selection-guards";
 import { stripeCheckoutPaymentOptions } from "@/lib/stripe-checkout-options";
 import {
   addonCentsForSkus,
@@ -71,9 +75,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Shipping address is required for physical SIM delivery." }, { status: 400 });
   }
 
-  const plan = await prisma.plan.findUnique({ where: { id: body.planId } });
-  if (!plan) return NextResponse.json({ error: "Plan not found." }, { status: 404 });
-
   const voucherResult = await resolveVoucherForRedeem(purchase, body.voucherCode);
   if (!voucherResult.ok) {
     return NextResponse.json(
@@ -84,6 +85,29 @@ export async function POST(req: Request) {
   const voucher = voucherResult.voucher;
   if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "Invalid or already redeemed voucher." }, { status: 400 });
+  }
+
+  const wizardSel = await validateRedeemWizardSelections(purchase, voucher);
+  if (!wizardSel.ok) {
+    return NextResponse.json(
+      { error: wizardSel.error, code: wizardSel.code },
+      { status: wizardSel.status },
+    );
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: body.planId },
+    include: { network: { select: { slug: true } } },
+  });
+  if (!plan) return NextResponse.json({ error: "Plan not found." }, { status: 404 });
+
+  const planErr = validateRedeemPlanForSelections({
+    plan,
+    selections: wizardSel,
+    fulfillmentType: body.fulfillmentType,
+  });
+  if (planErr) {
+    return NextResponse.json({ error: planErr.error, code: planErr.code }, { status: planErr.status });
   }
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);

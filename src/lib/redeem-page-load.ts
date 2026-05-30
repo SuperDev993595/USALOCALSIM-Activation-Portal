@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
 import { networkRequiredForVoucher } from "@/lib/redeem-network";
+import { redeemUsesTierStep } from "@/lib/redeem-config";
 import { effectiveVoucherProductType } from "@/lib/voucher-product-type";
 
 export type RedeemWizardPageContext = {
@@ -100,12 +101,13 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
   }
 
   const showNetwork = voucher ? networkRequiredForVoucher(voucher) : true;
+  const useTier = showNetwork && redeemUsesTierStep();
 
   return {
     purchaseId: purchase.id,
     accessToken: access,
     redemptionPhoneVerified: purchase.redemptionPhoneVerifiedAt != null,
-    showTierStep: showNetwork,
+    showTierStep: useTier,
     showNetworkStep: showNetwork,
     initialCoverageTier: purchase.redemptionCoverageTier,
     initialNetworkSlug: purchase.redemptionNetworkSlug,

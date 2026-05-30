@@ -267,20 +267,22 @@ For Path B prepaid cards, payment may set `paymentStatus` before PIN redemption;
 
 | Card element | Portal / doc reference |
 |--------------|------------------------|
-| Pay → Scratch → Redeem | Path B: `/cart` → pay → `/redeem` with PIN |
+| Pay → Scratch → Redeem | Path B: `/cart` → pay → **`/redeem/enter`** (scratch PIN) |
 | SMS verify | Redeem flow OTP step |
-| Choose plan + upgrades | Plan catalog, network picker, Stripe upgrade (checklist slice 3) |
-| SIM & eSIM | Combo (ICCID + voucher) vs eSIM-only voucher scenarios |
+| BASIC / PRO / ULTRA | `RedeemTierStep` (disable with `REDEEM_USE_TIER_STEP=false` for briefing flow) |
+| Choose plan + upgrades | Plan catalog, network picker, Stripe upgrade |
+| SIM & eSIM | Combo (ICCID + voucher) vs eSIM-only (ULTRA enforced) |
 | Physical SIM shipping | Checkout/shipping option at redeem |
-| Dealer / retail | Dealer unlock, bulk activation, Code 128 admin tools |
-| Manual fulfillment | Request queue until admin “Mark as Active” (`doc/project description.md`) |
+| Dealer / retail | `/retail` → dealer scan; bulk CSV import + admin unlock |
+| Manual fulfillment | Admin activation queue (no live MVNO API) |
 
 **Gaps to resolve before print:**
 
-1. Final redemption URL (replace placeholder `www.redeem/voucher`)
-2. Whether Bitcoin-only copy matches actual checkout rails
-3. Exact mapping of Basic / Pro / Ultra to plan SKUs and networks in DB
+1. ~~Final redemption URL~~ — portal default **`/redeem/enter`** (set `NEXT_PUBLIC_PAYMENT_METHODS_NOTE` if card still says Bitcoin)
+2. Whether Bitcoin-only copy matches actual checkout rails (Stripe / Mercado Pago today)
+3. Replace **mock** PRO/ULTRA SKUs when client sends final blocks; Orange matrix for PRO
 4. Real EAN and Code 128 allocation per batch (`LOT: USL-2026-01`)
+5. Card strip logos **Vodafone / Trump Mobile** are marketing only — picker uses four seeded networks
 
 ---
 

@@ -34,7 +34,8 @@ export default async function AdminPage() {
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">Activation queue</h2>
           <p className="admin-panel-head-desc">
-            Process in travel-date order. eSIM voucher rows can include QR / LPA payload before marking active.
+            Manual carrier fulfillment — no live MVNO API. Process in travel-date order; paste eSIM QR / LPA on
+            voucher rows before marking active. Customer receives email when you complete the row.
           </p>
         </div>
         <div className="p-5 md:p-6 pt-0 md:pt-0">

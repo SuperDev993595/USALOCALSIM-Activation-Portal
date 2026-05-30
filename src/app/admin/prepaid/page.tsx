@@ -98,6 +98,8 @@ export default function AdminPrepaidImportPage() {
             <br />
             Example: USALOCAL001,SCRATCH001,5000,us,USALOCAL001,,global
             <br />
+            If voucherProductType is omitted, Three UK is inferred from serial or PIN prefix (see VOUCHER_PREFIX_THREE_UK).
+            <br />
             faceValueCents is wallet cents (5000 = $50). retailMarket: us | br | uk | global. barcode defaults to
             serial when empty.
           </p>

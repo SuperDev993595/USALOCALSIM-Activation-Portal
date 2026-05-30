@@ -308,6 +308,13 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
 
   return (
     <div className="space-y-4 pt-1">
+      <div className="admin-callout admin-callout-muted text-sm text-slate-700">
+        <p className="font-semibold text-slate-900">Manual activation queue</p>
+        <p className="mt-1">
+          Fulfillment is completed by your team (provisioning + email). There is no automatic carrier API in this
+          portal — use travel date to prioritize same-day activations.
+        </p>
+      </div>
       {notice ? (
         <div
           className="flex items-start justify-between gap-3 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"

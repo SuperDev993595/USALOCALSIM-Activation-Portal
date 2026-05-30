@@ -6,6 +6,10 @@ import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVeri
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
 import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
+import {
+  validateRedeemPlanForSelections,
+  validateRedeemWizardSelections,
+} from "@/lib/redeem-selection-guards";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -57,9 +61,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid or already redeemed PIN." }, { status: 400 });
   }
 
+  if (!purchase.planId) {
+    return NextResponse.json({ error: "Select a plan before activation." }, { status: 400 });
+  }
+
+  const wizardSel = await validateRedeemWizardSelections(purchase, voucher);
+  if (!wizardSel.ok) {
+    return NextResponse.json(
+      { error: wizardSel.error, code: wizardSel.code },
+      { status: wizardSel.status },
+    );
+  }
+
+  const plan = await prisma.plan.findUnique({
+    where: { id: purchase.planId },
+    include: { network: { select: { slug: true } } },
+  });
+  if (!plan) {
+    return NextResponse.json({ error: "Selected plan is no longer available." }, { status: 400 });
+  }
+
   const fulfillmentType = purchase.redemptionFulfillmentType;
   if (!fulfillmentType) {
     return NextResponse.json({ error: "Choose how customer connects before activation." }, { status: 400 });
+  }
+
+  const planErr = validateRedeemPlanForSelections({
+    plan,
+    selections: wizardSel,
+    fulfillmentType,
+  });
+  if (planErr) {
+    return NextResponse.json({ error: planErr.error, code: planErr.code }, { status: planErr.status });
   }
   if (fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM && !purchase.redemptionIccid?.trim()) {
     return NextResponse.json({ error: "ICCID is required for existing physical SIM." }, { status: 400 });

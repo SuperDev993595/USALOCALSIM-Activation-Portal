@@ -8,12 +8,9 @@ import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
 import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
 import { tierRequiresEsimOnly, isCoverageTier } from "@/lib/coverage-tier";
-import { planMarketForTier } from "@/lib/tier-plan-seed";
-import {
-  networkRequiredForVoucher,
-  planFilterForNetwork,
-  resolveNetworkForRedeem,
-} from "@/lib/redeem-network";
+import { planFilterForNetwork } from "@/lib/redeem-network";
+import { threeUkExclusivePlanWhere } from "@/lib/three-uk-redeem";
+import { validateRedeemWizardSelections } from "@/lib/redeem-selection-guards";
 import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
 import {
   addonCentsForSkus,
@@ -78,32 +75,15 @@ export async function POST(req: Request) {
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
 
-  const tier = purchase.redemptionCoverageTier?.trim().toLowerCase() ?? "";
-  if (networkRequiredForVoucher(voucher) && !isCoverageTier(tier)) {
+  const wizardSel = await validateRedeemWizardSelections(purchase, voucher);
+  if (!wizardSel.ok) {
     return NextResponse.json(
-      { error: "Select a coverage tier before continuing.", code: "TIER_REQUIRED" },
-      { status: 403 },
+      { error: wizardSel.error, code: wizardSel.code },
+      { status: wizardSel.status },
     );
   }
-
-  const network = await resolveNetworkForRedeem({
-    purchaseNetworkSlug: purchase.redemptionNetworkSlug,
-    voucher,
-  });
-  if (networkRequiredForVoucher(voucher) && !network) {
-    return NextResponse.json(
-      { error: "Select a mobile network before choosing a plan.", code: "NETWORK_REQUIRED" },
-      { status: 403 },
-    );
-  }
-
-  const cardMarket = purchase.prepaidCard?.retailMarket ?? voucher.plan.market;
-  const planMarket = planMarketForTier(
-    isCoverageTier(tier) ? tier : "",
-    cardMarket,
-  );
+  const { tier, network, ultraEsimOnly, threeUkExclusive, planMarket } = wizardSel;
   const fulfillment = body.fulfillmentType;
-  const ultraEsimOnly = isCoverageTier(tier) && tierRequiresEsimOnly(tier);
   const planTypeWhere = ultraEsimOnly
     ? { planType: "esim" as const }
     : fulfillment === REDEMPTION_FULFILLMENT_TYPES.ESIM
@@ -122,9 +102,13 @@ export async function POST(req: Request) {
   const planRows = await prisma.plan.findMany({
     where: {
       ...planTypeWhere,
-      market: planMarket,
-      ...(network ? planFilterForNetwork(network.id) : {}),
-      ...(isCoverageTier(tier) ? { coverageTier: tier } : {}),
+      ...(threeUkExclusive && network
+        ? threeUkExclusivePlanWhere(network.id)
+        : {
+            market: planMarket,
+            ...(network ? planFilterForNetwork(network.id) : {}),
+            ...(isCoverageTier(tier) ? { coverageTier: tier } : {}),
+          }),
     },
     select: {
       id: true,

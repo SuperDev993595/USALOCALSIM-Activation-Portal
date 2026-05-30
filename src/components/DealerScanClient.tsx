@@ -234,6 +234,9 @@ export function DealerScanClient() {
     <div className="mx-auto max-w-lg">
       <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">{t("scanTitle")}</h1>
       <p className="mt-1 text-sm text-slate-600">{t("scanSubtitle")}</p>
+      <p className="mt-2 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-950">
+        {t("scanTourismNote")}
+      </p>
 
       {message ? (
         <p

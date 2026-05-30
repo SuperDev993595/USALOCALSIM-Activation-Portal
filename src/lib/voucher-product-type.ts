@@ -34,6 +34,24 @@ export function inferVoucherProductTypeFromCode(code: string): VoucherProductTyp
   return VOUCHER_PRODUCT_TYPE.GLOBAL;
 }
 
+/** Batch type for prepaid CSV import: explicit column → form default → serial/PIN prefix. */
+export function resolvePrepaidImportProductType(options: {
+  rowType?: string;
+  bodyDefault?: string;
+  serial: string;
+  pin: string;
+}): VoucherProductType {
+  if (options.rowType && isVoucherProductType(options.rowType)) return options.rowType;
+  if (options.bodyDefault && isVoucherProductType(options.bodyDefault)) return options.bodyDefault;
+  if (inferVoucherProductTypeFromCode(options.serial) === VOUCHER_PRODUCT_TYPE.THREE_UK) {
+    return VOUCHER_PRODUCT_TYPE.THREE_UK;
+  }
+  if (inferVoucherProductTypeFromCode(options.pin) === VOUCHER_PRODUCT_TYPE.THREE_UK) {
+    return VOUCHER_PRODUCT_TYPE.THREE_UK;
+  }
+  return VOUCHER_PRODUCT_TYPE.GLOBAL;
+}
+
 export function effectiveVoucherProductType(voucher: {
   voucherProductType: string;
   code: string;

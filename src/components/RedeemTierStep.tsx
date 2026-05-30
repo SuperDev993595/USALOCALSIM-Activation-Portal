@@ -91,14 +91,16 @@ export function RedeemTierStep({
               key={tier}
               type="button"
               disabled={loading}
-              className={`rounded-lg border px-4 py-3 text-left transition ${
-                isSelected
-                  ? `${ui.accentClass} ring-2 ring-white/25`
-                  : "border-white/15 bg-black/20 hover:border-white/30"
+              className={`relative overflow-hidden rounded-lg border px-4 py-3 text-left transition ${
+                isSelected ? ui.selectedClass : `${ui.accentClass} hover:border-white/30`
               }`}
               onClick={() => setSelected(tier)}
             >
-              <span className="block text-sm font-bold tracking-wide text-white">{ui.title}</span>
+              <span
+                className={`absolute left-0 top-0 h-full w-1 ${ui.barClass}`}
+                aria-hidden
+              />
+              <span className="block pl-2 text-sm font-bold tracking-wide text-white">{ui.title}</span>
               <span className="mt-0.5 block text-xs text-slate-300">{ui.subtitle}</span>
               {tier === COVERAGE_TIER.ULTRA ? (
                 <span className="mt-1 block text-[10px] uppercase text-red-200/90">{t("tierUltraEsimNote")}</span>

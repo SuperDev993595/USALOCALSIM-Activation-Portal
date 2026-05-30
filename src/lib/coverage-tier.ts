@@ -26,22 +26,34 @@ export const NETWORK_SLUGS_BY_TIER: Record<CoverageTier, readonly string[]> = {
 
 export const COVERAGE_TIER_UI: Record<
   CoverageTier,
-  { title: string; subtitle: string; accentClass: string }
+  {
+    title: string;
+    subtitle: string;
+    accentClass: string;
+    selectedClass: string;
+    barClass: string;
+  }
 > = {
   [COVERAGE_TIER.BASIC]: {
     title: "BASIC",
     subtitle: "USA · Canada · Mexico",
-    accentClass: "border-emerald-500/50 bg-emerald-950/30",
+    accentClass: "border-emerald-600/40 bg-emerald-950/25",
+    selectedClass: "border-emerald-400 bg-emerald-950/40 ring-2 ring-emerald-400/40",
+    barClass: "bg-emerald-500",
   },
   [COVERAGE_TIER.PRO]: {
     title: "PRO",
     subtitle: "72 countries",
-    accentClass: "border-sky-500/50 bg-sky-950/30",
+    accentClass: "border-sky-500/40 bg-sky-950/25",
+    selectedClass: "border-sky-400 bg-sky-950/40 ring-2 ring-sky-400/40",
+    barClass: "bg-sky-500",
   },
   [COVERAGE_TIER.ULTRA]: {
     title: "ULTRA",
     subtitle: "200+ countries · eSIM only",
-    accentClass: "border-red-500/50 bg-red-950/30",
+    accentClass: "border-red-500/40 bg-red-950/25",
+    selectedClass: "border-red-400 bg-red-950/40 ring-2 ring-red-400/40",
+    barClass: "bg-red-600",
   },
 };
 

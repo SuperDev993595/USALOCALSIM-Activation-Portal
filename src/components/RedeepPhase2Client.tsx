@@ -10,6 +10,8 @@ import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/Redee
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
+import { PaymentMethodsNote } from "@/components/PaymentMethodsNote";
+import { REDEEM_PANEL_CLASS, REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
 const redeepPanelInputClass =
@@ -90,7 +92,7 @@ function RedeemStepNav({
                 {isPast ? "✓" : stepNum}
               </span>
               <span
-                className={`hidden max-w-[4.5rem] truncate px-0.5 text-center text-[10px] font-medium leading-tight sm:block ${
+                className={`block max-w-[4.25rem] truncate px-0.5 text-center text-[9px] font-medium leading-tight sm:max-w-[4.5rem] sm:text-[10px] ${
                   isCurrent ? "text-white" : isPast ? "text-emerald-200/90" : "text-slate-500"
                 }`}
               >
@@ -156,7 +158,9 @@ export function RedeepPhase2Client({
   const [tmobileAddonOptions, setTmobileAddonOptions] = useState<TmobileAddonOption[]>([]);
   const [selectedAddonSkus, setSelectedAddonSkus] = useState<TmobileAddonSku[]>([]);
   const ultraEsimOnly =
-    isCoverageTier(selectedCoverageTier) && tierRequiresEsimOnly(selectedCoverageTier);
+    showTierStep &&
+    isCoverageTier(selectedCoverageTier) &&
+    tierRequiresEsimOnly(selectedCoverageTier);
   const [voucherCode, setVoucherCode] = useState("");
   const [plans, setPlans] = useState<PlanRow[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
@@ -439,8 +443,7 @@ export function RedeepPhase2Client({
     }
   }
 
-  const panelClass =
-    "h-auto w-full rounded-xl border border-white/[0.12] bg-slate-950/65 p-6 text-slate-100 shadow-[0_16px_40px_-14px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:p-7";
+  const panelClass = REDEEM_PANEL_CLASS;
 
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
@@ -512,6 +515,7 @@ export function RedeepPhase2Client({
           labelKeys={navKeys}
           t={t}
         />
+        <PaymentMethodsNote className="mb-4" />
         <div role="status" aria-live="polite" aria-atomic="true" className="mb-5 min-h-0">
           {error ? (
             <p className="rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
@@ -602,7 +606,7 @@ export function RedeepPhase2Client({
                   </div>
                   <button
                     type="button"
-                    className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                    className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
                     disabled={loading !== null || !redeemPhone.trim() || !purchaseId.trim()}
                     onClick={() => void sendRedeemSms()}
                   >
@@ -634,7 +638,7 @@ export function RedeepPhase2Client({
                   </div>
                   <button
                     type="button"
-                    className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                    className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
                     disabled={loading !== null || redeemOtpCode.trim().length < 4}
                     onClick={() => void verifyRedeemSms()}
                   >
@@ -797,7 +801,7 @@ export function RedeepPhase2Client({
 
               <button
                 type="button"
-                className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
                 disabled={loading !== null || !fulfillmentReady}
                 onClick={() => {
                   setSelectedPlanId("");
@@ -912,7 +916,7 @@ export function RedeepPhase2Client({
 
               <button
                 type="button"
-                className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
                 disabled={loading !== null || !selectedPlan || (!voucherFromPurchase && !voucherCode.trim())}
                 onClick={() => void checkoutBalance()}
               >
@@ -985,7 +989,7 @@ export function RedeepPhase2Client({
 
               <button
                 type="button"
-                className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
                 disabled={
                   loading !== null ||
                   !activationDate ||
