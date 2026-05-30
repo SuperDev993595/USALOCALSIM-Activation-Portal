@@ -8,13 +8,22 @@ import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/red
 import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
 import { createMercadoPagoUpgradePreference } from "@/lib/mercadopago-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
-import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
+import { ensureRedemptionAccessToken } from "@/lib/redemption-access";
+import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
 import { stripeCheckoutPaymentOptions } from "@/lib/stripe-checkout-options";
+import {
+  addonCentsForSkus,
+  addonLinesForSkus,
+  addonsAllowedForNetwork,
+  normalizeTmobileAddonSkus,
+  serializeAddonSkus,
+} from "@/lib/tmobile-addons";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
-  voucherCode: z.string().min(1),
+  voucherCode: z.string().optional(),
   planId: z.string().min(1),
+  addonSkus: z.array(z.string()).optional(),
   fulfillmentType: z.enum([
     REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
     REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING,
@@ -53,6 +62,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: redeemPhoneNotVerifiedMessage() }, { status: 403 });
   }
 
+  const accessForReturn = access || (await ensureRedemptionAccessToken(purchase)).accessToken;
+
   if (body.fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM && !body.iccid?.trim()) {
     return NextResponse.json({ error: "ICCID is required when customer already has a SIM." }, { status: 400 });
   }
@@ -63,26 +74,31 @@ export async function POST(req: Request) {
   const plan = await prisma.plan.findUnique({ where: { id: body.planId } });
   if (!plan) return NextResponse.json({ error: "Plan not found." }, { status: 404 });
 
-  const pinInput = body.voucherCode.trim();
-  const matchedRowVoucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-  let voucher =
-    matchedRowVoucher && (await matchesVoucherPin(matchedRowVoucher, pinInput))
-      ? await prisma.voucher.findUnique({
-          where: { id: matchedRowVoucher.id },
-          include: { plan: true },
-        })
-      : null;
-  if (!voucher) voucher = await resolveVoucherByPin(pinInput);
-  if (!voucher || voucher.status === "redeemed") {
+  const voucherResult = await resolveVoucherForRedeem(purchase, body.voucherCode);
+  if (!voucherResult.ok) {
+    return NextResponse.json(
+      { error: voucherResult.error, code: voucherResult.code },
+      { status: voucherResult.status },
+    );
+  }
+  const voucher = voucherResult.voucher;
+  if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "Invalid or already redeemed voucher." }, { status: 400 });
   }
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
+  const addonsOk = addonsAllowedForNetwork(purchase.redemptionNetworkSlug);
+  const selectedAddonSkus = addonsOk ? normalizeTmobileAddonSkus(body.addonSkus ?? []) : [];
+  const addonCents = addonsOk ? addonCentsForSkus(selectedAddonSkus) : 0;
   const totals = computeRedemptionTotals({
     planPriceCents: plan.priceCents,
     creditAmountCents,
     fulfillmentType: body.fulfillmentType,
+    addonCents,
   });
+  const addonLines = addonLinesForSkus(selectedAddonSkus);
+  const addonSummary =
+    addonLines.length > 0 ? addonLines.map((a) => a.label).join(", ") : undefined;
 
   await prisma.cartPurchase.update({
     where: { id: purchase.id },
@@ -94,6 +110,8 @@ export async function POST(req: Request) {
       redemptionShippingCents: totals.shippingCents,
       redemptionCreditAppliedCents: totals.creditAppliedCents,
       redemptionFinalTotalCents: totals.finalTotalCents,
+      redemptionAddonSkus:
+        selectedAddonSkus.length > 0 ? serializeAddonSkus(selectedAddonSkus) : null,
     },
   });
 
@@ -109,7 +127,7 @@ export async function POST(req: Request) {
       balanceDueCents: totals.balanceDueCents,
       retailMarket,
       customerEmail: purchase.customerEmail,
-      accessToken: access,
+      accessToken: accessForReturn,
     });
     if (mp.ok) {
       return NextResponse.json({ ok: true, zeroDue: false, url: mp.initPoint, provider: "mercadopago" });
@@ -131,7 +149,12 @@ export async function POST(req: Request) {
           currency: "usd",
           product_data: {
             name: `Redemption balance (${plan.name})`,
-            description: `Voucher credit applied: $${(totals.creditAppliedCents / 100).toFixed(2)}`,
+            description: [
+              `Voucher credit applied: $${(totals.creditAppliedCents / 100).toFixed(2)}`,
+              addonSummary ? `Add-ons: ${addonSummary}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · "),
           },
           unit_amount: totals.balanceDueCents,
         },
@@ -140,10 +163,10 @@ export async function POST(req: Request) {
     ],
     success_url: `${appUrl}/redeem?purchaseId=${encodeURIComponent(
       purchase.id,
-    )}${access ? `&access=${encodeURIComponent(access)}` : ""}&upgrade=paid`,
+    )}&access=${encodeURIComponent(accessForReturn)}&upgrade=paid`,
     cancel_url: `${appUrl}/redeem?purchaseId=${encodeURIComponent(
       purchase.id,
-    )}${access ? `&access=${encodeURIComponent(access)}` : ""}`,
+    )}&access=${encodeURIComponent(accessForReturn)}`,
     metadata: {
       flow: "cart_voucher_upgrade",
       purchaseId: purchase.id,

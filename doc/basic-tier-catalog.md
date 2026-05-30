@@ -101,7 +101,7 @@ npx prisma migrate deploy
 npm run db:seed
 ```
 
-Seed logic: `prisma/seed.ts` → `seedBasicTierCatalog()` — upserts networks (if missing) and BASIC plans by **name + network + planType**.
+Seed logic: `prisma/seed.ts` → `seedTierCatalogs()` — BASIC + mock PRO/ULTRA (see [mock-tier-catalogs.md](./mock-tier-catalogs.md)).
 
 ---
 
@@ -114,7 +114,7 @@ Seed logic: `prisma/seed.ts` → `seedBasicTierCatalog()` — upserts networks (
 | Network picker after SMS | ✅ Global voucher |
 | Perfect-match grouping ($35) | ✅ Quote + redeem UI |
 | Tier step BASIC / PRO / ULTRA | ✅ After SMS on global voucher |
-| T-Mobile add-on checkboxes | ❌ Not built |
+| T-Mobile add-on checkboxes | ✅ Plan step when network is T-Mobile |
 | Brand colors on network step | ❌ Not built |
 
 ---

@@ -1,7 +1,11 @@
 import { composeGs1BarcodeV1, expiryYymmddFromDate, type Gs1ComposeInput } from "./gs1-128";
 import { validateGtinOptional } from "./gs1-barcode";
+import type { VoucherProductType } from "./voucher-product-type";
 
 export type PrepaidGenerateMode = "test" | "gs1";
+
+/** Production cards: `redeem_enter` (scratch PIN at /redeem/enter). D2C checkout: `cart_serial`. */
+export type PrepaidQrTarget = "redeem_enter" | "cart_serial";
 
 export type PrepaidGenerateBatchConfig = {
   mode: PrepaidGenerateMode;
@@ -14,6 +18,8 @@ export type PrepaidGenerateBatchConfig = {
   lot: string;
   expiryYymmdd: string;
   qrUseFullUrl: boolean;
+  qrTarget?: PrepaidQrTarget;
+  voucherProductType?: VoucherProductType;
 };
 
 export type PrepaidGeneratedCard = {
@@ -21,6 +27,7 @@ export type PrepaidGeneratedCard = {
   pin: string;
   faceValueCents: number;
   retailMarket: string;
+  voucherProductType: VoucherProductType;
   barcodePayload: string;
   gtin: string | null;
   qrPayload: string;
@@ -53,11 +60,24 @@ export function formatSerial(prefix: string, seq: number, width = 6): string {
   return serial.slice(0, 64);
 }
 
-export function buildQrPayload(serial: string, appBaseUrl: string, useFullUrl: boolean): string {
+export function buildRedeemEnterUrl(appBaseUrl: string): string {
+  const base = appBaseUrl.replace(/\/$/, "");
+  return `${base}/redeem/enter`;
+}
+
+export function buildQrPayload(
+  serial: string,
+  appBaseUrl: string,
+  useFullUrl: boolean,
+  target: PrepaidQrTarget = "redeem_enter",
+): string {
   const s = serial.trim();
   if (!useFullUrl) return s;
   const base = appBaseUrl.replace(/\/$/, "");
-  return `${base}/cart?serial=${encodeURIComponent(s)}`;
+  if (target === "cart_serial") {
+    return `${base}/cart?serial=${encodeURIComponent(s)}`;
+  }
+  return buildRedeemEnterUrl(appBaseUrl);
 }
 
 export function buildPrepaidCardRow(
@@ -91,14 +111,17 @@ export function buildPrepaidCardRow(
     gtin = gtin.replace(/\D/g, "");
   }
 
+  const voucherProductType = config.voucherProductType ?? "global";
+
   return {
     serial,
     pin,
     faceValueCents: config.faceValueCents,
     retailMarket,
+    voucherProductType,
     barcodePayload,
     gtin,
-    qrPayload: buildQrPayload(serial, appBaseUrl, config.qrUseFullUrl),
+    qrPayload: buildQrPayload(serial, appBaseUrl, config.qrUseFullUrl, config.qrTarget ?? "redeem_enter"),
     gs1HumanReadable,
   };
 }
@@ -131,7 +154,7 @@ export function generatePrepaidBatch(
 }
 
 export function prepaidRowsToCsv(rows: PrepaidGeneratedCard[]): string {
-  const header = "serial,pin,faceValueCents,retailMarket,barcode,gtin";
+  const header = "serial,pin,faceValueCents,retailMarket,barcode,gtin,voucherProductType";
   const lines = rows.map((r) => {
     const esc = (v: string) => (v.includes(",") || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v);
     return [
@@ -141,6 +164,7 @@ export function prepaidRowsToCsv(rows: PrepaidGeneratedCard[]): string {
       r.retailMarket,
       esc(r.barcodePayload),
       r.gtin ? esc(r.gtin) : "",
+      r.voucherProductType,
     ].join(",");
   });
   return [header, ...lines].join("\n");

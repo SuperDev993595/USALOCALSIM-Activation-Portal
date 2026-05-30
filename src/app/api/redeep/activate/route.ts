@@ -5,11 +5,11 @@ import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { ACTIVATION_SCENARIO_CART_VOUCHER } from "@/lib/stripe-cart-flow";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
-import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
+import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
-  voucherCode: z.string().min(1),
+  voucherCode: z.string().optional(),
   activationDate: z.string().min(1),
   accessToken: z.string().optional(),
 });
@@ -44,15 +44,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: redeemPhoneNotVerifiedMessage() }, { status: 403 });
   }
 
-  const pinInput = body.voucherCode.trim();
-  const voucherCode = pinInput.toUpperCase();
-  const matchedRowVoucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-  let voucher =
-    matchedRowVoucher && (await matchesVoucherPin(matchedRowVoucher, pinInput))
-      ? await prisma.voucher.findUnique({ where: { id: matchedRowVoucher.id } })
-      : null;
-  if (!voucher) voucher = await resolveVoucherByPin(pinInput);
-  if (!voucher || voucher.status === "redeemed") {
+  const voucherResult = await resolveVoucherForRedeem(purchase, body.voucherCode);
+  if (!voucherResult.ok) {
+    return NextResponse.json(
+      { error: voucherResult.error, code: voucherResult.code },
+      { status: voucherResult.status },
+    );
+  }
+  const voucher = voucherResult.voucher;
+  const voucherCode = voucher.code.toUpperCase();
+  if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "Invalid or already redeemed PIN." }, { status: 400 });
   }
 

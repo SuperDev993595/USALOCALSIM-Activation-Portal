@@ -16,6 +16,8 @@ const bodySchema = z.object({
   lot: z.string().optional(),
   expiryYymmdd: z.string().optional(),
   qrUseFullUrl: z.boolean().optional(),
+  qrTarget: z.enum(["redeem_enter", "cart_serial"]).optional(),
+  voucherProductType: z.enum(["global", "three_uk"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -43,6 +45,8 @@ export async function POST(req: Request) {
       lot: body.lot ?? "",
       expiryYymmdd: body.expiryYymmdd ?? "",
       qrUseFullUrl: body.qrUseFullUrl ?? true,
+      qrTarget: body.qrTarget ?? "redeem_enter",
+      voucherProductType: body.voucherProductType ?? "global",
     },
     appBaseUrlFromEnv(),
   );

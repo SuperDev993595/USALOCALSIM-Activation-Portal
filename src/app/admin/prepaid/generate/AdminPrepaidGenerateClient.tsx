@@ -14,11 +14,13 @@ export function AdminPrepaidGenerateClient() {
   const [serialPrefix, setSerialPrefix] = useState("USALOCAL");
   const [serialStart, setSerialStart] = useState(1);
   const [retailMarket, setRetailMarket] = useState("us");
+  const [voucherProductType, setVoucherProductType] = useState<"global" | "three_uk">("global");
   const [faceValueCents, setFaceValueCents] = useState(5000);
   const [gtin, setGtin] = useState("");
   const [lot, setLot] = useState("LOT01");
   const [expiryYymmdd, setExpiryYymmdd] = useState("");
   const [qrUseFullUrl, setQrUseFullUrl] = useState(true);
+  const [qrTarget, setQrTarget] = useState<"redeem_enter" | "cart_serial">("redeem_enter");
   const [qrWidth, setQrWidth] = useState(280);
   const [padding, setPadding] = useState(5);
   const [fontsize, setFontsize] = useState(12);
@@ -76,6 +78,8 @@ export function AdminPrepaidGenerateClient() {
           lot: mode === "gs1" ? lot : undefined,
           expiryYymmdd: expiryYymmdd || undefined,
           qrUseFullUrl,
+          qrTarget,
+          voucherProductType,
         }),
       });
       const data = await res.json();
@@ -102,6 +106,8 @@ export function AdminPrepaidGenerateClient() {
     lot,
     expiryYymmdd,
     qrUseFullUrl,
+    qrTarget,
+    voucherProductType,
   ]);
 
   async function decodePayload() {
@@ -219,14 +225,27 @@ export function AdminPrepaidGenerateClient() {
                 />
               </div>
             </div>
-            <div className="pb-5">
-              <label className="ui-label">Retail market</label>
-              <select className="ui-select" value={retailMarket} onChange={(e) => setRetailMarket(e.target.value)}>
-                <option value="us">us</option>
-                <option value="br">br</option>
-                <option value="uk">uk</option>
-                <option value="global">global</option>
-              </select>
+            <div className="grid gap-4 pb-5 sm:grid-cols-2">
+              <div>
+                <label className="ui-label">Retail market</label>
+                <select className="ui-select" value={retailMarket} onChange={(e) => setRetailMarket(e.target.value)}>
+                  <option value="us">us</option>
+                  <option value="br">br</option>
+                  <option value="uk">uk</option>
+                  <option value="global">global</option>
+                </select>
+              </div>
+              <div>
+                <label className="ui-label">Voucher product type</label>
+                <select
+                  className="ui-select"
+                  value={voucherProductType}
+                  onChange={(e) => setVoucherProductType(e.target.value as "global" | "three_uk")}
+                >
+                  <option value="global">Global (tier + network redeem)</option>
+                  <option value="three_uk">Three UK exclusive</option>
+                </select>
+              </div>
             </div>
             {mode === "gs1" ? (
               <>
@@ -256,11 +275,30 @@ export function AdminPrepaidGenerateClient() {
                 </div>
               </>
             ) : null}
-            <div className="pb-5">
+            <div className="space-y-3 pb-5">
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input type="checkbox" checked={qrUseFullUrl} onChange={(e) => setQrUseFullUrl(e.target.checked)} />
-                QR encodes full cart URL (/cart?serial=…)
+                QR encodes full HTTPS URL (recommended for printed cards)
               </label>
+              {qrUseFullUrl ? (
+                <div>
+                  <label className="ui-label">QR destination</label>
+                  <select
+                    className="ui-select"
+                    value={qrTarget}
+                    onChange={(e) => setQrTarget(e.target.value as "redeem_enter" | "cart_serial")}
+                  >
+                    <option value="redeem_enter">Redeem portal — /redeem/enter (production default)</option>
+                    <option value="cart_serial">D2C cart — /cart?serial=… (scan-to-pay)</option>
+                  </select>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Replaces invalid printed URL <code className="rounded bg-slate-100 px-1">www.redeem/voucher</code>.
+                    Customer scratches PIN on the redeem page.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">QR encodes serial only (dealer barcode smoke test).</p>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-3 border-t border-slate-200 bg-slate-50/90 px-6 py-5 md:px-8">

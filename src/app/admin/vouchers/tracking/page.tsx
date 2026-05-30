@@ -4,11 +4,13 @@ import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { voucherAdminStatusBadge } from "@/lib/voucher-status-display";
 
 type VoucherRow = {
   id: string;
   code: string;
   status: string;
+  paymentStatus: boolean;
   type: string;
   planName: string;
   planType: string;
@@ -41,39 +43,13 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const s = status.toLowerCase();
-  const styleByStatus: Record<string, { badge: string; dot: string; label: string }> = {
-    redeemed: {
-      badge: "border-violet-300 bg-violet-50 text-violet-900",
-      dot: "bg-violet-500",
-      label: "Redeemed",
-    },
-    activated: {
-      badge: "border-emerald-300 bg-emerald-50 text-emerald-900",
-      dot: "bg-emerald-600",
-      label: "Activated",
-    },
-    eligible: {
-      badge: "border-sky-300 bg-sky-50 text-sky-900",
-      dot: "bg-sky-600",
-      label: "Eligible",
-    },
-    inactive: {
-      badge: "border-rose-300 bg-rose-50 text-rose-900",
-      dot: "bg-rose-500",
-      label: "Inactive",
-    },
-  };
-  const style =
-    styleByStatus[s] ??
-    ({
-      badge: "border-amber-300 bg-amber-50 text-amber-900",
-      dot: "bg-amber-500",
-      label: status,
-    } as const);
+function StatusBadge({ status, paymentStatus }: { status: string; paymentStatus: boolean }) {
+  const style = voucherAdminStatusBadge({ status, paymentStatus });
   return (
-    <span className={`badge inline-flex items-center gap-1.5 whitespace-nowrap border font-semibold ${style.badge}`}>
+    <span
+      className={`badge inline-flex items-center gap-1.5 whitespace-nowrap border font-semibold ${style.badge}`}
+      title={`DB status: ${style.dbStatus}${paymentStatus ? " · paid" : ""}`}
+    >
       <span className={`h-2 w-2 rounded-full ${style.dot}`} aria-hidden />
       {style.label}
     </span>
@@ -345,7 +321,7 @@ export default function VoucherTrackingPage() {
                   <tr key={v.id}>
                     <td className="pl-5 font-mono text-sm text-slate-900 md:pl-6">{v.code}</td>
                     <td>
-                      <StatusBadge status={v.status} />
+                      <StatusBadge status={v.status} paymentStatus={v.paymentStatus} />
                     </td>
                     <td>
                       <span className="rounded-none border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs capitalize text-slate-600">

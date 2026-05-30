@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { NETWORK_DISPLAY, type GlobalNetworkSlug } from "@/lib/network-catalog";
+import { networkBrandCardStyle } from "@/lib/network-brand";
 
 type NetworkRow = { slug: string; name: string };
 
@@ -109,15 +110,13 @@ export function RedeemNetworkStep({
               NETWORK_DISPLAY[n.slug as GlobalNetworkSlug] ||
               n.slug.toUpperCase();
             const isSelected = selected === n.slug;
+            const brand = networkBrandCardStyle(n.slug, isSelected);
             return (
               <button
                 key={n.slug}
                 type="button"
-                className={`rounded-lg border px-4 py-3 text-left text-sm font-semibold transition ${
-                  isSelected
-                    ? "border-white bg-white/15 text-white ring-2 ring-white/25"
-                    : "border-white/15 bg-black/20 text-slate-200 hover:border-white/30 hover:bg-white/10"
-                }`}
+                className={`rounded-lg border px-4 py-3 text-left text-sm font-semibold transition ${brand.className}`}
+                style={brand.style}
                 disabled={loading === "save"}
                 onClick={() => setSelected(n.slug)}
               >

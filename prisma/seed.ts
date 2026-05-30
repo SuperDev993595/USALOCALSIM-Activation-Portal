@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
-import { seedBasicTierCatalog } from "./seed-basic-tier";
+import { seedTierCatalogs } from "./seed-tier-catalogs";
 
 const prisma = new PrismaClient();
 
@@ -51,7 +51,7 @@ async function main() {
 
   console.log("Seeded plans");
 
-  await seedBasicTierCatalog(prisma);
+  await seedTierCatalogs(prisma);
 
   // Demo prepaid QR flow (optional): `/cart?serial=…` then PIN `SCRATCHDEMO1` after checkout.
   let prepaidBasic = await prisma.plan.findFirst({

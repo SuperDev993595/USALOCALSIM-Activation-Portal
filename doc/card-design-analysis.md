@@ -147,7 +147,7 @@ Dark navy header: **HOW IT WORKS**
 | Step | Title | Instruction |
 |------|-------|-------------|
 | 1 | **SCAN & PAY** | Scan the QR code to pay and purchase your credit instantly. |
-| 2 | **GO TO REDEEM/VOUCHER** | Visit **www.redeem/voucher** — scratch and enter your PIN to redeem your credit. |
+| 2 | **GO TO REDEEM/VOUCHER** | Visit **`{APP_URL}/redeem/enter`** — scratch and enter your PIN to redeem your credit. |
 | 3 | **VERIFY & CHOOSE PLAN** | Verify via SMS and explore data plans, upgrades, and shipping (if needed). |
 
 **Portal mapping:**
@@ -158,7 +158,7 @@ Dark navy header: **HOW IT WORKS**
 | Redeem | `/redeem` (or printed URL) → PIN entry → access token / purchase session |
 | Verify & choose | SMS OTP → plan catalog filtered by tier/network → optional upgrade payment → activation queue |
 
-**Copy issue:** Step 2 URL `www.redeem/voucher` is not a valid hostname as printed. Production should use a real URL, e.g. `redeem.usalocalsim.com` or `www.usalocalsim.com/redeem`, matching DNS and the deployed app.
+**Copy issue (resolved in portal):** Step 2 URL `www.redeem/voucher` is not valid as printed. Production uses **`/redeem/enter`** (see admin prepaid generate QR default). Printed copy: `https://www.usalocalsim.com/redeem/enter` or customer-facing domain + `/redeem/enter`.
 
 ### 4.3 Scratch-for-PIN block
 

@@ -4,21 +4,31 @@ import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/redemption-fulfillment";
-import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
+import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
 import { tierRequiresEsimOnly, isCoverageTier } from "@/lib/coverage-tier";
+import { planMarketForTier } from "@/lib/tier-plan-seed";
 import {
   networkRequiredForVoucher,
   planFilterForNetwork,
   resolveNetworkForRedeem,
 } from "@/lib/redeem-network";
-import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
+import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
+import {
+  addonCentsForSkus,
+  addonLinesForSkus,
+  addonsAllowedForNetwork,
+  listTmobileAddons,
+  normalizeTmobileAddonSkus,
+  serializeAddonSkus,
+} from "@/lib/tmobile-addons";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
-  voucherCode: z.string().min(1),
+  voucherCode: z.string().optional(),
   planId: z.string().optional(),
+  addonSkus: z.array(z.string()).optional(),
   fulfillmentType: z
     .enum([
       REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
@@ -54,25 +64,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: redeemPhoneNotVerifiedMessage() }, { status: 403 });
   }
 
-  const pinInput = body.voucherCode.trim();
-  const matchedRowVoucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-  let voucher =
-    matchedRowVoucher && (await matchesVoucherPin(matchedRowVoucher, pinInput))
-      ? await prisma.voucher.findUnique({
-          where: { id: matchedRowVoucher.id },
-          include: { plan: true, prepaidCard: true },
-        })
-      : null;
-  if (!voucher) {
-    voucher = await resolveVoucherByPin(pinInput);
-  }
-  if (!voucher) {
-    const serialHint = await messageIfPinLooksLikePrepaidSerial(pinInput);
+  const voucherResult = await resolveVoucherForRedeem(purchase, body.voucherCode);
+  if (!voucherResult.ok) {
     return NextResponse.json(
-      { error: serialHint ?? "Invalid PIN or voucher code." },
-      { status: 400 },
+      { error: voucherResult.error, code: voucherResult.code },
+      { status: voucherResult.status },
     );
   }
+  const voucher = voucherResult.voucher;
   if (voucher.status === "redeemed") {
     return NextResponse.json({ error: "This voucher has already been used." }, { status: 400 });
   }
@@ -98,8 +97,11 @@ export async function POST(req: Request) {
     );
   }
 
-  /** Phase 2: catalog for card retail market (Path B) or voucher plan market. */
-  const planMarket = purchase.prepaidCard?.retailMarket ?? voucher.plan.market;
+  const cardMarket = purchase.prepaidCard?.retailMarket ?? voucher.plan.market;
+  const planMarket = planMarketForTier(
+    isCoverageTier(tier) ? tier : "",
+    cardMarket,
+  );
   const fulfillment = body.fulfillmentType;
   const ultraEsimOnly = isCoverageTier(tier) && tierRequiresEsimOnly(tier);
   const planTypeWhere = ultraEsimOnly
@@ -126,6 +128,7 @@ export async function POST(req: Request) {
     },
     select: {
       id: true,
+      sku: true,
       name: true,
       dataAllowance: true,
       durationDays: true,
@@ -140,7 +143,8 @@ export async function POST(req: Request) {
     fulfillmentForQuote ??
     REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM;
 
-  const plans = planRows
+  const plans = filterRedeemQuotePlans(
+    planRows
     .map((p) => {
       const t = computeRedemptionTotals({
         planPriceCents: p.priceCents,
@@ -161,7 +165,9 @@ export async function POST(req: Request) {
         return a.matchesVoucherCredit ? -1 : 1;
       }
       return a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents;
-    });
+    }),
+    creditAmountCents,
+  );
 
   const baselinePlans = plans.filter((p) => p.matchesVoucherCredit);
   const suggestedPlanId = baselinePlans[0]?.id ?? plans[0]?.id ?? null;
@@ -172,14 +178,28 @@ export async function POST(req: Request) {
     body.fulfillmentType ??
     (quotePlan?.planType === "esim" ? REDEMPTION_FULFILLMENT_TYPES.ESIM : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
 
+  const addonsAvailable = addonsAllowedForNetwork(purchase.redemptionNetworkSlug);
+  const selectedAddonSkus = addonsAvailable
+    ? normalizeTmobileAddonSkus(body.addonSkus ?? [])
+    : [];
+  const addonCents = addonsAvailable ? addonCentsForSkus(selectedAddonSkus) : 0;
+
   const totals =
     quotePlan != null
       ? computeRedemptionTotals({
           planPriceCents: quotePlan.priceCents,
           creditAmountCents,
           fulfillmentType: selectedFulfillment,
+          addonCents,
         })
       : null;
+
+  if (quotePlan != null && selectedAddonSkus.length > 0) {
+    await prisma.cartPurchase.update({
+      where: { id: purchase.id },
+      data: { redemptionAddonSkus: serializeAddonSkus(selectedAddonSkus) },
+    });
+  }
 
   return NextResponse.json({
     ok: true,
@@ -193,6 +213,11 @@ export async function POST(req: Request) {
     suggestedPlanId,
     selectedPlanId: selectedPlan?.id ?? null,
     selectedFulfillmentType: selectedFulfillment,
+    redemptionNetworkSlug: purchase.redemptionNetworkSlug,
+    tmobileAddonsAvailable: addonsAvailable,
+    tmobileAddons: addonsAvailable ? listTmobileAddons() : [],
+    selectedAddonSkus,
+    addonLines: addonLinesForSkus(selectedAddonSkus),
     totals,
   });
 }

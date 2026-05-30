@@ -15,16 +15,20 @@ export function computeRedemptionTotals(input: {
   planPriceCents: number;
   creditAmountCents: number;
   fulfillmentType: RedemptionFulfillmentType;
+  /** T-Mobile optional add-ons (ADD-TM-*), counted before voucher credit. */
+  addonCents?: number;
 }) {
   const shippingCents =
     input.fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.NEW_SIM_SHIPPING
       ? REDEMPTION_SHIPPING_DEFAULT_CENTS
       : 0;
-  const finalTotalCents = Math.max(0, input.planPriceCents + shippingCents);
+  const addonCents = Math.max(0, input.addonCents ?? 0);
+  const finalTotalCents = Math.max(0, input.planPriceCents + shippingCents + addonCents);
   const creditAppliedCents = Math.min(Math.max(0, input.creditAmountCents), finalTotalCents);
   const balanceDueCents = Math.max(0, finalTotalCents - creditAppliedCents);
   return {
     shippingCents,
+    addonCents,
     finalTotalCents,
     creditAppliedCents,
     balanceDueCents,

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
+import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
+import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
@@ -14,6 +17,7 @@ const redeepPanelInputClass =
 
 type PlanRow = {
   id: string;
+  sku?: string | null;
   name: string;
   dataAllowance: string;
   durationDays: number;
@@ -133,6 +137,8 @@ export function RedeepPhase2Client({
   initialCoverageTier?: string | null;
 }) {
   const t = useTranslations("redeemWizard");
+  const router = useRouter();
+  const voucherFromPurchase = skipPinStep && Boolean(purchaseIdProp?.trim() && accessTokenProp?.trim());
   const stepMap = useMemo(
     () =>
       buildRedeemWizardStepMap({
@@ -147,6 +153,8 @@ export function RedeepPhase2Client({
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
   const [selectedCoverageTier, setSelectedCoverageTier] = useState(initialCoverageTier ?? "");
   const [selectedNetworkSlug, setSelectedNetworkSlug] = useState(initialNetworkSlug ?? "");
+  const [tmobileAddonOptions, setTmobileAddonOptions] = useState<TmobileAddonOption[]>([]);
+  const [selectedAddonSkus, setSelectedAddonSkus] = useState<TmobileAddonSku[]>([]);
   const ultraEsimOnly =
     isCoverageTier(selectedCoverageTier) && tierRequiresEsimOnly(selectedCoverageTier);
   const [voucherCode, setVoucherCode] = useState("");
@@ -159,6 +167,7 @@ export function RedeepPhase2Client({
   const [creditCents, setCreditCents] = useState(0);
   const [totals, setTotals] = useState<{
     shippingCents: number;
+    addonCents?: number;
     finalTotalCents: number;
     creditAppliedCents: number;
     balanceDueCents: number;
@@ -185,6 +194,8 @@ export function RedeepPhase2Client({
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
   const baselinePlans = useMemo(() => plans.filter((p) => p.matchesVoucherCredit), [plans]);
   const upgradePlans = useMemo(() => plans.filter((p) => !p.matchesVoucherCredit), [plans]);
+  const showTmobileAddons =
+    addonsAllowedForNetwork(selectedNetworkSlug) && Boolean(selectedPlanId);
   const iccidDigitCount = useMemo(() => iccid.replace(/\D/g, "").length, [iccid]);
 
   useEffect(() => {
@@ -240,7 +251,11 @@ export function RedeepPhase2Client({
     }
   }
 
-  async function unlockAndQuote(planId?: string, fType?: FulfillmentType) {
+  async function unlockAndQuote(
+    planId?: string,
+    fType?: FulfillmentType,
+    addonSkus?: TmobileAddonSku[],
+  ) {
     if (!purchaseId.trim()) {
       setError(t("errors.unlockFirst"));
       return;
@@ -254,9 +269,10 @@ export function RedeepPhase2Client({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           purchaseId,
-          voucherCode,
+          ...(voucherFromPurchase ? {} : { voucherCode }),
           ...(planId ? { planId } : {}),
           ...(fType ? { fulfillmentType: fType } : {}),
+          ...(addonSkus && addonSkus.length > 0 ? { addonSkus } : {}),
           ...(at ? { accessToken: at } : {}),
         }),
       });
@@ -266,12 +282,16 @@ export function RedeepPhase2Client({
         plans?: PlanRow[];
         suggestedPlanId?: string | null;
         selectedFulfillmentType?: FulfillmentType;
+        tmobileAddons?: TmobileAddonOption[];
+        selectedAddonSkus?: string[];
         totals?: {
           shippingCents: number;
+          addonCents?: number;
           finalTotalCents: number;
           creditAppliedCents: number;
           balanceDueCents: number;
         } | null;
+        addonLines?: { sku: string; label: string; priceCents: number }[];
       };
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : t("errors.quote"));
@@ -281,6 +301,12 @@ export function RedeepPhase2Client({
       const nextPlans = data.plans ?? [];
       setPlans(nextPlans);
       if (data.selectedFulfillmentType) setFulfillmentType(data.selectedFulfillmentType);
+      if (Array.isArray(data.tmobileAddons)) {
+        setTmobileAddonOptions(data.tmobileAddons);
+      }
+      if (Array.isArray(data.selectedAddonSkus)) {
+        setSelectedAddonSkus(data.selectedAddonSkus as TmobileAddonSku[]);
+      }
       if (!planId && typeof data.suggestedPlanId === "string" && data.suggestedPlanId) {
         setSelectedPlanId(data.suggestedPlanId);
       }
@@ -361,11 +387,12 @@ export function RedeepPhase2Client({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           purchaseId,
-          voucherCode,
+          ...(voucherFromPurchase ? {} : { voucherCode }),
           planId: selectedPlanId,
           fulfillmentType,
           iccid,
           shippingAddress,
+          ...(selectedAddonSkus.length > 0 ? { addonSkus: selectedAddonSkus } : {}),
           ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
       });
@@ -396,7 +423,7 @@ export function RedeepPhase2Client({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           purchaseId,
-          voucherCode,
+          ...(voucherFromPurchase ? {} : { voucherCode }),
           activationDate,
           ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
@@ -430,8 +457,12 @@ export function RedeepPhase2Client({
         key={p.id}
         className="flex items-center justify-between rounded border border-white/10 bg-black/20 p-3 text-sm text-slate-200"
       >
-        <span>
-          {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
+        <span className="flex min-w-0 flex-col gap-0.5">
+          {p.sku ? (
+            <span className="font-mono text-[10px] uppercase tracking-wide text-slate-400">{p.sku}</span>
+          ) : null}
+          <span>
+            {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
           {p.matchesVoucherCredit ? (
             <span className="ml-1 text-emerald-300">· {t("planPerfectMatch")}</span>
           ) : null}
@@ -445,6 +476,7 @@ export function RedeepPhase2Client({
               · {t("planUpgradeDue", { amount: (p.balanceDueCents / 100).toFixed(2) })}
             </span>
           ) : null}
+          </span>
         </span>
         <span className="ml-3 flex items-center gap-3">
           <span>${(p.priceCents / 100).toFixed(2)}</span>
@@ -453,7 +485,8 @@ export function RedeepPhase2Client({
             checked={selectedPlanId === p.id}
             onChange={() => {
               setSelectedPlanId(p.id);
-              void unlockAndQuote(p.id, fulfillmentType);
+              const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];
+              void unlockAndQuote(p.id, fulfillmentType, addons);
             }}
           />
         </span>
@@ -528,8 +561,12 @@ export function RedeepPhase2Client({
                 aria-label={t("backUnlock")}
                 disabled={loading !== null}
                 onClick={() => {
+                  if (stepMap.skipPin) {
+                    router.push("/redeem/enter");
+                    return;
+                  }
                   setRedeemOtpUiStep("phone");
-                  setWizardStep(stepMap.skipPin ? stepMap.phone : stepMap.pin || stepMap.phone);
+                  setWizardStep(stepMap.pin || stepMap.phone);
                 }}
               >
                 <BackChevronIcon />
@@ -648,6 +685,7 @@ export function RedeepPhase2Client({
             onBack={() => setWizardStep(stepMap.tier || stepMap.phone)}
             onContinue={(slug) => {
               setSelectedNetworkSlug(slug);
+              setSelectedAddonSkus([]);
               setWizardStep(stepMap.fulfillment);
             }}
           />
@@ -838,6 +876,18 @@ export function RedeepPhase2Client({
                 ) : null}
               </div>
 
+              {showTmobileAddons && tmobileAddonOptions.length > 0 ? (
+                <RedeemTmobileAddons
+                  options={tmobileAddonOptions}
+                  selected={selectedAddonSkus}
+                  disabled={loading !== null}
+                  onChange={(skus) => {
+                    setSelectedAddonSkus(skus);
+                    if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, skus);
+                  }}
+                />
+              ) : null}
+
               {totals ? (
                 <div className="rounded border border-white/[0.08] bg-black/15 p-4 text-sm text-slate-200">
                   <p>
@@ -849,6 +899,11 @@ export function RedeepPhase2Client({
                   <p>
                     {t("shippingLine")} ${(totals.shippingCents / 100).toFixed(2)}
                   </p>
+                  {(totals.addonCents ?? 0) > 0 ? (
+                    <p>
+                      {t("addonsLine")} ${((totals.addonCents ?? 0) / 100).toFixed(2)}
+                    </p>
+                  ) : null}
                   <p className="mt-1 font-semibold text-white">
                     {t("balanceDue")} ${(totals.balanceDueCents / 100).toFixed(2)}
                   </p>
@@ -858,7 +913,7 @@ export function RedeepPhase2Client({
               <button
                 type="button"
                 className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
-                disabled={loading !== null || !selectedPlan || !voucherCode.trim()}
+                disabled={loading !== null || !selectedPlan || (!voucherFromPurchase && !voucherCode.trim())}
                 onClick={() => void checkoutBalance()}
               >
                 {loading === "checkout" ? t("processingCheckout") : t("applyCredit")}
@@ -912,7 +967,7 @@ export function RedeepPhase2Client({
                 />
               </div>
 
-              {!voucherCode.trim() ? (
+              {!voucherFromPurchase && !voucherCode.trim() ? (
                 <div className="space-y-2.5">
                   <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-pin-again-input">
                     {t("pinAgainLabel")}
@@ -931,7 +986,11 @@ export function RedeepPhase2Client({
               <button
                 type="button"
                 className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
-                disabled={loading !== null || !activationDate || !voucherCode.trim()}
+                disabled={
+                  loading !== null ||
+                  !activationDate ||
+                  (!voucherFromPurchase && !voucherCode.trim())
+                }
                 onClick={() => void activate()}
               >
                 {loading === "activate" ? t("submitting") : t("finalize")}

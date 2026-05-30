@@ -3,15 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
+import { COVERAGE_TIER_ORDER } from "@/lib/coverage-tier";
 
 type PlanRow = {
   id: string;
+  sku: string | null;
   name: string;
   dataAllowance: string;
   durationDays: number;
   priceCents: number;
   planType: string;
   market: string;
+  coverageTier: string | null;
   networkId: string | null;
   network?: { slug: string; name: string } | null;
 };
@@ -75,12 +78,14 @@ function XIcon({ className }: { className?: string }) {
 }
 
 const emptyCreate = {
+  sku: "",
   name: "",
   dataAllowance: "",
   durationDays: "30",
   priceCents: "",
   planType: "physical_sim" as "physical_sim" | "esim",
-  market: "global" as "global" | "us",
+  market: "global" as "global" | "us" | "uk" | "br",
+  coverageTier: "" as "" | "basic" | "pro" | "ultra",
   networkId: "",
 };
 
@@ -151,12 +156,14 @@ export function AdminPlansClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: createForm.name.trim(),
+          sku: createForm.sku.trim() || null,
           dataAllowance: createForm.dataAllowance.trim(),
           durationDays,
           priceCents,
           planType: createForm.planType,
           market: createForm.market,
           networkId: createForm.networkId.trim() || null,
+          coverageTier: createForm.coverageTier || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -194,12 +201,14 @@ export function AdminPlansClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editDraft.name.trim(),
+          sku: editDraft.sku?.trim() || null,
           dataAllowance: editDraft.dataAllowance.trim(),
           durationDays: editDraft.durationDays,
           priceCents: editDraft.priceCents,
           planType: editDraft.planType,
           market: editDraft.market,
           networkId: editDraft.networkId?.trim() || null,
+          coverageTier: editDraft.coverageTier || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -235,7 +244,16 @@ export function AdminPlansClient() {
         <form onSubmit={handleCreate} className="space-y-4 p-5 md:p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="ui-label !mt-0">Name</label>
+              <label className="ui-label !mt-0">SKU</label>
+              <input
+                value={createForm.sku}
+                onChange={(e) => setCreateForm((s) => ({ ...s, sku: e.target.value.toUpperCase() }))}
+                placeholder="e.g. TM-UNL-30D"
+                className="ui-input !mt-1 rounded-none font-mono text-sm uppercase"
+              />
+            </div>
+            <div>
+              <label className="ui-label !mt-0">Display name</label>
               <input
                 value={createForm.name}
                 onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
@@ -297,6 +315,28 @@ export function AdminPlansClient() {
               >
                 <option value="global">Global</option>
                 <option value="us">US</option>
+                <option value="uk">UK</option>
+                <option value="br">BR</option>
+              </select>
+            </div>
+            <div>
+              <label className="ui-label !mt-0">Coverage tier</label>
+              <select
+                value={createForm.coverageTier}
+                onChange={(e) =>
+                  setCreateForm((s) => ({
+                    ...s,
+                    coverageTier: e.target.value as typeof createForm.coverageTier,
+                  }))
+                }
+                className="ui-select !mt-1 rounded-none"
+              >
+                <option value="">Unassigned</option>
+                {COVERAGE_TIER_ORDER.map((tier) => (
+                  <option key={tier} value={tier}>
+                    {tier.toUpperCase()}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -335,8 +375,10 @@ export function AdminPlansClient() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th className="pl-5 md:pl-6">Name</th>
+                <th className="pl-5 md:pl-6">SKU</th>
+                <th>Name</th>
                 <th>Market</th>
+                <th>Tier</th>
                 <th>Network</th>
                 <th>Type</th>
                 <th>Data</th>
@@ -350,6 +392,16 @@ export function AdminPlansClient() {
                 editingId === p.id && editDraft ? (
                   <tr key={p.id}>
                     <td className="pl-5 align-top md:pl-6">
+                      <input
+                        value={editDraft.sku ?? ""}
+                        onChange={(e) =>
+                          setEditDraft((d) => (d ? { ...d, sku: e.target.value.toUpperCase() || null } : d))
+                        }
+                        className="ui-input !mt-0 font-mono text-xs uppercase"
+                        placeholder="SKU"
+                      />
+                    </td>
+                    <td className="align-top">
                       <input
                         value={editDraft.name}
                         onChange={(e) => setEditDraft((d) => (d ? { ...d, name: e.target.value } : d))}
@@ -366,6 +418,26 @@ export function AdminPlansClient() {
                       >
                         <option value="global">global</option>
                         <option value="us">us</option>
+                        <option value="uk">uk</option>
+                        <option value="br">br</option>
+                      </select>
+                    </td>
+                    <td className="align-top">
+                      <select
+                        value={editDraft.coverageTier ?? ""}
+                        onChange={(e) =>
+                          setEditDraft((d) =>
+                            d ? { ...d, coverageTier: e.target.value || null } : d,
+                          )
+                        }
+                        className="ui-select !mt-0 text-sm"
+                      >
+                        <option value="">—</option>
+                        {COVERAGE_TIER_ORDER.map((tier) => (
+                          <option key={tier} value={tier}>
+                            {tier}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td className="align-top">
@@ -458,8 +530,10 @@ export function AdminPlansClient() {
                   </tr>
                 ) : (
                   <tr key={p.id}>
-                    <td className="pl-5 font-medium text-slate-900 md:pl-6">{p.name}</td>
+                    <td className="pl-5 font-mono text-xs text-slate-600 md:pl-6">{p.sku ?? "—"}</td>
+                    <td className="font-medium text-slate-900">{p.name}</td>
                     <td className="text-slate-600">{p.market}</td>
+                    <td className="text-slate-600">{p.coverageTier ?? "—"}</td>
                     <td className="text-slate-600">{p.network?.name ?? "—"}</td>
                     <td className="text-slate-600">{p.planType}</td>
                     <td className="text-slate-600">{p.dataAllowance}</td>

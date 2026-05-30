@@ -105,8 +105,3 @@ export const BASIC_TMOBILE_ADDONS = [
       "International calling features valid while roaming inside USA, Mexico, or Canada + 5GB Roaming Data.",
   },
 ] as const;
-
-export function planSeedDisplayName(sku: string, name: string, planType: "physical_sim" | "esim"): string {
-  const fmt = planType === "esim" ? "eSIM" : "Physical SIM";
-  return `[${sku}] ${name} (${fmt})`;
-}

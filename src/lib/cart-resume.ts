@@ -1,5 +1,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
+import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
+import { effectiveVoucherProductType } from "@/lib/voucher-product-type";
 
 export const CART_RESUME_COOKIE = "usalocal_cart_resume";
 
@@ -105,5 +107,21 @@ export async function tryConsumeCartResumeCookie(
     throw e;
   }
 
-  return { kind: "attached", redirectTo: `/redeem?purchaseId=${encodeURIComponent(purchaseId)}` };
+  const purchase = await prisma.cartPurchase.findUnique({
+    where: { id: purchaseId },
+    select: {
+      id: true,
+      redemptionAccessToken: true,
+      redemptionAccessExpiresAt: true,
+      prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
+      voucher: { select: { voucherProductType: true, code: true } },
+    },
+  });
+  if (!purchase) {
+    return { kind: "noop" };
+  }
+  const { accessToken } = await ensureRedemptionAccessToken(purchase);
+  const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
+  const base = voucher && effectiveVoucherProductType(voucher) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+  return { kind: "attached", redirectTo: redeemUrlWithAccess(base, purchaseId, accessToken) };
 }

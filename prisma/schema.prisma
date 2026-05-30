@@ -82,6 +82,8 @@ model Network {
 model Plan {
   id            String   @id @default(cuid())
   name          String
+  /// Client catalog SKU (e.g. TM-UNL-30D). Unique per planType (physical_sim / esim).
+  sku           String?
   dataAllowance String   // e.g. "Unlimited", "5GB"
   durationDays  Int
   priceCents    Int
@@ -98,8 +100,10 @@ model Plan {
   prepaidCardsBase    PrepaidCard[] @relation("PrepaidCardBasePlan")
   prepaidCardsUpgrade PrepaidCard[] @relation("PrepaidCardUpgradePlan")
 
+  @@unique([sku, planType])
   @@index([networkId])
   @@index([coverageTier])
+  @@index([sku])
 }
 
 model Voucher {
@@ -239,6 +243,8 @@ model CartPurchase {
   redemptionNetworkSlug     String?
   /// basic | pro | ultra — card coverage tier (global voucher).
   redemptionCoverageTier  String?
+  /// JSON array of T-Mobile add-on SKUs (ADD-TM-*), when network is t_mobile.
+  redemptionAddonSkus     String?  @db.Text
 
   @@index([cartSessionId])
   @@index([redemptionNetworkSlug])

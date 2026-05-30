@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
-import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { RedeepPhase2Client } from "@/components/RedeepPhase2Client";
-import { networkRequiredForVoucher } from "@/lib/redeem-network";
+import { loadRedeemWizardPageContext } from "@/lib/redeem-page-load";
 
 function RedeemPageBackground({ children }: { children: ReactNode }) {
   return (
@@ -37,65 +34,30 @@ export default async function RedeemPage({
   const purchaseId = Array.isArray(searchParams.purchaseId) ? searchParams.purchaseId[0] : searchParams.purchaseId;
   const access = Array.isArray(searchParams.access) ? searchParams.access[0] : searchParams.access;
   const upgrade = Array.isArray(searchParams.upgrade) ? searchParams.upgrade[0] : searchParams.upgrade;
-  const resumeAfterPaidUpgrade = upgrade?.trim().toLowerCase() === "paid";
-  if (!purchaseId) {
+
+  if (!purchaseId?.trim()) {
     redirect("/redeem/enter");
   }
 
-  if (access?.trim()) {
-    const purchase = await prisma.cartPurchase.findFirst({
-      where: {
-        id: purchaseId,
-        redemptionAccessToken: access.trim(),
-        redemptionAccessExpiresAt: { gt: new Date() },
-      },
-      select: {
-        id: true,
-        redemptionPhoneVerifiedAt: true,
-        redemptionNetworkSlug: true,
-        redemptionCoverageTier: true,
-        prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
-        voucher: { select: { voucherProductType: true, code: true } },
-      },
-    });
-    if (!purchase) redirect("/cart?resume=invalid");
-    const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-    const showNetwork = voucher ? networkRequiredForVoucher(voucher) : true;
-    return (
-      <RedeemPageBackground>
-        <div className="flex w-full justify-center">
-          <RedeepPhase2Client
-            purchaseId={purchase.id}
-            accessToken={access.trim()}
-            resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
-            redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
-            showTierStep={showNetwork}
-            showNetworkStep={showNetwork}
-            skipPinStep
-            initialCoverageTier={purchase.redemptionCoverageTier}
-            initialNetworkSlug={purchase.redemptionNetworkSlug}
-          />
-        </div>
-      </RedeemPageBackground>
-    );
-  }
-
-  const cookieStore = await cookies();
-  const sid = cookieStore.get(CART_SESSION_COOKIE)?.value;
-  if (!sid) redirect("/cart");
-  const purchase = await prisma.cartPurchase.findFirst({
-    where: { id: purchaseId, cartSessionId: sid },
-    select: { id: true, redemptionPhoneVerifiedAt: true },
+  const ctx = await loadRedeemWizardPageContext({
+    purchaseId: purchaseId.trim(),
+    access: access?.trim(),
+    upgrade,
   });
-  if (!purchase) redirect("/cart/plans");
 
   return (
     <RedeemPageBackground>
       <div className="flex w-full justify-center">
         <RedeepPhase2Client
-          purchaseId={purchase.id}
-          resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
-          redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
+          purchaseId={ctx.purchaseId}
+          accessToken={ctx.accessToken}
+          resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
+          redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
+          showTierStep={ctx.showTierStep}
+          showNetworkStep={ctx.showNetworkStep}
+          skipPinStep
+          initialCoverageTier={ctx.initialCoverageTier}
+          initialNetworkSlug={ctx.initialNetworkSlug}
         />
       </div>
     </RedeemPageBackground>

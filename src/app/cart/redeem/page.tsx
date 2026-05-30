@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
+import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
+import { effectiveVoucherProductType } from "@/lib/voucher-product-type";
 
 export default async function CartRedeemPage({
   searchParams,
@@ -27,12 +29,17 @@ export default async function CartRedeemPage({
         redemptionAccessExpiresAt: { gt: now },
         status: "authorized",
       },
-      include: { plan: true },
+      include: {
+        prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
+        voucher: { select: { voucherProductType: true, code: true } },
+      },
     });
     if (!purchase) {
       redirect("/cart?resume=invalid");
     }
-    redirect(`/redeem?purchaseId=${encodeURIComponent(purchase.id)}&access=${encodeURIComponent(access.trim())}`);
+    const voucherRow = purchase.prepaidCard?.voucher ?? purchase.voucher;
+    const base = voucherRow && effectiveVoucherProductType(voucherRow) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+    redirect(redeemUrlWithAccess(base, purchase.id, access.trim()));
   }
 
   const cookieStore = await cookies();
@@ -43,7 +50,10 @@ export default async function CartRedeemPage({
 
   const purchase = await prisma.cartPurchase.findFirst({
     where: { id: purchaseId, cartSessionId: sid },
-    include: { plan: true },
+    include: {
+      prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
+      voucher: { select: { voucherProductType: true, code: true } },
+    },
   });
   if (!purchase) {
     redirect("/cart/plans");
@@ -52,5 +62,8 @@ export default async function CartRedeemPage({
     redirect(`/cart/paid?purchaseId=${encodeURIComponent(purchase.id)}`);
   }
 
-  redirect(`/redeem?purchaseId=${encodeURIComponent(purchase.id)}`);
+  const { accessToken } = await ensureRedemptionAccessToken(purchase);
+  const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
+  const base = voucher && effectiveVoucherProductType(voucher) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+  redirect(redeemUrlWithAccess(base, purchase.id, accessToken));
 }

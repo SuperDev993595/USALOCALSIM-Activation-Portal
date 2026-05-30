@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-server";
 import { z } from "zod";
+import { COVERAGE_TIER_ORDER } from "@/lib/coverage-tier";
+import { normalizePlanSku } from "@/lib/plan-sku";
+
+const coverageTierSchema = z
+  .enum([COVERAGE_TIER_ORDER[0], COVERAGE_TIER_ORDER[1], COVERAGE_TIER_ORDER[2]])
+  .nullable()
+  .optional();
 
 const createBodySchema = z.object({
   name: z.string().min(1).max(200),
@@ -9,8 +16,10 @@ const createBodySchema = z.object({
   durationDays: z.number().int().min(1).max(3650),
   priceCents: z.number().int().min(0),
   planType: z.enum(["physical_sim", "esim"]),
-  market: z.enum(["global", "us"]),
+  market: z.enum(["global", "us", "uk", "br"]),
   networkId: z.string().nullable().optional(),
+  coverageTier: coverageTierSchema,
+  sku: z.string().max(64).nullable().optional(),
 });
 
 export async function GET() {
@@ -39,16 +48,26 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const plan = await prisma.plan.create({
-    data: {
-      name: body.name.trim(),
-      dataAllowance: body.dataAllowance.trim(),
-      durationDays: body.durationDays,
-      priceCents: body.priceCents,
-      planType: body.planType,
-      market: body.market,
-      networkId: body.networkId?.trim() || null,
-    },
-  });
-  return NextResponse.json(plan);
+  const sku = body.sku?.trim() ? normalizePlanSku(body.sku) : null;
+  try {
+    const plan = await prisma.plan.create({
+      data: {
+        name: body.name.trim(),
+        sku,
+        dataAllowance: body.dataAllowance.trim(),
+        durationDays: body.durationDays,
+        priceCents: body.priceCents,
+        planType: body.planType,
+        market: body.market,
+        networkId: body.networkId?.trim() || null,
+        coverageTier: body.coverageTier ?? null,
+      },
+    });
+    return NextResponse.json(plan);
+  } catch {
+    return NextResponse.json(
+      { error: "Could not create plan. SKU may already exist for this plan type." },
+      { status: 409 },
+    );
+  }
 }

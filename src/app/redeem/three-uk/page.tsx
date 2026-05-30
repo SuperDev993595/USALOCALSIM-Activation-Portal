@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
 import { RedeepPhase2Client } from "@/components/RedeepPhase2Client";
+import { loadRedeemWizardPageContext } from "@/lib/redeem-page-load";
 
 function RedeemPageBackground({ children }: { children: ReactNode }) {
   return (
@@ -35,21 +35,17 @@ export default async function RedeemThreeUkPage({
   const purchaseId = Array.isArray(searchParams.purchaseId) ? searchParams.purchaseId[0] : searchParams.purchaseId;
   const access = Array.isArray(searchParams.access) ? searchParams.access[0] : searchParams.access;
   const upgrade = Array.isArray(searchParams.upgrade) ? searchParams.upgrade[0] : searchParams.upgrade;
-  const resumeAfterPaidUpgrade = upgrade?.trim().toLowerCase() === "paid";
 
-  if (!purchaseId?.trim() || !access?.trim()) {
+  if (!purchaseId?.trim()) {
     redirect("/redeem/enter");
   }
 
-  const purchase = await prisma.cartPurchase.findFirst({
-    where: {
-      id: purchaseId.trim(),
-      redemptionAccessToken: access.trim(),
-      redemptionAccessExpiresAt: { gt: new Date() },
-    },
-    select: { id: true, redemptionPhoneVerifiedAt: true },
+  const ctx = await loadRedeemWizardPageContext({
+    purchaseId: purchaseId.trim(),
+    access: access?.trim(),
+    upgrade,
+    threeUkPath: "/redeem/three-uk",
   });
-  if (!purchase) redirect("/redeem/enter?error=session");
 
   return (
     <RedeemPageBackground>
@@ -58,10 +54,10 @@ export default async function RedeemThreeUkPage({
           THREE UK
         </p>
         <RedeepPhase2Client
-          purchaseId={purchase.id}
-          accessToken={access.trim()}
-          resumeAfterPaidUpgrade={resumeAfterPaidUpgrade}
-          redemptionPhoneVerifiedInitial={purchase.redemptionPhoneVerifiedAt != null}
+          purchaseId={ctx.purchaseId}
+          accessToken={ctx.accessToken}
+          resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
+          redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
           skipPinStep
           autoNetworkSlug="three_uk"
           initialNetworkSlug="three_uk"

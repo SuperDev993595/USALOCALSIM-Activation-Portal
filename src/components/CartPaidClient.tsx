@@ -8,10 +8,13 @@ import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 
 export function CartPaidClient({
   purchaseId,
+  redeemHref,
   plan,
   variant,
 }: {
   purchaseId: string;
+  /** Phase 2 wizard with access token (voucher entered on /redeem/enter or auto-linked). */
+  redeemHref: string;
   plan: CartCheckoutPlanSummary;
   variant: "ready" | "redeemed";
 }) {
@@ -23,13 +26,13 @@ export function CartPaidClient({
         <CartPhase1StepNav currentStep={4} />
         <div className="ui-card p-8 text-center">
           <div className="mb-4 flex justify-start">
-            <Link href="/redeem" className={cartPhase1BackButtonClass} aria-label={t("backRedeemAria")}>
+            <Link href="/redeem/enter" className={cartPhase1BackButtonClass} aria-label={t("backRedeemAria")}>
               <BackChevronIcon />
             </Link>
           </div>
           <h1 className="text-xl font-bold text-slate-900">{t("alreadyRedeemedTitle")}</h1>
           <p className="mt-3 text-sm text-slate-600">{t("alreadyRedeemedBody")}</p>
-          <Link href="/redeem" className="btn-primary mt-6 inline-block px-6 py-2.5 text-sm">
+          <Link href="/redeem/enter" className="btn-primary mt-6 inline-block px-6 py-2.5 text-sm">
             {t("backRedeem")}
           </Link>
         </div>
@@ -60,10 +63,7 @@ export function CartPaidClient({
           </p>
           <p className="mt-2 text-xs text-slate-600">{t("paidPlanReadOnlyHint")}</p>
         </div>
-        <Link
-          href={`/redeem?purchaseId=${encodeURIComponent(purchaseId)}`}
-          className="btn-primary mt-8 inline-block px-8 py-3 text-sm font-semibold"
-        >
+        <Link href={redeemHref} className="btn-primary mt-8 inline-block px-8 py-3 text-sm font-semibold">
           {t("proceedActivation")}
         </Link>
       </div>
