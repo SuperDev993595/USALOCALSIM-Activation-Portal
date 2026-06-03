@@ -3,8 +3,38 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+
+/** Native tooltip only when CSS truncation hides part of the label. */
+function TruncateTooltip({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [truncated, setTruncated] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setTruncated(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [label]);
+
+  return (
+    <span ref={ref} className={className} title={truncated ? label : undefined}>
+      {children}
+    </span>
+  );
+}
 
 type NavLink = {
   href: string;
@@ -297,7 +327,9 @@ function NavTree({
                 style={{ paddingLeft: `${12 + depth * 14}px` }}
                 aria-expanded={isOpen}
               >
-                <span className="min-w-0 flex-1 truncate">{link.label}</span>
+                <TruncateTooltip label={link.label} className="min-w-0 flex-1 truncate">
+                  {link.label}
+                </TruncateTooltip>
                 <ChevronIcon open={isOpen} />
               </button>
               {isOpen ? (
@@ -345,7 +377,9 @@ function NavTree({
                   aria-hidden
                 />
               ) : null}
-              <span className="relative">{link.label}</span>
+              <TruncateTooltip label={link.label} className="relative block truncate">
+                {link.label}
+              </TruncateTooltip>
             </Link>
           </li>
         );
@@ -416,19 +450,23 @@ export function AdminAppShell({
                   setActiveSectionId(section.id);
                   setPanelCollapsed(false);
                 }}
-                className={`group flex flex-col items-center gap-1 rounded-lg px-1 py-2.5 transition ${
+                className={`group flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2.5 transition ${
                   selected
                     ? "border border-brand-purple/35 bg-brand-purple/10 text-brand-purple shadow-[inset_0_0_20px_rgba(37,99,235,0.12)]"
                     : "border border-transparent text-slate-500 hover:border-white/10 hover:bg-white/[0.03] hover:text-slate-300"
                 }`}
                 aria-current={selected ? "true" : undefined}
+                aria-label={section.panelTitle}
               >
                 <span className={selected ? "text-brand-purple" : "text-slate-500 group-hover:text-slate-300"}>
                   {section.icon}
                 </span>
-                <span className="max-w-full truncate text-[9px] font-semibold uppercase tracking-[0.08em]">
+                <TruncateTooltip
+                  label={section.panelTitle}
+                  className="max-w-full truncate text-[9px] font-semibold uppercase tracking-[0.08em]"
+                >
                   {section.railLabel}
-                </span>
+                </TruncateTooltip>
               </button>
             );
           })}
