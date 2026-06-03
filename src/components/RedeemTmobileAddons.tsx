@@ -13,6 +13,26 @@ export type TmobileAddonOption = {
   priceCents: number;
 };
 
+function AddonCheckIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3.5 8.25L6.5 11.25L12.5 4.75"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function RedeemTmobileAddons({
   options,
   selected,
@@ -39,29 +59,48 @@ export function RedeemTmobileAddons({
   }
 
   return (
-    <div className="space-y-3 rounded border border-[#E20074]/35 bg-[#E20074]/10 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-pink-200">{t("tmobileAddonsHeading")}</p>
-      <p className="text-xs text-slate-300">{t("tmobileAddonsHint")}</p>
-      <ul className="space-y-2.5">
+    <div className="space-y-3 rounded-lg border border-[#E20074]/30 bg-[#E20074]/[0.07] p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-pink-200/95">
+        {t("tmobileAddonsHeading")}
+      </p>
+      <p className="text-xs text-slate-400">{t("tmobileAddonsHint")}</p>
+      <ul className="space-y-2" role="group" aria-label={t("tmobileAddonsHeading")}>
         {options.map((opt) => {
           const sku = opt.sku as TmobileAddonSku;
           const checked = selected.includes(sku);
           return (
             <li key={opt.sku}>
-              <label className="flex cursor-pointer gap-3 rounded border border-white/10 bg-black/20 p-3 text-sm text-slate-200">
-                <input
-                  type="checkbox"
-                  className="mt-1 shrink-0"
-                  checked={checked}
-                  disabled={disabled}
-                  onChange={(e) => toggle(sku, e.target.checked)}
-                />
-                <span className="min-w-0 flex-1">
+              <label
+                className={`flex cursor-pointer gap-3 rounded-lg border p-3 text-sm transition-colors duration-150 ${
+                  disabled ? "cursor-not-allowed opacity-60" : "hover:border-[#E20074]/45"
+                } ${
+                  checked
+                    ? "border-[#E20074]/55 bg-[#E20074]/15 shadow-[inset_0_0_0_1px_rgba(226,0,116,0.12)]"
+                    : "border-white/10 bg-black/25"
+                }`}
+              >
+                <span className="relative mt-0.5 h-5 w-5 shrink-0">
+                  <input
+                    type="checkbox"
+                    className="peer sr-only"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={(e) => toggle(sku, e.target.checked)}
+                  />
+                  <span
+                    className="pointer-events-none absolute inset-0 rounded border border-white/25 bg-slate-950/80 transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-[#E20074]/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-950 peer-checked:border-[#E20074] peer-checked:bg-[#E20074] peer-disabled:opacity-50"
+                    aria-hidden
+                  />
+                  <AddonCheckIcon className="pointer-events-none absolute inset-0 m-auto h-3 w-3 text-white opacity-0 transition-opacity duration-150 peer-checked:opacity-100" />
+                </span>
+                <span className="min-w-0 flex-1 text-slate-200">
                   <span className="font-medium text-white">
                     {opt.label}{" "}
-                    <span className="text-pink-200">+${(opt.priceCents / 100).toFixed(2)}</span>
+                    <span className={checked ? "text-pink-200" : "text-pink-300/80"}>
+                      +${(opt.priceCents / 100).toFixed(2)}
+                    </span>
                   </span>
-                  <span className="mt-1 block text-xs text-slate-400">{opt.description}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-slate-400">{opt.description}</span>
                 </span>
               </label>
             </li>
