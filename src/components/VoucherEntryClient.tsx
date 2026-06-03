@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PaymentMethodsNote } from "@/components/PaymentMethodsNote";
-import { REDEEM_PANEL_CLASS, REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
+import {
+  REDEEM_PANEL_CLASS,
+  REDEEM_PRIMARY_BUTTON_CLASS,
+  REDEEM_SHELL_CLASS,
+} from "@/lib/redeem-panel";
 
 const inputClass =
   "w-full rounded border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-none placeholder:text-slate-400 focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]/40 [color-scheme:light] uppercase";
@@ -49,8 +53,8 @@ export function VoucherEntryClient() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <section className="rounded-xl border border-white/[0.12] bg-slate-950/65 p-6 text-slate-100 shadow-[0_16px_40px_-14px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:p-8">
+    <div className={REDEEM_SHELL_CLASS}>
+      <section className={REDEEM_PANEL_CLASS}>
         <p className="text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           {t("eyebrow")}
         </p>

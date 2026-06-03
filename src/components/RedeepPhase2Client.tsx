@@ -6,12 +6,17 @@ import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
-import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/RedeemTmobileAddons";
+import { RedeemPlanPaymentStep } from "@/components/RedeemPlanPaymentStep";
+import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 import { PaymentMethodsNote } from "@/components/PaymentMethodsNote";
-import { REDEEM_PANEL_CLASS, REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
+import {
+  REDEEM_PANEL_CLASS,
+  REDEEM_PRIMARY_BUTTON_CLASS,
+  REDEEM_SHELL_CLASS,
+} from "@/lib/redeem-panel";
 
 /** Light fields on the dark glass redeem panel — consistent white inputs + autofill that stays white. */
 const redeepPanelInputClass =
@@ -72,15 +77,15 @@ function RedeemStepNav({
       <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
         {t("stepProgress", { current: currentStep, total: totalSteps })}
       </p>
-      <ol className="flex items-start justify-between gap-0.5 sm:gap-1">
+      <ol className="flex items-start justify-between gap-0.5 sm:gap-1.5 md:gap-3 lg:gap-4">
         {labelKeys.map((key, idx) => {
           const stepNum = idx + 1;
           const isCurrent = stepNum === currentStep;
           const isPast = stepNum < currentStep;
           return (
-            <li key={key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+            <li key={key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5 md:gap-2">
               <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition md:h-9 md:w-9 md:text-sm ${
                   isCurrent
                     ? "border-white bg-white/20 text-white ring-2 ring-white/25 ring-offset-2 ring-offset-slate-950"
                     : isPast
@@ -92,7 +97,7 @@ function RedeemStepNav({
                 {isPast ? "✓" : stepNum}
               </span>
               <span
-                className={`block max-w-[4.25rem] truncate px-0.5 text-center text-[9px] font-medium leading-tight sm:max-w-[4.5rem] sm:text-[10px] ${
+                className={`block max-w-[4.25rem] truncate px-0.5 text-center text-[9px] font-medium leading-tight sm:max-w-[4.75rem] sm:text-[10px] md:max-w-none md:overflow-visible md:whitespace-normal md:text-xs md:leading-snug lg:text-[13px] ${
                   isCurrent ? "text-white" : isPast ? "text-emerald-200/90" : "text-slate-500"
                 }`}
               >
@@ -464,60 +469,19 @@ export function RedeepPhase2Client({
       (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
       (fulfillmentType === "NEW_SIM_SHIPPING" && shippingAddress.trim().length > 5);
 
-  function renderPlanOption(p: PlanRow) {
-    return (
-      <label
-        key={p.id}
-        className="flex items-center justify-between rounded border border-white/10 bg-black/20 p-3 text-sm text-slate-200"
-      >
-        <span className="flex min-w-0 flex-col gap-0.5">
-          {p.sku ? (
-            <span className="font-mono text-[10px] uppercase tracking-wide text-slate-400">{p.sku}</span>
-          ) : null}
-          <span>
-            {p.name} ({p.dataAllowance} · {p.durationDays}d · {p.market.toUpperCase()})
-          {p.matchesVoucherCredit ? (
-            <span className="ml-1 text-emerald-300">· {t("planPerfectMatch")}</span>
-          ) : null}
-          {!p.matchesVoucherCredit && p.fullyCoveredByWallet ? (
-            <span className="ml-1 text-emerald-300">· {t("planCoveredByWallet")}</span>
-          ) : null}
-          {!p.matchesVoucherCredit &&
-          typeof p.balanceDueCents === "number" &&
-          p.balanceDueCents > 0 ? (
-            <span className="ml-1 text-amber-200">
-              · {t("planUpgradeDue", { amount: (p.balanceDueCents / 100).toFixed(2) })}
-            </span>
-          ) : null}
-          </span>
-        </span>
-        <span className="ml-3 flex items-center gap-3">
-          <span>${(p.priceCents / 100).toFixed(2)}</span>
-          <input
-            type="radio"
-            checked={selectedPlanId === p.id}
-            onChange={() => {
-              setSelectedPlanId(p.id);
-              const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];
-              void unlockAndQuote(p.id, fulfillmentType, addons);
-            }}
-          />
-        </span>
-      </label>
-    );
-  }
-
   if (done) {
     return (
-      <div className={`${panelClass} text-center`}>
-        <h1 className="text-2xl font-bold text-white">{t("doneTitle")}</h1>
-        <p className="mt-3 text-sm text-slate-300">{t("doneBody")}</p>
+      <div className={REDEEM_SHELL_CLASS}>
+        <div className={`${panelClass} text-center`}>
+          <h1 className="text-2xl font-bold text-white md:text-3xl">{t("doneTitle")}</h1>
+          <p className="mt-3 text-sm text-slate-300 md:text-base">{t("doneBody")}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-xl">
+    <div className={REDEEM_SHELL_CLASS}>
       <section className={panelClass} aria-labelledby={`redeem-step${wizardStep}-heading`}>
         <RedeemStepNav
           currentStep={wizardStep}
@@ -533,7 +497,7 @@ export function RedeepPhase2Client({
         </div>
         {wizardStep === stepMap.pin && stepMap.pin > 0 ? (
           <>
-            <h2 id="redeem-step1-heading" className="text-lg font-semibold text-white">
+            <h2 id="redeem-step1-heading" className="text-lg font-semibold text-white md:text-xl">
               {t("step1Title")}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step1Body")}</p>
@@ -585,7 +549,7 @@ export function RedeepPhase2Client({
               >
                 <BackChevronIcon />
               </button>
-              <h2 id="redeem-step2-heading" className="text-lg font-semibold text-white">
+              <h2 id="redeem-step2-heading" className="text-lg font-semibold text-white md:text-xl">
                 {t("step2Title")}
               </h2>
             </div>
@@ -727,7 +691,7 @@ export function RedeepPhase2Client({
               >
                 <BackChevronIcon />
               </button>
-              <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white">
+              <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white md:text-xl">
                 {t("step3Title")}
               </h2>
             </div>
@@ -822,113 +786,33 @@ export function RedeepPhase2Client({
         ) : null}
 
         {wizardStep === stepMap.plans && plans.length > 0 ? (
-          <>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className={backArrowButtonClass}
-                aria-label={t("backFulfillment")}
-                disabled={loading !== null}
-                onClick={() => setWizardStep(stepMap.fulfillment)}
-              >
-                <BackChevronIcon />
-              </button>
-              <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white">
-                {t("step4Title")}
-              </h2>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">
-              <span className="inline">
-                {fulfillmentType === "ESIM"
-                  ? t.rich("step4BodyEsim", { kind: (chunks) => <strong className="text-white">{chunks}</strong> })
-                  : t.rich("step4BodyPhysical", {
-                      kind: (chunks) => <strong className="text-white">{chunks}</strong>,
-                    })}
-              </span>{" "}
-              <span>{t("step4BodyTail")}</span>
-            </p>
-
-            <div className="mt-5 space-y-4">
-              <div className="rounded border border-white/[0.08] bg-black/15 px-3 py-2 text-sm text-slate-200">
-                <p>
-                  {t("creditLabel")}{" "}
-                  <strong className="text-white">${(creditCents / 100).toFixed(2)}</strong>
-                </p>
-                <p className="mt-1 text-xs text-slate-400">{t("creditExplain")}</p>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm font-medium text-slate-200">{t("choosePlan")}</p>
-                {!selectedPlan ? (
-                  <p className="rounded border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-                    {t("pickPlanHint")}
-                  </p>
-                ) : null}
-                {baselinePlans.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/90">
-                      {t("baselinePlansHeading", { amount: (creditCents / 100).toFixed(2) })}
-                    </p>
-                    {baselinePlans.map(renderPlanOption)}
-                  </div>
-                ) : null}
-                {upgradePlans.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      {baselinePlans.length > 0 ? t("upgradePlansHeading") : t("allPlansHeading")}
-                    </p>
-                    {upgradePlans.map(renderPlanOption)}
-                  </div>
-                ) : null}
-                {plans.length === 0 ? (
-                  <p className="text-sm text-slate-400">{t("noPlansForNetwork")}</p>
-                ) : null}
-              </div>
-
-              {showTmobileAddons && tmobileAddonOptions.length > 0 ? (
-                <RedeemTmobileAddons
-                  options={tmobileAddonOptions}
-                  selected={selectedAddonSkus}
-                  disabled={loading !== null}
-                  onChange={(skus) => {
-                    setSelectedAddonSkus(skus);
-                    if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, skus);
-                  }}
-                />
-              ) : null}
-
-              {totals ? (
-                <div className="rounded border border-white/[0.08] bg-black/15 p-4 text-sm text-slate-200">
-                  <p>
-                    {t("planTotal")} ${(totals.finalTotalCents / 100).toFixed(2)}
-                  </p>
-                  <p>
-                    {t("creditApplied")} -${(totals.creditAppliedCents / 100).toFixed(2)}
-                  </p>
-                  <p>
-                    {t("shippingLine")} ${(totals.shippingCents / 100).toFixed(2)}
-                  </p>
-                  {(totals.addonCents ?? 0) > 0 ? (
-                    <p>
-                      {t("addonsLine")} ${((totals.addonCents ?? 0) / 100).toFixed(2)}
-                    </p>
-                  ) : null}
-                  <p className="mt-1 font-semibold text-white">
-                    {t("balanceDue")} ${(totals.balanceDueCents / 100).toFixed(2)}
-                  </p>
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
-                disabled={loading !== null || !selectedPlan || (!voucherFromPurchase && !voucherCode.trim())}
-                onClick={() => void checkoutBalance()}
-              >
-                {loading === "checkout" ? t("processingCheckout") : t("applyCredit")}
-              </button>
-            </div>
-          </>
+          <RedeemPlanPaymentStep
+            creditCents={creditCents}
+            fulfillmentType={fulfillmentType}
+            plans={plans}
+            baselinePlans={baselinePlans}
+            upgradePlans={upgradePlans}
+            selectedPlanId={selectedPlanId}
+            selectedPlan={selectedPlan}
+            totals={totals}
+            showTmobileAddons={showTmobileAddons}
+            tmobileAddonOptions={tmobileAddonOptions}
+            selectedAddonSkus={selectedAddonSkus}
+            loading={loading !== null}
+            voucherFromPurchase={voucherFromPurchase}
+            voucherCode={voucherCode}
+            onBack={() => setWizardStep(stepMap.fulfillment)}
+            onSelectPlan={(planId) => {
+              setSelectedPlanId(planId);
+              const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];
+              void unlockAndQuote(planId, fulfillmentType, addons);
+            }}
+            onAddonChange={(skus) => {
+              setSelectedAddonSkus(skus);
+              if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, skus);
+            }}
+            onCheckout={() => void checkoutBalance()}
+          />
         ) : null}
 
         {wizardStep === stepMap.date ? (
@@ -947,7 +831,7 @@ export function RedeepPhase2Client({
               ) : (
                 <span className="inline-flex h-9 w-9 shrink-0" aria-hidden />
               )}
-              <h2 id="redeem-step5-heading" className="text-lg font-semibold text-white">
+              <h2 id="redeem-step5-heading" className="text-lg font-semibold text-white md:text-xl">
                 {t("step5Title")}
               </h2>
             </div>
