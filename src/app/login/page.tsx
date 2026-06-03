@@ -4,9 +4,16 @@ import { getSession, signIn } from "next-auth/react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { SiteHeader } from "@/components/SiteHeader";
+import { useTranslations } from "next-intl";
+import {
+  CART_FLOW_CLASS,
+  CART_PANEL_CLASS,
+  CART_PRIMARY_BUTTON_CLASS,
+  CART_TEXT_INPUT_CLASS,
+} from "@/lib/cart-panel";
 
 export default function LoginPage() {
+  const t = useTranslations("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,7 +40,7 @@ export default function LoginPage() {
     const res = await signIn("credentials", signInOptions);
     setLoading(false);
     if (res?.error) {
-      setError("Invalid email or password.");
+      setError(t("errorInvalid"));
       return;
     }
     const session = await getSession();
@@ -46,58 +53,75 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="public-site flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="public-main flex flex-1 flex-col items-center justify-center px-6 py-16">
-        <div className="ui-card w-full max-w-sm rounded-xl border border-slate-200 p-6 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.18)]">
-          <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">Sign in</h1>
-          <p className="mt-1 text-sm text-muted">Admin or Dealer access</p>
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="email" className="ui-label">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="ui-input"
-                autoComplete="email"
-              />
+    <div className="cart-flow-page flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
+      <div className={`${CART_FLOW_CLASS} w-full max-w-md`}>
+        <div className={`${CART_PANEL_CLASS} cart-flow-panel--checkout`}>
+          <header className="cart-flow-header cart-flow-header--accent">
+            <p className="cart-flow-eyebrow">{t("eyebrow")}</p>
+            <h1 className="cart-flow-title">{t("title")}</h1>
+            <p className="cart-flow-subtitle">{t("subtitle")}</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+              <span className="cart-flow-pill">{t("roleAdmin")}</span>
+              <span className="cart-flow-pill">{t("roleDealer")}</span>
             </div>
-            <div>
-              <label htmlFor="password" className="ui-label">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="ui-input"
-                autoComplete="current-password"
-              />
-            </div>
-            {urlError === "AccountDisabled" && (
-              <p className="text-sm text-amber-800">
-                This account has been disabled. Contact an administrator if you need access.
-              </p>
-            )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={loading} className="btn-primary w-full rounded-xl">
-              {loading ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-          <p className="mt-4 text-center">
-            <Link href="/redeem" className="link-accent text-sm">
-              ← Back to activation
+          </header>
+
+          <div className="cart-flow-body">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="cart-flow-field">
+                <label htmlFor="email" className="cart-flow-field-label">
+                  {t("emailLabel")}
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className={CART_TEXT_INPUT_CLASS}
+                  autoComplete="email"
+                />
+              </div>
+              <div className="cart-flow-field">
+                <label htmlFor="password" className="cart-flow-field-label">
+                  {t("passwordLabel")}
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className={CART_TEXT_INPUT_CLASS}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              {urlError === "AccountDisabled" ? (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
+                  {t("accountDisabled")}
+                </p>
+              ) : null}
+
+              {error ? (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              <button type="submit" disabled={loading} className={CART_PRIMARY_BUTTON_CLASS}>
+                {loading ? t("submitting") : t("submit")}
+              </button>
+            </form>
+          </div>
+
+          <footer className="cart-flow-footer">
+            <Link href="/redeem/enter" className="cart-flow-footer-link">
+              {t("backToActivation")}
             </Link>
-          </p>
+          </footer>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

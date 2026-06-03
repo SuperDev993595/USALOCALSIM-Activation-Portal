@@ -10,6 +10,9 @@
     "checkoutTagline": "Link your card · Pay · Redeem",
     "checkoutSecure": "Secure checkout",
     "checkoutHelp": "Help",
+    "loginTitle": "Staff sign in",
+    "loginTagline": "Admin & dealer portal",
+    "loginSecure": "Secure sign-in",
     "langAria": "Sprache wählen",
     "langEn": "English",
     "langNl": "Nederlands",
@@ -20,6 +23,20 @@
     "langZh": "中文",
     "langJa": "日本語",
     "langHi": "हिन्दी"
+  },
+  "login": {
+    "eyebrow": "Staff portal",
+    "title": "Sign in",
+    "subtitle": "Use your admin or dealer account to unlock vouchers, manage the queue, or run the dealer portal.",
+    "roleAdmin": "Admin",
+    "roleDealer": "Dealer",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "errorInvalid": "Invalid email or password.",
+    "accountDisabled": "This account has been disabled. Contact an administrator if you need access.",
+    "backToActivation": "← Customer activation (redeem)"
   },
   "home": {
     "title": "Aktivieren Sie Ihren USALOCALSIM‑Service",

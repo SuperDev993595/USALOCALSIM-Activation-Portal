@@ -132,7 +132,21 @@ function LockIcon({ className }: { className?: string }) {
   );
 }
 
-function CheckoutSiteHeader({ locale, th }: { locale: HeaderLocale; th: ReturnType<typeof useTranslations<"header">> }) {
+type PortalHeaderMode = "checkout" | "login";
+
+function PortalSiteHeader({
+  locale,
+  th,
+  mode,
+}: {
+  locale: HeaderLocale;
+  th: ReturnType<typeof useTranslations<"header">>;
+  mode: PortalHeaderMode;
+}) {
+  const portalTitle = mode === "login" ? th("loginTitle") : th("checkoutTitle");
+  const portalTagline = mode === "login" ? th("loginTagline") : th("checkoutTagline");
+  const portalSecure = mode === "login" ? th("loginSecure") : th("checkoutSecure");
+
   return (
     <header className="site-header-checkout sticky top-0 z-50 w-full">
       <div className="site-header-checkout-top">
@@ -143,7 +157,7 @@ function CheckoutSiteHeader({ locale, th }: { locale: HeaderLocale; th: ReturnTy
           </a>
           <span className="site-header-checkout-secure">
             <LockIcon className="h-3.5 w-3.5 shrink-0 opacity-90" />
-            {th("checkoutSecure")}
+            {portalSecure}
           </span>
         </div>
       </div>
@@ -162,12 +176,12 @@ function CheckoutSiteHeader({ locale, th }: { locale: HeaderLocale; th: ReturnTy
               />
             </span>
             <span className="site-header-checkout-brand-text">
-              <span className="site-header-checkout-brand-title">{th("checkoutTitle")}</span>
-              <span className="site-header-checkout-brand-tag">{th("checkoutTagline")}</span>
+              <span className="site-header-checkout-brand-title">{portalTitle}</span>
+              <span className="site-header-checkout-brand-tag">{portalTagline}</span>
             </span>
           </Link>
 
-          <nav className="site-header-checkout-nav" aria-label={th("checkoutTitle")}>
+          <nav className="site-header-checkout-nav" aria-label={portalTitle}>
             <Link href="https://usalocalsim.com/" className="site-header-checkout-nav-link">
               {th("navHome")}
             </Link>
@@ -201,12 +215,16 @@ function CheckoutSiteHeader({ locale, th }: { locale: HeaderLocale; th: ReturnTy
   );
 }
 
-export function SiteHeader({ variant = "full" }: { variant?: "full" | "compact" | "checkout" }) {
+export function SiteHeader({ variant = "full" }: { variant?: "full" | "compact" | "checkout" | "login" }) {
   const locale = useLocale() as HeaderLocale;
   const th = useTranslations("header");
 
   if (variant === "checkout" || variant === "compact") {
-    return <CheckoutSiteHeader locale={locale} th={th} />;
+    return <PortalSiteHeader locale={locale} th={th} mode="checkout" />;
+  }
+
+  if (variant === "login") {
+    return <PortalSiteHeader locale={locale} th={th} mode="login" />;
   }
 
   return (
