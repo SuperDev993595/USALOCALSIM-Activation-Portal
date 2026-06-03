@@ -285,6 +285,82 @@
     @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800;
   }
 
+  .dealer-scan-page {
+    @apply mx-auto w-full max-w-5xl space-y-5;
+  }
+
+  .dealer-scan-layout {
+    @apply grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,22rem)] lg:items-start;
+  }
+
+  .dealer-scan-panel {
+    @apply ui-card space-y-4 rounded-xl p-4 md:p-5;
+  }
+
+  .dealer-scan-panel-head {
+    @apply border-b border-slate-100 pb-3;
+  }
+
+  .dealer-scan-panel-title {
+    @apply text-sm font-semibold text-slate-900;
+  }
+
+  .dealer-scan-panel-desc {
+    @apply mt-1 text-xs leading-relaxed text-slate-500;
+  }
+
+  .dealer-scan-note {
+    @apply rounded-lg border border-slate-200/90 bg-white/90 px-3 py-2.5 text-xs leading-relaxed text-slate-600;
+  }
+
+  .dealer-scan-camera-off {
+    @apply flex aspect-[4/3] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50/90 px-4 text-center text-sm text-slate-500;
+  }
+
+  .dealer-scan-divider {
+    @apply border-t border-slate-100 pt-4;
+  }
+
+  .dealer-scan-preview-empty {
+    @apply dealer-scan-panel flex min-h-[14rem] flex-col items-center justify-center text-center text-sm text-slate-500;
+  }
+
+  .dealer-scan-preview-hero {
+    @apply rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-center;
+  }
+
+  .dealer-scan-amount {
+    @apply text-2xl font-bold tracking-tight text-slate-900;
+  }
+
+  .dealer-scan-status-badge {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .dealer-scan-status-badge--ready {
+    @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80;
+  }
+
+  .dealer-scan-status-badge--paid {
+    @apply bg-slate-100 text-slate-700 ring-1 ring-slate-200/80;
+  }
+
+  .dealer-scan-dl {
+    @apply grid gap-2.5 text-sm;
+  }
+
+  .dealer-scan-dl-row {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .dealer-scan-dl dt {
+    @apply shrink-0 text-slate-500;
+  }
+
+  .dealer-scan-dl dd {
+    @apply min-w-0 text-right font-medium text-slate-900;
+  }
+
   .dealer-subnav {
     @apply border-b border-slate-200/90 bg-white;
   }

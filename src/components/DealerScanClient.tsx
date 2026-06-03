@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { DealerPageHeader } from "@/components/DealerPageHeader";
 
 type ScanType = "serial" | "barcode";
@@ -198,7 +199,7 @@ export function DealerScanClient() {
       setPreview(data.card);
       if (data.card.alreadyPaid) {
         setMessage({ type: "err", text: t("alreadyPaid") });
-        scrollToResult("feedback");
+        scrollToResult("preview");
       } else if (value.toUpperCase() !== data.card.serial.toUpperCase()) {
         setMessage({ type: "ok", text: t("resolvedViaPin", { serial: data.card.serial }) });
         scrollToResult("preview");
@@ -260,198 +261,213 @@ export function DealerScanClient() {
   const canActivate = preview && !preview.alreadyPaid && preview.faceValueCents > 0;
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="dealer-scan-page">
       <DealerPageHeader title={t("scanTitle")} description={t("scanSubtitle")} />
-      <p className="mt-2 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-950">
-        {t("scanTourismNote")}
-      </p>
+      <p className="dealer-scan-note">{t("scanTourismNote")}</p>
 
-      {loading === "preview" || message ? (
-        <div ref={feedbackRef} className="mt-4" aria-live="polite" aria-atomic="true">
-          {loading === "preview" ? (
-            <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700">
-              {t("lookingUp")}
-            </p>
-          ) : null}
-          {message ? (
-            <p
-              className={`rounded-md border px-3 py-3 text-sm ${
-                loading === "preview" ? "mt-2" : ""
-              } ${
-                message.type === "ok"
-                  ? "border-accent/35 bg-accent/10 text-accent"
-                  : "border-red-200 bg-red-50 text-red-800"
-              }`}
-            >
-              {message.text}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      {lastSuccess?.redeemUrl ? (
-        <div className="ui-card mt-4 rounded-xl p-4 text-sm">
-          <p className="font-medium text-slate-900">{t("lastSale")}</p>
-          <p className="mt-1 font-mono text-xs text-slate-600">{lastSuccess.serial}</p>
-          <a href={lastSuccess.redeemUrl} className="link-accent mt-2 inline-block break-all text-xs">
-            {t("customerRedeemLink")}
-          </a>
-        </div>
-      ) : null}
-
-      <div className="ui-card mt-4 space-y-4 rounded-xl p-4">
-        <h2 className="font-semibold text-slate-900">{t("cameraTitle")}</h2>
-        {cameraSupported ? (
-          <>
-            <div
-              className={`overflow-hidden rounded-lg border border-slate-200 bg-black ${
-                cameraOn ? "" : "hidden"
-              }`}
-            >
-              <video
-                ref={videoRef}
-                className="aspect-[4/3] w-full object-cover"
-                muted
-                playsInline
-                aria-labelledby={regionId}
-              />
-            </div>
-            <p id={regionId} className="sr-only">
-              {t("cameraAria")}
-            </p>
-            {cameraError ? <p className="text-sm text-red-600">{cameraError}</p> : null}
-            <button
-              type="button"
-              className="btn-primary w-full rounded-xl"
-              onClick={() => (cameraOn ? stopCamera() : void startCamera())}
-            >
-              {cameraOn ? t("stopCamera") : t("startCamera")}
-            </button>
-          </>
-        ) : (
-          <p className="text-sm text-slate-600">{t("cameraUnsupported")}</p>
-        )}
-      </div>
-
-      <div className="ui-card mt-6 space-y-4 rounded-xl p-4">
-        <h2 className="font-semibold text-slate-900">{t("manualTitle")}</h2>
-        <div>
-          <label className="ui-label !mt-0">{t("scanTypeLabel")}</label>
-          <select
-            className="ui-select"
-            value={scanType}
-            onChange={(e) => setScanType(e.target.value as ScanType)}
-          >
-            <option value="serial">{t("scanTypeSerial")}</option>
-            <option value="barcode">{t("scanTypeBarcode")}</option>
-          </select>
-        </div>
-        <div>
-          <label className="ui-label !mt-0" htmlFor="dealer-scan-value">
-            {t("scanValueLabel")}
-          </label>
-          <input
-            id="dealer-scan-value"
-            type="text"
-            className="ui-input !mt-1 font-mono uppercase"
-            value={scanValue}
-            onChange={(e) => {
-              setScanValue(e.target.value);
-              setPreview(null);
-            }}
-            placeholder={t("scanValuePlaceholder")}
-            autoComplete="off"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                if (loading === null && scanValue.trim()) void lookupCard();
-              }
-            }}
+      <div ref={feedbackRef} className="space-y-3" aria-live="polite" aria-atomic="true">
+        {loading === "preview" ? (
+          <AdminFeedbackBanner variant="info" message={t("lookingUp")} />
+        ) : null}
+        {message ? (
+          <AdminFeedbackBanner
+            variant={message.type === "ok" ? "success" : "error"}
+            message={message.text}
+            onDismiss={() => setMessage(null)}
           />
-          <p className="mt-1 text-xs text-slate-500">{t("scanValueHint")}</p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary w-full rounded-xl disabled:opacity-50"
-          disabled={loading !== null || !scanValue.trim()}
-          onClick={() => void lookupCard()}
-        >
-          {loading === "preview" ? t("lookingUp") : t("lookupCard")}
-        </button>
+        ) : null}
+        {lastSuccess?.redeemUrl ? (
+          <AdminFeedbackBanner
+            variant="success"
+            message={
+              <span>
+                <span className="font-medium">{t("lastSale")}</span>
+                <span className="mt-1 block font-mono text-xs opacity-90">{lastSuccess.serial}</span>
+                <a href={lastSuccess.redeemUrl} className="link-accent mt-2 inline-block break-all text-xs">
+                  {t("customerRedeemLink")}
+                </a>
+              </span>
+            }
+            onDismiss={() => setLastSuccess(null)}
+          />
+        ) : null}
       </div>
 
-      {preview ? (
-        <div ref={previewRef} className="ui-card mt-6 space-y-4 rounded-xl p-4">
-          <h2 className="font-semibold text-slate-900">{t("cardPreviewTitle")}</h2>
-          <dl className="grid gap-2 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{t("fieldSerial")}</dt>
-              <dd className="font-mono text-xs font-medium text-slate-900">{preview.serial}</dd>
-            </div>
-            {preview.barcodePayload ? (
-              <div className="flex justify-between gap-2">
-                <dt className="text-slate-500">{t("fieldBarcode")}</dt>
-                <dd className="font-mono text-xs text-slate-900">{preview.barcodePayload}</dd>
-              </div>
-            ) : null}
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{t("fieldMarket")}</dt>
-              <dd className="uppercase text-slate-900">{preview.retailMarket}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{t("fieldAmount")}</dt>
-              <dd className="font-semibold text-slate-900">
-                {formatMoney(preview.faceValueCents, preview.retailMarket)}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{t("fieldStatus")}</dt>
-              <dd className="capitalize text-slate-900">
-                {preview.alreadyPaid ? t("statusEligible") : t("statusInactive")}
-              </dd>
-            </div>
-          </dl>
+      <div className="dealer-scan-layout">
+        <section className="dealer-scan-panel">
+          <div className="dealer-scan-panel-head">
+            <h2 className="dealer-scan-panel-title">{t("scanStepScan")}</h2>
+            <p className="dealer-scan-panel-desc">{t("scanStepScanDesc")}</p>
+          </div>
 
-          {!preview.alreadyPaid ? (
+          {cameraSupported ? (
             <>
-              <div>
-                <label className="ui-label !mt-0" htmlFor="dealer-receipt">
-                  {t("receiptRefLabel")}
-                </label>
-                <input
-                  id="dealer-receipt"
-                  type="text"
-                  className="ui-input !mt-1"
-                  value={receiptRef}
-                  onChange={(e) => setReceiptRef(e.target.value)}
-                  placeholder={t("receiptRefPlaceholder")}
-                />
-              </div>
-              <div>
-                <label className="ui-label !mt-0" htmlFor="dealer-email">
-                  {t("customerEmailOptional")}
-                </label>
-                <input
-                  id="dealer-email"
-                  type="email"
-                  className="ui-input !mt-1"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder={t("customerEmailPlaceholder")}
-                />
-              </div>
+              {cameraOn ? (
+                <div className="overflow-hidden rounded-lg border border-slate-200 bg-black">
+                  <video
+                    ref={videoRef}
+                    className="aspect-[4/3] w-full object-cover"
+                    muted
+                    playsInline
+                    aria-labelledby={regionId}
+                  />
+                </div>
+              ) : (
+                <div className="dealer-scan-camera-off">{t("startCamera")}</div>
+              )}
+              <p id={regionId} className="sr-only">
+                {t("cameraAria")}
+              </p>
+              {cameraError ? (
+                <AdminFeedbackBanner variant="error" message={cameraError} onDismiss={() => setCameraError(null)} />
+              ) : null}
               <button
                 type="button"
-                className="btn-primary w-full rounded-xl disabled:opacity-50"
-                disabled={loading !== null || !canActivate}
-                onClick={() => void confirmSale()}
+                className={cameraOn ? "btn-secondary w-full" : "btn-primary w-full"}
+                onClick={() => (cameraOn ? stopCamera() : void startCamera())}
               >
-                {loading === "activate" ? t("activating") : t("confirmSale")}
+                {cameraOn ? t("stopCamera") : t("startCamera")}
               </button>
             </>
-          ) : null}
-        </div>
-      ) : null}
+          ) : (
+            <p className="text-sm text-slate-600">{t("cameraUnsupported")}</p>
+          )}
+
+          <div className="dealer-scan-divider space-y-4">
+            <div>
+              <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="dealer-scan-type">
+                {t("scanTypeLabel")}
+              </label>
+              <select
+                id="dealer-scan-type"
+                className="ui-select !mt-1"
+                value={scanType}
+                onChange={(e) => setScanType(e.target.value as ScanType)}
+              >
+                <option value="serial">{t("scanTypeSerial")}</option>
+                <option value="barcode">{t("scanTypeBarcode")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="dealer-scan-value">
+                {t("scanValueLabel")}
+              </label>
+              <input
+                id="dealer-scan-value"
+                type="text"
+                className="ui-input !mt-1 font-mono uppercase"
+                value={scanValue}
+                onChange={(e) => {
+                  setScanValue(e.target.value);
+                  setPreview(null);
+                }}
+                placeholder={t("scanValuePlaceholder")}
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (loading === null && scanValue.trim()) void lookupCard();
+                  }
+                }}
+              />
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{t("scanValueHint")}</p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary w-full disabled:opacity-50"
+              disabled={loading !== null || !scanValue.trim()}
+              onClick={() => void lookupCard()}
+            >
+              {loading === "preview" ? t("lookingUp") : t("lookupCard")}
+            </button>
+          </div>
+        </section>
+
+        <section ref={previewRef} className="lg:sticky lg:top-4">
+          {preview ? (
+            <div className="dealer-scan-panel space-y-4">
+              <div className="dealer-scan-panel-head">
+                <h2 className="dealer-scan-panel-title">{t("scanStepConfirm")}</h2>
+                <p className="dealer-scan-panel-desc">{t("cardPreviewTitle")}</p>
+              </div>
+
+              <div className="dealer-scan-preview-hero">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{t("fieldAmount")}</p>
+                <p className="dealer-scan-amount">{formatMoney(preview.faceValueCents, preview.retailMarket)}</p>
+                <span
+                  className={
+                    preview.alreadyPaid
+                      ? "dealer-scan-status-badge dealer-scan-status-badge--paid mt-2"
+                      : "dealer-scan-status-badge dealer-scan-status-badge--ready mt-2"
+                  }
+                >
+                  {preview.alreadyPaid ? t("statusEligible") : t("statusInactive")}
+                </span>
+              </div>
+
+              <dl className="dealer-scan-dl">
+                <div className="dealer-scan-dl-row">
+                  <dt>{t("fieldSerial")}</dt>
+                  <dd className="font-mono text-xs">{preview.serial}</dd>
+                </div>
+                {preview.barcodePayload ? (
+                  <div className="dealer-scan-dl-row">
+                    <dt>{t("fieldBarcode")}</dt>
+                    <dd className="font-mono text-xs">{preview.barcodePayload}</dd>
+                  </div>
+                ) : null}
+                <div className="dealer-scan-dl-row">
+                  <dt>{t("fieldMarket")}</dt>
+                  <dd className="uppercase">{preview.retailMarket}</dd>
+                </div>
+              </dl>
+
+              {!preview.alreadyPaid ? (
+                <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <div>
+                    <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="dealer-receipt">
+                      {t("receiptRefLabel")}
+                    </label>
+                    <input
+                      id="dealer-receipt"
+                      type="text"
+                      className="ui-input !mt-1"
+                      value={receiptRef}
+                      onChange={(e) => setReceiptRef(e.target.value)}
+                      placeholder={t("receiptRefPlaceholder")}
+                    />
+                  </div>
+                  <div>
+                    <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="dealer-email">
+                      {t("customerEmailOptional")}
+                    </label>
+                    <input
+                      id="dealer-email"
+                      type="email"
+                      className="ui-input !mt-1"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder={t("customerEmailPlaceholder")}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary w-full disabled:opacity-50"
+                    disabled={loading !== null || !canActivate}
+                    onClick={() => void confirmSale()}
+                  >
+                    {loading === "activate" ? t("activating") : t("confirmSale")}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="dealer-scan-preview-empty">
+              <p>{t("scanEmptyPreview")}</p>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
