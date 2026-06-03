@@ -2,6 +2,8 @@ import { prisma } from "./db";
 import { authorizePrepaidAfterPayment } from "./prepaid-authorize";
 import { findPrepaidCardByScan, type PrepaidScanType } from "./prepaid-cart";
 import { PREPAID_PAYMENT_SOURCES } from "./prepaid-payment-source";
+import { isEligibleForRedemption } from "./voucher-status";
+import { ensurePrepaidVoucherEligible } from "./voucher-retail-activation";
 
 export type PrepaidSaleActivateInput = {
   scanType: PrepaidScanType | "qr";
@@ -41,6 +43,7 @@ export async function activatePrepaidCardAtSale(
     return { ok: false, error: "Card already redeemed.", code: "ALREADY_PAID" };
   }
   if (card.voucher.paymentStatus || card.voucher.status === "eligible") {
+    await ensurePrepaidVoucherEligible(card.voucher.id);
     return {
       ok: false,
       error: "Card is already paid and eligible for redemption.",
@@ -96,15 +99,23 @@ export async function activatePrepaidCardAtSale(
 export async function previewPrepaidCardScan(scanType: string, scanValue: string) {
   const card = await findPrepaidCardByScan(normalizePosScanType(scanType), scanValue);
   if (!card) return null;
-  const expectedCents = card.faceValueCents > 0 ? card.faceValueCents : card.voucher.creditAmountCents;
+  await ensurePrepaidVoucherEligible(card.voucher.id);
+  const refreshed = await prisma.prepaidCard.findUnique({
+    where: { id: card.id },
+    include: { voucher: true },
+  });
+  const voucher = refreshed?.voucher ?? card.voucher;
+  const expectedCents = card.faceValueCents > 0 ? card.faceValueCents : voucher.creditAmountCents;
+  const redeemReady = isEligibleForRedemption(voucher);
   return {
     serial: card.serial,
     barcodePayload: card.barcodePayload,
     retailMarket: card.retailMarket,
     faceValueCents: expectedCents,
-    voucherStatus: card.voucher.status,
-    paymentStatus: card.voucher.paymentStatus,
-    alreadyPaid: card.voucher.paymentStatus || card.voucher.status === "eligible",
+    voucherStatus: voucher.status,
+    paymentStatus: voucher.paymentStatus,
+    alreadyPaid: redeemReady,
+    redeemReady,
   };
 }
 

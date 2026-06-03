@@ -9,6 +9,10 @@ import {
 } from "@/lib/voucher-product-type";
 import { matchesVoucherPin, resolveVoucherByPin } from "@/lib/voucher-pin";
 import { VOUCHER_STATUS } from "@/lib/voucher-status";
+import {
+  ensurePrepaidVoucherEligible,
+  isRetailerActivatedForRedeem,
+} from "@/lib/voucher-retail-activation";
 
 export type VoucherEntryFailure = {
   ok: false;
@@ -64,7 +68,16 @@ export async function resolveVoucherEntry(pinInput: string): Promise<VoucherEntr
     };
   }
 
-  if (voucher.status === VOUCHER_STATUS.INACTIVE || !voucher.paymentStatus) {
+  if (voucher.prepaidCard) {
+    await ensurePrepaidVoucherEligible(voucher.id);
+    const refreshed = await prisma.voucher.findUnique({
+      where: { id: voucher.id },
+      include: { plan: true, prepaidCard: { include: { basePlan: { select: { market: true } } } } },
+    });
+    if (refreshed) voucher = refreshed;
+  }
+
+  if (!isRetailerActivatedForRedeem(voucher)) {
     return notActivatedFailure();
   }
 

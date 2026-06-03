@@ -8,6 +8,7 @@ import {
   posStripePaymentId,
 } from "./prepaid-payment-source";
 import { VOUCHER_STATUS } from "./voucher-status";
+import { ensurePrepaidVoucherEligible } from "./voucher-retail-activation";
 
 export type AuthorizePrepaidInput = {
   prepaidCardId: string;
@@ -115,6 +116,7 @@ async function authorizeInTransaction(
     include: { resumeToken: { select: { token: true } } },
   });
   if (existingByCard) {
+    await ensurePrepaidVoucherEligible(prepaid.voucher.id, tx);
     const access = existingByCard.redemptionAccessToken?.trim();
     const resume = existingByCard.resumeToken?.token;
     if (!access || !resume) {
@@ -130,6 +132,7 @@ async function authorizeInTransaction(
   }
 
   if (prepaid.voucher.paymentStatus) {
+    await ensurePrepaidVoucherEligible(prepaid.voucher.id, tx);
     return {
       ok: false,
       error: "This card is already paid. Continue to redemption.",
