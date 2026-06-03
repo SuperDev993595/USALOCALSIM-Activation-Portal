@@ -108,14 +108,24 @@ function CartStepBadge({
   );
 }
 
-export function CartPhase1StepNav({ currentStep }: { currentStep: CartPhase1Step }) {
+export function CartPhase1StepNav({
+  currentStep,
+  embedded = false,
+}: {
+  currentStep: CartPhase1Step;
+  /** Inside main panel (no extra outer card). */
+  embedded?: boolean;
+}) {
   const t = useTranslations("cart");
   const steps = NAV_KEYS.map((key, idx) => ({ key, step: (idx + 1) as CartPhase1Step }));
   const hasActiveStep = steps.some((s) => s.step === currentStep);
   const pulseOn = useActiveStepPulse(hasActiveStep);
 
   return (
-    <nav aria-label={t("phase1NavAria")} className="cart-phase1-nav">
+    <nav
+      aria-label={t("phase1NavAria")}
+      className={embedded ? "cart-phase1-nav cart-phase1-nav--embedded" : "cart-phase1-nav"}
+    >
       <p className="cart-phase1-nav-progress">{t("phase1Progress", { current: currentStep, total: CART_PHASE1_TOTAL_STEPS })}</p>
 
       <ol className="flex w-full items-start">
