@@ -166,10 +166,25 @@ export function AdminPrepaidGenerateClient() {
           { label: "Generate" },
         ]}
         title="Generate QR & barcodes"
+        description="Build a prepaid batch CSV with QR and Code 128 previews. Test mode for smoke tests; GS1 for production barcodes."
         meta={
-          <Link href="/admin/prepaid" className="text-sm font-medium text-accent hover:underline">
-            ← Import prepaid cards
-          </Link>
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {rows.length > 0 ? (
+              <span className="inline-flex items-center gap-2 rounded-md border border-emerald-200/90 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800">
+                <strong className="font-semibold">{rows.length}</strong> card{rows.length === 1 ? "" : "s"} generated
+              </span>
+            ) : (
+              <span className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600">
+                {mode === "gs1" ? "GS1-128" : "Test"} mode
+              </span>
+            )}
+            <Link
+              href="/admin/prepaid"
+              className="btn-secondary inline-flex h-9 items-center rounded-none px-3 text-xs no-underline"
+            >
+              Import prepaid cards
+            </Link>
+          </span>
         }
       />
 
@@ -187,194 +202,264 @@ export function AdminPrepaidGenerateClient() {
           onDismiss={() => setCopyNotice(null)}
         />
       ) : null}
+      {errors.length > 0 ? (
+        <AdminFeedbackBanner
+          variant="warning"
+          message={
+            <ul className="list-inside list-disc space-y-1">
+              {errors.map((err) => (
+                <li key={err}>{err}</li>
+              ))}
+            </ul>
+          }
+          onDismiss={() => setErrors([])}
+        />
+      ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <form
-          className="admin-panel space-y-0 overflow-hidden"
+          className="admin-panel"
           onSubmit={(e) => {
             e.preventDefault();
             void generate();
           }}
         >
-          <div className="admin-panel-head">
-            <h2 className="admin-panel-head-title">Batch settings</h2>
-            <p className="admin-panel-head-desc text-xs">
-              Test mode: barcode = serial (dealer scanner smoke test). GS1 mode: (01) GTIN + (21) serial + (10) lot +
-              (17) expiry.
-            </p>
-          </div>
-          <div className="divide-y divide-slate-100 px-6 py-5 md:px-8">
-            <div className="pb-5">
-              <label className="ui-label">Mode</label>
-              <select className="ui-select" value={mode} onChange={(e) => setMode(e.target.value as "test" | "gs1")}>
-                <option value="test">Test (serial = barcode)</option>
-                <option value="gs1">GS1-128 template v1</option>
-              </select>
-            </div>
-            <div className="grid gap-4 pb-5 sm:grid-cols-2">
-              <div>
-                <label className="ui-label">Cards to generate</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  className="ui-input"
-                  value={count}
-                  onChange={(e) => setCount(Number(e.target.value))}
-                />
+          <div className="space-y-6 p-5 md:p-6">
+            <div className="admin-settings-block">
+              <div className="admin-settings-block-head">
+                <h2 className="admin-settings-block-title">Batch settings</h2>
+                <p className="admin-settings-block-desc">
+                  {mode === "gs1"
+                    ? "GS1: (01) GTIN, (21) serial, (10) lot, (17) expiry on Code 128."
+                    : "Test: barcode equals serial for dealer scanner smoke tests."}
+                </p>
               </div>
-              <div>
-                <label className="ui-label">Face value (cents)</label>
-                <input
-                  type="number"
-                  min={0}
-                  className="ui-input"
-                  value={faceValueCents}
-                  onChange={(e) => setFaceValueCents(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 pb-5 sm:grid-cols-2">
-              <div>
-                <label className="ui-label">Serial prefix</label>
-                <input className="ui-input font-mono text-sm" value={serialPrefix} onChange={(e) => setSerialPrefix(e.target.value)} />
-              </div>
-              <div>
-                <label className="ui-label">Serial start #</label>
-                <input
-                  type="number"
-                  min={0}
-                  className="ui-input"
-                  value={serialStart}
-                  onChange={(e) => setSerialStart(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 pb-5 sm:grid-cols-2">
-              <div>
-                <label className="ui-label">Retail market</label>
-                <select className="ui-select" value={retailMarket} onChange={(e) => setRetailMarket(e.target.value)}>
-                  <option value="us">us</option>
-                  <option value="br">br</option>
-                  <option value="uk">uk</option>
-                  <option value="global">global</option>
-                </select>
-              </div>
-              <div>
-                <label className="ui-label">Voucher product type</label>
-                <select
-                  className="ui-select"
-                  value={voucherProductType}
-                  onChange={(e) => setVoucherProductType(e.target.value as "global" | "three_uk")}
-                >
-                  <option value="global">Global (tier + network redeem)</option>
-                  <option value="three_uk">Three UK exclusive</option>
-                </select>
-              </div>
-            </div>
-            {mode === "gs1" ? (
-              <>
-                <div className="pb-5">
-                  <label className="ui-label">GTIN / UPC (12–14 digits from GS1)</label>
+              <div className="admin-form-grid">
+                <div className="admin-form-grid-span-2">
+                  <label htmlFor="prepaid-gen-mode" className="ui-label !mt-0">
+                    Mode
+                  </label>
+                  <select
+                    id="prepaid-gen-mode"
+                    className="ui-select !mt-1 max-w-md rounded-none"
+                    value={mode}
+                    onChange={(e) => setMode(e.target.value as "test" | "gs1")}
+                  >
+                    <option value="test">Test (serial = barcode)</option>
+                    <option value="gs1">GS1-128 template v1</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="prepaid-gen-count" className="ui-label !mt-0">
+                    Cards to generate
+                  </label>
                   <input
-                    className="ui-input font-mono text-sm"
-                    placeholder="012345678905"
-                    value={gtin}
-                    onChange={(e) => setGtin(e.target.value)}
+                    id="prepaid-gen-count"
+                    type="number"
+                    min={1}
+                    max={500}
+                    className="ui-input !mt-1 rounded-none"
+                    value={count}
+                    onChange={(e) => setCount(Number(e.target.value))}
                   />
                 </div>
-                <div className="grid gap-4 pb-5 sm:grid-cols-2">
-                  <div>
-                    <label className="ui-label">Lot (AI 10)</label>
-                    <input className="ui-input font-mono text-sm" value={lot} onChange={(e) => setLot(e.target.value)} />
+                <div>
+                  <label htmlFor="prepaid-gen-face" className="ui-label !mt-0">
+                    Face value (cents)
+                  </label>
+                  <input
+                    id="prepaid-gen-face"
+                    type="number"
+                    min={0}
+                    className="ui-input !mt-1 rounded-none"
+                    value={faceValueCents}
+                    onChange={(e) => setFaceValueCents(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="prepaid-gen-prefix" className="ui-label !mt-0">
+                    Serial prefix
+                  </label>
+                  <input
+                    id="prepaid-gen-prefix"
+                    className="ui-input !mt-1 rounded-none font-mono text-sm"
+                    value={serialPrefix}
+                    onChange={(e) => setSerialPrefix(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="prepaid-gen-start" className="ui-label !mt-0">
+                    Serial start #
+                  </label>
+                  <input
+                    id="prepaid-gen-start"
+                    type="number"
+                    min={0}
+                    className="ui-input !mt-1 rounded-none"
+                    value={serialStart}
+                    onChange={(e) => setSerialStart(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="prepaid-gen-market" className="ui-label !mt-0">
+                    Retail market
+                  </label>
+                  <select
+                    id="prepaid-gen-market"
+                    className="ui-select !mt-1 rounded-none"
+                    value={retailMarket}
+                    onChange={(e) => setRetailMarket(e.target.value)}
+                  >
+                    <option value="us">us</option>
+                    <option value="br">br</option>
+                    <option value="uk">uk</option>
+                    <option value="global">global</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="prepaid-gen-vtype" className="ui-label !mt-0">
+                    Voucher product type
+                  </label>
+                  <select
+                    id="prepaid-gen-vtype"
+                    className="ui-select !mt-1 rounded-none"
+                    value={voucherProductType}
+                    onChange={(e) => setVoucherProductType(e.target.value as "global" | "three_uk")}
+                  >
+                    <option value="global">Global (tier + network redeem)</option>
+                    <option value="three_uk">Three UK exclusive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {mode === "gs1" ? (
+              <div className="admin-settings-block border-t border-slate-200 pt-6">
+                <div className="admin-settings-block-head">
+                  <h2 className="admin-settings-block-title">GS1 fields</h2>
+                </div>
+                <div className="admin-form-grid">
+                  <div className="admin-form-grid-span-2">
+                    <label htmlFor="prepaid-gen-gtin" className="ui-label !mt-0">
+                      GTIN / UPC (12–14 digits)
+                    </label>
+                    <input
+                      id="prepaid-gen-gtin"
+                      className="ui-input !mt-1 rounded-none font-mono text-sm"
+                      placeholder="012345678905"
+                      value={gtin}
+                      onChange={(e) => setGtin(e.target.value)}
+                    />
                   </div>
                   <div>
-                    <label className="ui-label">Expiry YYMMDD (AI 17)</label>
+                    <label htmlFor="prepaid-gen-lot" className="ui-label !mt-0">
+                      Lot (AI 10)
+                    </label>
                     <input
-                      className="ui-input font-mono text-sm"
+                      id="prepaid-gen-lot"
+                      className="ui-input !mt-1 rounded-none font-mono text-sm"
+                      value={lot}
+                      onChange={(e) => setLot(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="prepaid-gen-expiry" className="ui-label !mt-0">
+                      Expiry YYMMDD (AI 17)
+                    </label>
+                    <input
+                      id="prepaid-gen-expiry"
+                      className="ui-input !mt-1 rounded-none font-mono text-sm"
                       placeholder="261231"
                       value={expiryYymmdd}
                       onChange={(e) => setExpiryYymmdd(e.target.value)}
                     />
                   </div>
                 </div>
-              </>
+              </div>
             ) : null}
-            <div className="space-y-3 pb-5">
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" checked={qrUseFullUrl} onChange={(e) => setQrUseFullUrl(e.target.checked)} />
-                QR encodes full HTTPS URL (recommended for printed cards)
+
+            <div className="admin-settings-block border-t border-slate-200 pt-6">
+              <div className="admin-settings-block-head">
+                <h2 className="admin-settings-block-title">QR encoding</h2>
+              </div>
+              <label className="admin-option-card">
+                <input
+                  type="checkbox"
+                  checked={qrUseFullUrl}
+                  onChange={(e) => setQrUseFullUrl(e.target.checked)}
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">Full HTTPS URL in QR</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-slate-600">
+                    Recommended for printed cards. Unchecked encodes serial only (dealer smoke test).
+                  </span>
+                </span>
               </label>
               {qrUseFullUrl ? (
-                <div>
-                  <label className="ui-label">QR destination</label>
+                <div className="mt-4">
+                  <label htmlFor="prepaid-gen-qr-target" className="ui-label !mt-0">
+                    QR destination
+                  </label>
                   <select
-                    className="ui-select"
+                    id="prepaid-gen-qr-target"
+                    className="ui-select !mt-1 rounded-none"
                     value={qrTarget}
                     onChange={(e) => setQrTarget(e.target.value as "redeem_enter" | "cart_serial")}
                   >
-                    <option value="redeem_enter">Redeem portal — /redeem/enter (production default)</option>
-                    <option value="cart_serial">D2C cart — /cart?serial=… (scan-to-pay)</option>
+                    <option value="redeem_enter">Redeem — /redeem/enter</option>
+                    <option value="cart_serial">Cart — /cart?serial=…</option>
                   </select>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Replaces invalid printed URL <code className="rounded bg-slate-100 px-1">www.redeem/voucher</code>.
-                    Customer scratches PIN on the redeem page.
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Customer scratches PIN on redeem; fixes bad printed URLs like www.redeem/voucher.
                   </p>
                 </div>
-              ) : (
-                <p className="text-xs text-slate-500">QR encodes serial only (dealer barcode smoke test).</p>
-              )}
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
+              <button type="submit" disabled={loading} className="btn-primary h-10 rounded-none">
+                {loading ? "Generating…" : "Generate batch"}
+              </button>
+              {rows.length > 0 ? (
+                <>
+                  <button type="button" className="btn-secondary h-10 rounded-none" onClick={downloadCsv}>
+                    Download CSV
+                  </button>
+                  <button type="button" className="btn-secondary h-10 rounded-none" onClick={copyImportCsv}>
+                    Copy for import
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 border-t border-slate-200 bg-slate-50/90 px-6 py-5 md:px-8">
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? "Generating…" : "Generate batch"}
-            </button>
-            {rows.length > 0 ? (
-              <>
-                <button type="button" className="btn-secondary" onClick={downloadCsv}>
-                  Download CSV
-                </button>
-                <button type="button" className="btn-secondary" onClick={copyImportCsv}>
-                  Copy CSV for import
-                </button>
-              </>
-            ) : null}
-          </div>
-          {errors.length > 0 ? (
-            <ul className="border-t border-amber-200 bg-amber-50 px-6 py-3 text-xs text-amber-900 md:px-8">
-              {errors.map((err) => (
-                <li key={err}>{err}</li>
-              ))}
-            </ul>
-          ) : null}
         </form>
 
-        <div className="admin-panel overflow-hidden">
-          <div className="admin-panel-head">
-            <h2 className="admin-panel-head-title">Preview</h2>
-            {rows.length > 0 ? (
-              <select
-                className="ui-select mt-2 max-w-xs text-sm"
-                value={selectedIndex}
-                onChange={(e) => setSelectedIndex(Number(e.target.value))}
-              >
-                {rows.map((r, i) => (
-                  <option key={r.serial} value={i}>
-                    {r.serial}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <p className="admin-panel-head-desc text-xs">Generate cards to preview images and payloads.</p>
-            )}
+        <section className="admin-panel">
+          <div className="border-b border-slate-200 px-5 py-4 md:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-sm font-semibold text-slate-900">Preview</h2>
+              {rows.length > 0 ? (
+                <select
+                  className="ui-select max-w-xs rounded-none text-sm"
+                  value={selectedIndex}
+                  onChange={(e) => setSelectedIndex(Number(e.target.value))}
+                  aria-label="Select card to preview"
+                >
+                  {rows.map((r, i) => (
+                    <option key={r.serial} value={i}>
+                      {r.serial}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+            </div>
           </div>
           {selected ? (
-            <div className="space-y-6 px-6 py-6 md:px-8">
-              <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Image size (preview)</p>
-                <p className="mt-1 text-[11px] text-muted">
-                  Adjust then right-click images to save. QR size is PNG pixels; barcode uses Orca scale.
+            <div className="space-y-6 p-5 md:p-6">
+              <div className="rounded-none border border-slate-200 bg-slate-50/80 p-4">
+                <p className="text-sm font-semibold text-slate-900">Image size</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Adjust sliders, then right-click images to save.
                 </p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
@@ -480,56 +565,78 @@ export function AdminPrepaidGenerateClient() {
                   <dd className="font-mono">{selected.serial}</dd>
                 </div>
               </dl>
-              <p className="text-xs text-muted-dim">
-                Test dealer scan: paste barcode into{" "}
-                <Link href="/dealer/scan" className="text-accent hover:underline">
-                  /dealer
-                </Link>{" "}
-                after import.
+              <p className="text-xs text-slate-500">
+                After import, test dealer scan at{" "}
+                <Link href="/dealer/scan" className="font-medium text-accent hover:underline">
+                  /dealer/scan
+                </Link>
+                .
               </p>
             </div>
-          ) : null}
-        </div>
+          ) : (
+            <div className="admin-empty-state py-14 md:py-20" role="status">
+              <div className="admin-empty-state-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
+                  <path strokeLinecap="round" d="M3.75 4.5h16.5M3.75 9h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+                </svg>
+              </div>
+              <h3 className="admin-empty-state-title">No preview yet</h3>
+              <p className="admin-empty-state-desc">Generate a batch to preview QR, barcode, and payloads.</p>
+            </div>
+          )}
+        </section>
       </div>
 
-      <div className="admin-panel max-w-3xl overflow-hidden">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">GS1 decoder</h2>
-          <p className="admin-panel-head-desc text-xs">Paste a scanned Code 128 string to verify template v1 fields.</p>
+      <section className="admin-panel">
+        <div className="space-y-4 p-5 md:p-6">
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <h2 className="admin-settings-block-title">GS1 decoder</h2>
+              <p className="admin-settings-block-desc">Paste a scanned Code 128 string to verify template v1 fields.</p>
+            </div>
+            <textarea
+              className="ui-input min-h-[88px] w-full resize-y rounded-none font-mono text-xs"
+              placeholder="Paste barcode scan value…"
+              value={decodeInput}
+              onChange={(e) => setDecodeInput(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn-secondary mt-3 h-10 rounded-none"
+              onClick={() => void decodePayload()}
+            >
+              Decode
+            </button>
+            {decodeError ? (
+              <div className="mt-3">
+                <AdminFeedbackBanner variant="error" message={decodeError} onDismiss={() => setDecodeError(null)} />
+              </div>
+            ) : null}
+            {decoded ? (
+              <div className="admin-table-wrap mt-4">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th className="pl-5 md:pl-6">AI</th>
+                      <th>Field</th>
+                      <th className="pr-5 md:pr-6">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {decoded.fields.map((f) => (
+                      <tr key={f.ai}>
+                        <td className="pl-5 font-mono text-sm md:pl-6">{f.ai}</td>
+                        <td>{f.label}</td>
+                        <td className="pr-5 font-mono text-xs md:pr-6">{f.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+          </div>
         </div>
-        <div className="space-y-4 px-6 py-5 md:px-8">
-          <textarea
-            className="ui-textarea min-h-[80px] font-mono text-xs"
-            placeholder="Paste barcode scan value…"
-            value={decodeInput}
-            onChange={(e) => setDecodeInput(e.target.value)}
-          />
-          <button type="button" className="btn-secondary" onClick={() => void decodePayload()}>
-            Decode
-          </button>
-          {decodeError ? <p className="text-sm text-red-600">{decodeError}</p> : null}
-          {decoded ? (
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b text-xs uppercase text-muted">
-                  <th className="py-2">AI</th>
-                  <th className="py-2">Field</th>
-                  <th className="py-2">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {decoded.fields.map((f) => (
-                  <tr key={f.ai} className="border-b border-slate-50">
-                    <td className="py-2 font-mono">{f.ai}</td>
-                    <td className="py-2">{f.label}</td>
-                    <td className="py-2 font-mono text-xs">{f.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-        </div>
-      </div>
+      </section>
 
     </div>
   );

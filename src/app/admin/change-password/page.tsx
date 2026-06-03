@@ -1,4 +1,4 @@
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 
 export default function AdminChangePasswordPage() {
@@ -7,9 +7,9 @@ export default function AdminChangePasswordPage() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Administration" }, { label: "Change password" }]}
         title="Change password"
+        description="Email verification required before your new password is saved."
       />
-      <ChangePasswordForm />
-      <AdminPageFooter href="/admin/users" label="Back to users" />
+      <ChangePasswordForm variant="admin" />
     </div>
   );
 }

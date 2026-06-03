@@ -7,8 +7,9 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect, useCallback, useMemo } from "react";
 
-const PAGE_SIZE = 50;
 import { VoucherAdminStatusBadge } from "@/components/VoucherAdminStatusBadge";
+
+const PAGE_SIZE = 50;
 
 type VoucherRow = {
   id: string;
@@ -172,6 +173,13 @@ export default function VoucherTrackingPage() {
     setPendingDelete(v);
   }
 
+  const hasClientFilters = Boolean(
+    typeFilter || planFilter || planTypeFilter || unlockedByFilter.trim() || redeemedByFilter.trim(),
+  );
+  const hasActiveFilters = Boolean(
+    statusFilter || codeFilter.trim() || typeFilter || planFilter || planTypeFilter || unlockedByFilter.trim() || redeemedByFilter.trim(),
+  );
+
   async function confirmRemoveInactive() {
     const v = pendingDelete;
     if (!v) return;
@@ -196,116 +204,169 @@ export default function VoucherTrackingPage() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Vouchers" }, { label: "Tracking" }]}
         title="Voucher tracking"
+        description={`Search inventory and redemption status. Code and status filter on the server (${PAGE_SIZE} per page).`}
+        meta={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {loading ? (
+              <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                Loading…
+              </span>
+            ) : (
+              <>
+                <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
+                  <strong className="font-semibold text-slate-900">{total.toLocaleString()}</strong> total
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
+                  {filteredVouchers.length} shown on page
+                  {hasClientFilters ? " (client filters)" : ""}
+                </span>
+              </>
+            )}
+          </span>
+        }
       />
+
       {loadError ? (
         <AdminFeedbackBanner variant="error" message={loadError} onDismiss={() => setLoadError(null)} />
       ) : null}
-      <div className="admin-panel">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">Filters</h2>
-          <p className="admin-panel-head-desc">
-            Status and code search run on the server ({PAGE_SIZE} per page). Plan, type, and unlocked/redeemed filters
-            apply to the current page only.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 md:p-5">
-        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Code</label>
-            <input
-              value={codeFilter}
-              onChange={(e) => {
-                setCodeFilter(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search voucher code"
-              className="ui-input !mt-1 h-11 rounded-none"
-            />
+      {deleteError ? (
+        <AdminFeedbackBanner variant="error" message={deleteError} onDismiss={() => setDeleteError(null)} />
+      ) : null}
+
+      <section className="admin-panel">
+        <div className="space-y-4 p-5 md:p-6">
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <h2 className="admin-settings-block-title">Filters</h2>
+              <p className="admin-settings-block-desc">
+                Code and status query the database. Plan, type, unlocked, and redeemed filters apply to the current page
+                only.
+              </p>
+            </div>
+            <div className="admin-form-grid lg:grid-cols-4">
+              <div>
+                <label htmlFor="voucher-track-code" className="ui-label !mt-0">
+                  Code
+                </label>
+                <input
+                  id="voucher-track-code"
+                  value={codeFilter}
+                  onChange={(e) => {
+                    setCodeFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search code"
+                  className="ui-input !mt-1 rounded-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="voucher-track-status" className="ui-label !mt-0">
+                  Status
+                </label>
+                <select
+                  id="voucher-track-status"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="ui-select !mt-1 rounded-none"
+                >
+                  <option value="">All statuses</option>
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="voucher-track-type" className="ui-label !mt-0">
+                  Type
+                </label>
+                <select
+                  id="voucher-track-type"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="ui-select !mt-1 rounded-none"
+                >
+                  <option value="">All types</option>
+                  {typeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="voucher-track-plan" className="ui-label !mt-0">
+                  Plan
+                </label>
+                <select
+                  id="voucher-track-plan"
+                  value={planFilter}
+                  onChange={(e) => setPlanFilter(e.target.value)}
+                  className="ui-select !mt-1 rounded-none"
+                >
+                  <option value="">All plans</option>
+                  {planOptions.map((plan) => (
+                    <option key={plan} value={plan}>
+                      {plan}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="voucher-track-plan-type" className="ui-label !mt-0">
+                  Plan type
+                </label>
+                <select
+                  id="voucher-track-plan-type"
+                  value={planTypeFilter}
+                  onChange={(e) => setPlanTypeFilter(e.target.value)}
+                  className="ui-select !mt-1 rounded-none"
+                >
+                  <option value="">All plan types</option>
+                  {planTypeOptions.map((planType) => (
+                    <option key={planType} value={planType}>
+                      {planType}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="voucher-track-unlocked" className="ui-label !mt-0">
+                  Unlocked by
+                </label>
+                <input
+                  id="voucher-track-unlocked"
+                  value={unlockedByFilter}
+                  onChange={(e) => setUnlockedByFilter(e.target.value)}
+                  placeholder="Email or name"
+                  className="ui-input !mt-1 rounded-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="voucher-track-redeemed" className="ui-label !mt-0">
+                  Redeemed by
+                </label>
+                <input
+                  id="voucher-track-redeemed"
+                  value={redeemedByFilter}
+                  onChange={(e) => setRedeemedByFilter(e.target.value)}
+                  placeholder="Email or ICCID"
+                  className="ui-input !mt-1 rounded-none"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="ui-select !mt-1 h-11 rounded-none"
-            >
-              <option value="">All statuses</option>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Type</label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-none"
-            >
-              <option value="">All types</option>
-              {typeOptions.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Plan</label>
-            <select
-              value={planFilter}
-              onChange={(e) => setPlanFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-none"
-            >
-              <option value="">All plans</option>
-              {planOptions.map((plan) => (
-                <option key={plan} value={plan}>
-                  {plan}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Plan type</label>
-            <select
-              value={planTypeFilter}
-              onChange={(e) => setPlanTypeFilter(e.target.value)}
-              className="ui-select !mt-1 h-11 rounded-none"
-            >
-              <option value="">All plan types</option>
-              {planTypeOptions.map((planType) => (
-                <option key={planType} value={planType}>
-                  {planType}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Unlocked by</label>
-            <input
-              value={unlockedByFilter}
-              onChange={(e) => setUnlockedByFilter(e.target.value)}
-              placeholder="Email or name"
-              className="ui-input !mt-1 h-11 rounded-none"
-            />
-          </div>
-          <div>
-            <label className="ui-label !mt-0 text-[10px] text-muted-dim">Redeemed by</label>
-            <input
-              value={redeemedByFilter}
-              onChange={(e) => setRedeemedByFilter(e.target.value)}
-              placeholder="Email or ICCID"
-              className="ui-input !mt-1 h-11 rounded-none"
-            />
-          </div>
-          <div className="flex items-end">
+          <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-slate-500">
+              Inactive vouchers can be removed from inventory with the trash action.
+            </p>
             <button
               type="button"
+              disabled={!hasActiveFilters}
               onClick={() => {
                 setStatusFilter("");
                 setTypeFilter("");
@@ -316,27 +377,43 @@ export default function VoucherTrackingPage() {
                 setRedeemedByFilter("");
                 setPage(1);
               }}
-              className="ui-btn-ghost h-11 w-full rounded-none text-xs uppercase tracking-wider"
+              className="btn-secondary h-10 shrink-0 rounded-none px-4 text-xs disabled:opacity-40"
             >
               Clear filters
             </button>
           </div>
         </div>
-        {!loading ? (
-          <p className="shrink-0 rounded-none border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-slate-600 sm:text-left">
-            {filteredVouchers.length} on page · {total} total in database
-          </p>
-        ) : null}
-        </div>
-      </div>
+      </section>
+
       {loading ? (
-        <div className="admin-panel space-y-3 p-6">
-          <div className="h-4 w-1/3 animate-pulse rounded-none bg-slate-200" />
-          <div className="h-32 animate-pulse rounded-none bg-slate-100" />
-        </div>
+        <section className="admin-panel p-6">
+          <div className="space-y-3">
+            <div className="h-4 w-1/3 animate-pulse rounded-none bg-slate-200" />
+            <div className="h-40 animate-pulse rounded-none bg-slate-100" />
+          </div>
+        </section>
       ) : (
-        <div className="admin-panel w-full max-w-full overflow-hidden">
-          <div className="admin-table-wrap w-full max-w-full">
+        <section className="admin-panel overflow-hidden">
+          {filteredVouchers.length === 0 ? (
+            <div className="admin-empty-state py-14 md:py-16" role="status">
+              <div className="admin-empty-state-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
+                  <path strokeLinecap="round" d="M21 21l-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+                </svg>
+              </div>
+              <h2 className="admin-empty-state-title">
+                {total === 0 ? "No vouchers in database" : "No vouchers match filters"}
+              </h2>
+              <p className="admin-empty-state-desc">
+                {total === 0
+                  ? "Import codes from the Import vouchers page to populate inventory."
+                  : hasActiveFilters
+                    ? "Try clearing filters or changing code/status search."
+                    : "This page is empty."}
+              </p>
+            </div>
+          ) : (
+            <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -447,19 +524,10 @@ export default function VoucherTrackingPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-          {filteredVouchers.length === 0 ? (
-            <p className="border-t border-slate-200 px-6 py-10 text-center text-sm text-slate-600">
-              No vouchers match this filter.
-            </p>
-          ) : null}
-          <AdminPagination
-            page={page}
-            pageSize={PAGE_SIZE}
-            total={total}
-            onPageChange={setPage}
-          />
-        </div>
+            </div>
+          )}
+          <AdminPagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+        </section>
       )}
 
       <ConfirmDialog
