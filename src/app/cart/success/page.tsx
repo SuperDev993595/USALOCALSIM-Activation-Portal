@@ -2,18 +2,26 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
+import { CART_FLOW_CLASS, CART_PANEL_CLASS, CART_PRIMARY_BUTTON_CLASS } from "@/lib/cart-panel";
 
 export default function CartSuccessPage() {
   const t = useTranslations("cart");
   return (
-    <div className="flex flex-1 justify-center py-8">
-      <div className="ui-card mx-auto max-w-md p-8 text-center">
-        <h1 className="text-xl font-bold text-slate-900">{t("successTitle")}</h1>
-        <p className="mt-3 text-sm text-slate-600">{t("successBody")}</p>
-        <p className="mt-6 text-sm text-slate-600">{t("redeemSuccessFooter")}</p>
-        <Link href="/cart/plans" className="btn-primary mt-6 inline-block px-6 py-2.5 text-sm font-semibold">
-          {t("goPlans")}
-        </Link>
+    <div className={CART_FLOW_CLASS}>
+      <div className={`${CART_PANEL_CLASS} cart-flow-panel--checkout`}>
+        <CartPhase1StepNav currentStep={4} embedded />
+        <header className="cart-flow-header cart-flow-header--accent">
+          <p className="cart-flow-eyebrow">{t("phase1NavStep4")}</p>
+          <h1 className="cart-flow-title">{t("successTitle")}</h1>
+          <p className="cart-flow-subtitle">{t("successBody")}</p>
+        </header>
+        <div className="cart-flow-body">
+          <p className="text-sm text-slate-600">{t("redeemSuccessFooter")}</p>
+          <Link href="/cart/plans" className={`${CART_PRIMARY_BUTTON_CLASS} text-center`}>
+            {t("goPlans")}
+          </Link>
+        </div>
       </div>
     </div>
   );

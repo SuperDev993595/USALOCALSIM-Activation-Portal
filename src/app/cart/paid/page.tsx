@@ -42,7 +42,7 @@ export default async function CartPaidPage({
   const redeemHref = redeemUrlWithAccess(base, purchase.id, accessToken);
 
   return (
-    <div className="flex flex-1 justify-center py-8">
+    <div className="cart-flow-page">
       <CartPaidClient
         purchaseId={purchase.id}
         redeemHref={redeemHref}

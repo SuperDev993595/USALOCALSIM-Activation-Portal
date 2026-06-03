@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CartNotice } from "@/components/CartNotice";
 import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
+import {
+  CART_FLOW_CLASS,
+  CART_PANEL_CLASS,
+  CART_PRIMARY_BUTTON_CLASS,
+} from "@/lib/cart-panel";
 
 export function CartCheckoutReturnClient() {
   const t = useTranslations("cart");
@@ -64,48 +70,53 @@ export function CartCheckoutReturnClient() {
     };
   }, [sessionId, mpPaymentId]);
 
-  if (!sessionId && !(mpPaymentId && /^\d+$/.test(mpPaymentId))) {
+  const hasPaymentRef = Boolean(sessionId || (mpPaymentId && /^\d+$/.test(mpPaymentId)));
+
+  function shell(body: React.ReactNode) {
     return (
-      <div className="mx-auto w-full max-w-md">
-        <CartPhase1StepNav currentStep={3} />
-        <div className="ui-card p-6 text-center">
-          <p className="text-sm text-red-600">{t("returnFailed")}</p>
-          <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
-            {t("returnTryPurchasesList")}
-          </Link>
-          <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
-            {t("goPlans")}
-          </Link>
+      <div className={CART_FLOW_CLASS}>
+        <div className={`${CART_PANEL_CLASS} cart-flow-panel--checkout`}>
+          <CartPhase1StepNav currentStep={3} embedded />
+          <header className="cart-flow-header cart-flow-header--accent">
+            <p className="cart-flow-eyebrow">{t("phase1NavStep3")}</p>
+            <h1 className="cart-flow-title">{t("returnTitle")}</h1>
+            {state === "loading" && hasPaymentRef ? (
+              <p className="cart-flow-subtitle">{t("returnSubtitle")}</p>
+            ) : null}
+          </header>
+          <div className="cart-flow-body">{body}</div>
         </div>
       </div>
+    );
+  }
+
+  if (!hasPaymentRef) {
+    return shell(
+      <>
+        <CartNotice variant="error">{t("returnFailed")}</CartNotice>
+        <Link href="/cart/plans" className={`${CART_PRIMARY_BUTTON_CLASS} text-center`}>
+          {t("goPlans")}
+        </Link>
+      </>,
     );
   }
 
   if (state === "error") {
-    return (
-      <div className="mx-auto w-full max-w-md">
-        <CartPhase1StepNav currentStep={3} />
-        <div className="ui-card p-6 text-center">
-          <p className="text-sm text-slate-700">{t("returnFailed")}</p>
-          <Link href="/cart/paid" className="mt-3 block text-sm font-medium text-[#00104E] underline">
-            {t("returnTryPurchasesList")}
-          </Link>
-          <Link href="/cart/plans" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">
-            {t("goPlans")}
-          </Link>
-        </div>
-      </div>
+    return shell(
+      <>
+        <CartNotice variant="warning">{t("returnFailed")}</CartNotice>
+        <Link href="/cart/plans" className={`${CART_PRIMARY_BUTTON_CLASS} text-center`}>
+          {t("goPlans")}
+        </Link>
+        <p className="cart-flow-secure-hint">{t("registerSecurePayHint")}</p>
+      </>,
     );
   }
 
-  return (
-    <div className="mx-auto w-full max-w-md">
-      <CartPhase1StepNav currentStep={3} />
-      <div className="ui-card p-8 text-center">
-        <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[#00104E]" aria-hidden />
-        <h1 className="text-lg font-semibold text-slate-900">{t("returnTitle")}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t("returnSubtitle")}</p>
-      </div>
-    </div>
+  return shell(
+    <div className="cart-flow-loading py-8" role="status" aria-live="polite">
+      <span className="cart-flow-spinner" aria-hidden />
+      <span>{t("returnSubtitle")}</span>
+    </div>,
   );
 }

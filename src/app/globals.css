@@ -364,6 +364,30 @@
     @apply border-b border-[#00104E]/10 bg-gradient-to-br from-[#f0f4ff] via-white to-white pb-6 pt-2 sm:pb-7;
   }
 
+  .public-site--cart .cart-flow-header--success {
+    @apply from-emerald-50/80 via-[#f0f4ff]/40 to-white;
+  }
+
+  .public-site--cart .cart-flow-success-badge {
+    @apply inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-4 ring-emerald-50;
+  }
+
+  .public-site--cart .cart-flow-pill--success {
+    @apply bg-emerald-50 font-semibold text-emerald-800 ring-emerald-200/90;
+  }
+
+  .public-site--cart .cart-flow-next-steps {
+    @apply space-y-2.5;
+  }
+
+  .public-site--cart .cart-flow-next-step {
+    @apply flex items-start gap-3 text-sm leading-snug text-slate-700;
+  }
+
+  .public-site--cart .cart-flow-next-step-num {
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#00104E]/10 text-xs font-bold text-[#00104E];
+  }
+
   .public-site--cart .cart-flow-eyebrow {
     @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00104E]/75;
   }
