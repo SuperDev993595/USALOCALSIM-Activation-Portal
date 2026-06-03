@@ -11,6 +11,8 @@ const config: Config = {
     "animate-tier-select",
     "animate-tier-check-pop",
     "animate-tier-pill-in",
+    "animate-redeem-step-active",
+    "redeem-step-badge-active",
   ],
   theme: {
     extend: {
@@ -55,6 +57,23 @@ const config: Config = {
       boxShadow: {
         "accent-sm": "0 0 24px rgba(225, 29, 46, 0.22)",
         "accent-md": "0 0 40px rgba(225, 29, 46, 0.16)",
+      },
+      keyframes: {
+        "redeem-step-active": {
+          "0%, 100%": {
+            transform: "scale(1)",
+            boxShadow:
+              "0 0 0 2px rgba(255, 255, 255, 0.28), 0 0 12px rgba(255, 255, 255, 0.12)",
+          },
+          "50%": {
+            transform: "scale(1.1)",
+            boxShadow:
+              "0 0 0 5px rgba(255, 255, 255, 0.4), 0 0 20px rgba(255, 255, 255, 0.28)",
+          },
+        },
+      },
+      animation: {
+        "redeem-step-active": "redeem-step-active 2.2s ease-in-out infinite",
       },
     },
   },

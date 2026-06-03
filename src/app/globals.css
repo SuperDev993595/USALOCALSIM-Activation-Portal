@@ -569,8 +569,39 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-tier-select,
     .animate-tier-check-pop,
-    .animate-tier-pill-in {
+    .animate-tier-pill-in,
+    .animate-redeem-step-active,
+    .animate-pulse {
       animation: none;
     }
+  }
+}
+
+/* Redeem wizard active step — outside @layer so Tailwind purge cannot drop it */
+@keyframes redeem-step-active-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.28),
+      0 0 12px rgba(255, 255, 255, 0.12);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 0 5px rgba(255, 255, 255, 0.42),
+      0 0 20px rgba(255, 255, 255, 0.28);
+  }
+}
+
+.animate-redeem-step-active {
+  animation: redeem-step-active-pulse 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-redeem-step-active {
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+    transform: none;
   }
 }

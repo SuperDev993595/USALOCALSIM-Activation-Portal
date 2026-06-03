@@ -7,6 +7,7 @@ import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
 import { RedeemPlanPaymentStep } from "@/components/RedeemPlanPaymentStep";
+import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
@@ -48,67 +49,18 @@ function initialWizardStep(
   return stepMap.skipPin ? stepMap.phone : stepMap.pin;
 }
 
-function navLabelKeys(stepMap: ReturnType<typeof buildRedeemWizardStepMap>): string[] {
-  const keys: string[] = [];
-  if (!stepMap.skipPin) keys.push("navStep1");
-  keys.push("navStep2");
-  if (stepMap.showTier) keys.push("navStepTier");
-  if (stepMap.showNetwork) keys.push("navStepNetwork");
-  keys.push("navStep3", "navStep4", "navStep5");
-  return keys;
-}
-
-function RedeemStepNav({
-  currentStep,
-  totalSteps,
-  labelKeys,
-  t,
-}: {
-  currentStep: number;
-  totalSteps: number;
-  labelKeys: string[];
-  t: ReturnType<typeof useTranslations<"redeemWizard">>;
-}) {
-  return (
-    <nav aria-label={t("navAria")} className="mb-6 border-b border-white/10 pb-5">
-      <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-        {t("phase2Banner")}
-      </p>
-      <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-        {t("stepProgress", { current: currentStep, total: totalSteps })}
-      </p>
-      <ol className="flex items-start justify-between gap-0.5 sm:gap-1.5 md:gap-3 lg:gap-4">
-        {labelKeys.map((key, idx) => {
-          const stepNum = idx + 1;
-          const isCurrent = stepNum === currentStep;
-          const isPast = stepNum < currentStep;
-          return (
-            <li key={key} className="flex min-w-0 flex-1 flex-col items-center gap-1.5 md:gap-2">
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition md:h-9 md:w-9 md:text-sm ${
-                  isCurrent
-                    ? "border-white bg-white/20 text-white ring-2 ring-white/25 ring-offset-2 ring-offset-slate-950"
-                    : isPast
-                      ? "border-emerald-500/45 bg-emerald-500/15 text-emerald-200"
-                      : "border-white/15 text-slate-500"
-                }`}
-                aria-current={isCurrent ? "step" : undefined}
-              >
-                {isPast ? "✓" : stepNum}
-              </span>
-              <span
-                className={`block max-w-[4.25rem] truncate px-0.5 text-center text-[9px] font-medium leading-tight sm:max-w-[4.75rem] sm:text-[10px] md:max-w-none md:overflow-visible md:whitespace-normal md:text-xs md:leading-snug lg:text-[13px] ${
-                  isCurrent ? "text-white" : isPast ? "text-emerald-200/90" : "text-slate-500"
-                }`}
-              >
-                {t(key)}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
+function navSteps(stepMap: ReturnType<typeof buildRedeemWizardStepMap>): { key: string; step: number }[] {
+  const items: { key: string; step: number }[] = [];
+  if (!stepMap.skipPin) items.push({ key: "navStep1", step: stepMap.pin });
+  items.push({ key: "navStep2", step: stepMap.phone });
+  if (stepMap.showTier) items.push({ key: "navStepTier", step: stepMap.tier });
+  if (stepMap.showNetwork) items.push({ key: "navStepNetwork", step: stepMap.network });
+  items.push(
+    { key: "navStep3", step: stepMap.fulfillment },
+    { key: "navStep4", step: stepMap.plans },
+    { key: "navStep5", step: stepMap.date },
   );
+  return items;
 }
 
 export function RedeepPhase2Client({
@@ -155,7 +107,7 @@ export function RedeepPhase2Client({
       }),
     [showTierStep, showNetworkStep, skipPinStep],
   );
-  const navKeys = useMemo(() => navLabelKeys(stepMap), [stepMap]);
+  const navStepsList = useMemo(() => navSteps(stepMap), [stepMap]);
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
   const [selectedCoverageTier, setSelectedCoverageTier] = useState(initialCoverageTier ?? "");
@@ -486,7 +438,7 @@ export function RedeepPhase2Client({
         <RedeemStepNav
           currentStep={wizardStep}
           totalSteps={stepMap.total}
-          labelKeys={navKeys}
+          steps={navStepsList}
           t={t}
         />
         <PaymentMethodsNote className="mb-4" />
