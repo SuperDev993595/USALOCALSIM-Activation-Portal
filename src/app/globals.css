@@ -434,6 +434,18 @@
     @apply border-slate-200 bg-slate-50 text-slate-600;
   }
 
+  .admin-callout-error {
+    @apply border-red-200 bg-red-50 text-red-900;
+  }
+
+  .admin-callout-success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-900;
+  }
+
+  .admin-callout-warning {
+    @apply border-amber-300 bg-amber-50 text-amber-950;
+  }
+
   .admin-table-wrap {
     @apply overflow-x-auto border-t border-slate-200;
   }

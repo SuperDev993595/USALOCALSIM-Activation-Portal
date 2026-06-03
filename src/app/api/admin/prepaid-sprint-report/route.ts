@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 
 function csvCell(v: string | number | null | undefined): string {
@@ -10,8 +9,8 @@ function csvCell(v: string | number | null | undefined): string {
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email || (session.user as { role?: string }).role !== "admin") {
+  const session = await requireAdmin();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

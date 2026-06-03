@@ -5,17 +5,40 @@ import { prisma } from "@/lib/db";
 import {
   getSimHardwareCostFallbackCents,
   normalizeSimHardwareMarket,
+  SIM_HARDWARE_MARKETS,
+  type SimHardwareMarket,
 } from "@/lib/sim-cost";
+
+const optionalCents = z.union([z.number().int().min(0).max(1_000_000), z.null()]);
 
 const bodySchema = z
   .object({
     fallbackCents: z.number().int().min(0).max(1_000_000).optional(),
-    globalCents: z.union([z.number().int().min(0).max(1_000_000), z.null()]).optional(),
-    usCents: z.union([z.number().int().min(0).max(1_000_000), z.null()]).optional(),
+    globalCents: optionalCents.optional(),
+    usCents: optionalCents.optional(),
+    ukCents: optionalCents.optional(),
+    brCents: optionalCents.optional(),
   })
-  .refine((d) => d.fallbackCents !== undefined || d.globalCents !== undefined || d.usCents !== undefined, {
-    message: "At least one of fallbackCents, globalCents, or usCents is required",
-  });
+  .refine(
+    (d) =>
+      d.fallbackCents !== undefined ||
+      d.globalCents !== undefined ||
+      d.usCents !== undefined ||
+      d.ukCents !== undefined ||
+      d.brCents !== undefined,
+    { message: "At least one field is required" },
+  );
+
+function marketPayload(rows: { market: string; cents: number }[]) {
+  const byKey = Object.fromEntries(rows.map((r) => [r.market, r.cents])) as Record<string, number>;
+  return {
+    fallbackCents: 0 as number,
+    globalCents: byKey.global ?? null,
+    usCents: byKey.us ?? null,
+    ukCents: byKey.uk ?? null,
+    brCents: byKey.br ?? null,
+  };
+}
 
 export async function GET() {
   const session = await requireAdmin();
@@ -24,12 +47,7 @@ export async function GET() {
   const rows = await prisma.simHardwareCostByMarket.findMany({
     select: { market: true, cents: true },
   });
-  const byKey = Object.fromEntries(rows.map((r) => [r.market, r.cents])) as Record<string, number>;
-  return NextResponse.json({
-    fallbackCents,
-    globalCents: byKey.global ?? null,
-    usCents: byKey.us ?? null,
-  });
+  return NextResponse.json({ ...marketPayload(rows), fallbackCents });
 }
 
 export async function POST(req: Request) {
@@ -41,7 +59,10 @@ export async function POST(req: Request) {
     body = bodySchema.parse(await req.json());
   } catch {
     return NextResponse.json(
-      { error: "Invalid body: fallbackCents?, globalCents? (number|null), usCents? (number|null)" },
+      {
+        error:
+          "Invalid body: fallbackCents?, globalCents?, usCents?, ukCents?, brCents? (number or null to clear)",
+      },
       { status: 400 },
     );
   }
@@ -56,13 +77,20 @@ export async function POST(req: Request) {
     });
   }
 
-  async function applyMarket(field: "globalCents" | "usCents", market: "global" | "us") {
+  const fieldMap: { field: keyof z.infer<typeof bodySchema>; market: SimHardwareMarket }[] = [
+    { field: "globalCents", market: "global" },
+    { field: "usCents", market: "us" },
+    { field: "ukCents", market: "uk" },
+    { field: "brCents", market: "br" },
+  ];
+
+  for (const { field, market } of fieldMap) {
     const v = body[field];
-    if (v === undefined) return;
+    if (v === undefined) continue;
     const key = normalizeSimHardwareMarket(market);
     if (v === null) {
       await prisma.simHardwareCostByMarket.deleteMany({ where: { market: key } });
-      return;
+      continue;
     }
     await prisma.simHardwareCostByMarket.upsert({
       where: { market: key },
@@ -71,19 +99,10 @@ export async function POST(req: Request) {
     });
   }
 
-  await applyMarket("globalCents", "global");
-  await applyMarket("usCents", "us");
-
   const fallbackCents = await getSimHardwareCostFallbackCents();
   const rows = await prisma.simHardwareCostByMarket.findMany({
     select: { market: true, cents: true },
   });
-  const byKey = Object.fromEntries(rows.map((r) => [r.market, r.cents])) as Record<string, number>;
 
-  return NextResponse.json({
-    ok: true,
-    fallbackCents,
-    globalCents: byKey.global ?? null,
-    usCents: byKey.us ?? null,
-  });
+  return NextResponse.json({ ok: true, ...marketPayload(rows), fallbackCents });
 }

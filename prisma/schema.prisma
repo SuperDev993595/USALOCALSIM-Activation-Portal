@@ -93,6 +93,7 @@ model Plan {
   coverageTier  String?
   networkId     String?
   network       Network? @relation(fields: [networkId], references: [id], onDelete: SetNull)
+  active        Boolean  @default(true)
   createdAt     DateTime @default(now())
   vouchers      Voucher[]
   activationRequests ActivationRequest[]
@@ -285,7 +286,7 @@ model ActivationRequest {
 }
 
 model SimHardwareCostByMarket {
-  market    String   @id // "global" | "us"
+  market    String   @id // "global" | "us" | "uk" | "br"
   cents     Int
   updatedAt DateTime @updatedAt
 }

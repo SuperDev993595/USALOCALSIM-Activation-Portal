@@ -44,6 +44,11 @@ const sections: NavSection[] = [
     links: [
       { href: "/admin/plans", label: "Plans", active: (p) => p.startsWith("/admin/plans") },
       {
+        href: "/admin/networks",
+        label: "Networks",
+        active: (p) => p.startsWith("/admin/networks"),
+      },
+      {
         href: "/admin/sim-cost",
         label: "Pricing & hardware",
         active: (p) => p.startsWith("/admin/sim-cost"),
@@ -72,7 +77,7 @@ const sections: NavSection[] = [
         active: (p) =>
           p === "/admin/prepaid" ||
           p.startsWith("/admin/prepaid/generate") ||
-          p.startsWith("/api/admin/prepaid-sprint-report"),
+          p.startsWith("/admin/prepaid/sprint-report"),
         children: [
           {
             href: "/admin/prepaid",
@@ -85,9 +90,9 @@ const sections: NavSection[] = [
             active: (p) => p.startsWith("/admin/prepaid/generate"),
           },
           {
-            href: "/api/admin/prepaid-sprint-report",
-            label: "Prepaid sprint export (CSV)",
-            active: () => false,
+            href: "/admin/prepaid/sprint-report",
+            label: "Prepaid sprint export",
+            active: (p) => p.startsWith("/admin/prepaid/sprint-report"),
           },
         ],
       },
@@ -105,6 +110,11 @@ const sections: NavSection[] = [
     icon: <AdminIcon />,
     links: [
       { href: "/admin/users", label: "Users", active: (p) => p.startsWith("/admin/users") },
+      {
+        href: "/admin/audit-logs",
+        label: "Audit log",
+        active: (p) => p.startsWith("/admin/audit-logs"),
+      },
       {
         href: "/admin/change-password",
         label: "Change password",

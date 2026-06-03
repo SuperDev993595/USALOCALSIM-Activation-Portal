@@ -101,6 +101,7 @@ export async function POST(req: Request) {
 
   const planRows = await prisma.plan.findMany({
     where: {
+      active: true,
       ...planTypeWhere,
       ...(threeUkExclusive && network
         ? threeUkExclusivePlanWhere(network.id)

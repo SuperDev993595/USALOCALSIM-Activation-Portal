@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useCallback, useEffect, useState } from "react";
 
-type Plan = { id: string; name: string; planType: string; market: string };
+type Plan = { id: string; name: string; planType: string; market: string; active?: boolean };
 
 export default function AdminPrepaidImportPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -14,6 +15,7 @@ export default function AdminPrepaidImportPage() {
   const [voucherProductType, setVoucherProductType] = useState<"global" | "three_uk">("global");
   const [csvText, setCsvText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     created: number;
     skipped: number;
@@ -26,7 +28,9 @@ export default function AdminPrepaidImportPage() {
   const loadPlans = useCallback(() => {
     fetch("/api/admin/plans")
       .then((res) => res.json())
-      .then((data) => setPlans(Array.isArray(data) ? data : []))
+      .then((data) =>
+        setPlans(Array.isArray(data) ? data.filter((p: Plan) => p.active !== false) : []),
+      )
       .catch(() => setPlans([]));
   }, []);
 
@@ -43,10 +47,11 @@ export default function AdminPrepaidImportPage() {
   async function handleImport(e: React.FormEvent) {
     e.preventDefault();
     if (!basePlanId) {
-      alert("Select a base plan (physical SIM, market tag for catalog).");
+      setError("Select a base plan (physical SIM, market tag for catalog).");
       return;
     }
     setLoading(true);
+    setError(null);
     setResult(null);
     try {
       const res = await fetch("/api/admin/prepaid/import", {
@@ -68,10 +73,10 @@ export default function AdminPrepaidImportPage() {
           errors: data.errors,
         });
       } else {
-        alert(data.error ?? "Import failed");
+        setError(typeof data.error === "string" ? data.error : "Import failed.");
       }
     } catch {
-      alert("Import failed");
+      setError("Import failed. Check your connection and try again.");
     }
     setLoading(false);
   }
@@ -87,6 +92,9 @@ export default function AdminPrepaidImportPage() {
           </Link>
         }
       />
+      {error ? (
+        <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
+      ) : null}
       <form
         onSubmit={handleImport}
         className="admin-panel w-full max-w-5xl space-y-0 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"

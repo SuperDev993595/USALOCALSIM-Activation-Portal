@@ -21,6 +21,7 @@ const patchBodySchema = z
     networkId: z.string().nullable().optional(),
     coverageTier: coverageTierSchema,
     sku: z.string().max(64).nullable().optional(),
+    active: z.boolean().optional(),
   })
   .strict();
 
@@ -62,6 +63,14 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
         ...(body.market !== undefined ? { market: body.market } : {}),
         ...(body.networkId !== undefined ? { networkId: body.networkId?.trim() || null } : {}),
         ...(body.coverageTier !== undefined ? { coverageTier: body.coverageTier } : {}),
+        ...(body.active !== undefined ? { active: body.active } : {}),
+      },
+    });
+    await prisma.auditLog.create({
+      data: {
+        action: body.active === false ? "admin_plan_archived" : "admin_plan_updated",
+        userId: session.user.id,
+        metadata: JSON.stringify({ planId: id, sku: plan.sku, active: plan.active }),
       },
     });
     return NextResponse.json(plan);

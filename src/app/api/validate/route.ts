@@ -62,7 +62,7 @@ export async function GET(req: Request) {
     const marketParam = searchParams.get("market")?.toLowerCase() ?? "global";
     const market: "global" | "us" = marketParam === "us" ? "us" : "global";
     const plans = await prisma.plan.findMany({
-      where: { planType: "physical_sim", market },
+      where: { planType: "physical_sim", market, active: true },
       orderBy: { durationDays: "asc" },
     });
     const hardwareCost = await getSimHardwareCostCentsForMarket(market);
@@ -221,7 +221,7 @@ export async function GET(req: Request) {
   const completed = existing.find((r) => r.status === "active") ?? null;
 
   const plans = await prisma.plan.findMany({
-    where: { planType: "physical_sim", market: "global" },
+    where: { planType: "physical_sim", market: "global", active: true },
     orderBy: { durationDays: "asc" },
   });
   const hardwareGlobal = await getSimHardwareCostCentsForMarket("global");

@@ -17,6 +17,7 @@ type PlanRow = {
   coverageTier: string | null;
   networkId: string | null;
   network?: { slug: string; name: string } | null;
+  active: boolean;
 };
 
 type NetworkRow = { id: string; slug: string; name: string };
@@ -189,6 +190,28 @@ export function AdminPlansClient() {
   function cancelEdit() {
     setEditingId(null);
     setEditDraft(null);
+  }
+
+  async function setPlanActive(plan: PlanRow, active: boolean) {
+    setError(null);
+    setSavingId(plan.id);
+    try {
+      const res = await fetch(`/api/admin/plans/${encodeURIComponent(plan.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Could not update plan status.");
+        return;
+      }
+      await loadPlans();
+    } catch {
+      setError("Could not update plan status.");
+    } finally {
+      setSavingId(null);
+    }
   }
 
   async function saveEdit() {
@@ -384,6 +407,7 @@ export function AdminPlansClient() {
                 <th>Data</th>
                 <th>Days</th>
                 <th>Price</th>
+                <th>Status</th>
                 <th className="pr-5 text-right md:pr-6">Actions</th>
               </tr>
             </thead>
@@ -503,6 +527,7 @@ export function AdminPlansClient() {
                         className="ui-input !mt-0 w-24 text-sm"
                       />
                     </td>
+                    <td className="text-slate-600">—</td>
                     <td className="pr-5 text-right md:pr-6">
                       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                         <button
@@ -529,7 +554,7 @@ export function AdminPlansClient() {
                     </td>
                   </tr>
                 ) : (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={p.active === false ? "opacity-60" : undefined}>
                     <td className="pl-5 font-mono text-xs text-slate-600 md:pl-6">{p.sku ?? "—"}</td>
                     <td className="font-medium text-slate-900">{p.name}</td>
                     <td className="text-slate-600">{p.market}</td>
@@ -539,16 +564,41 @@ export function AdminPlansClient() {
                     <td className="text-slate-600">{p.dataAllowance}</td>
                     <td className="text-slate-600">{p.durationDays}</td>
                     <td className="font-medium text-slate-900">${(p.priceCents / 100).toFixed(2)}</td>
+                    <td>
+                      {p.active === false ? (
+                        <span className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                          Archived
+                        </span>
+                      ) : (
+                        <span className="rounded-none border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td className="pr-5 text-right md:pr-6">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(p)}
-                        title={`Edit ${p.name}`}
-                        aria-label={`Edit ${p.name}`}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
-                      >
-                        <EditIcon className="h-4 w-4" />
-                      </button>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(p)}
+                          title={`Edit ${p.name}`}
+                          aria-label={`Edit ${p.name}`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                        >
+                          <EditIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void setPlanActive(p, p.active === false)}
+                          disabled={savingId === p.id}
+                          className="btn-secondary h-9 rounded-none px-2 text-xs"
+                        >
+                          {savingId === p.id
+                            ? "…"
+                            : p.active === false
+                              ? "Restore"
+                              : "Archive"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ),

@@ -1,9 +1,13 @@
 "use client";
 
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
+import { AdminPagination } from "@/components/AdminPagination";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect, useCallback, useMemo } from "react";
+
+const PAGE_SIZE = 50;
 import { VoucherAdminStatusBadge } from "@/components/VoucherAdminStatusBadge";
 
 type VoucherRow = {
@@ -19,6 +23,13 @@ type VoucherRow = {
   activatedByName: string | null;
   redeemedAt: string | null;
   redeemedBy: string | null;
+  prepaidSerial: string | null;
+  prepaidBarcode: string | null;
+  retailMarket: string | null;
+  faceValueCents: number | null;
+  purchasePaymentSource: string | null;
+  purchaseExternalRef: string | null;
+  amountPaidCents: number | null;
 };
 
 function TrashIcon({ className }: { className?: string }) {
@@ -52,19 +63,43 @@ export default function VoucherTrackingPage() {
   const [codeFilter, setCodeFilter] = useState("");
   const [unlockedByFilter, setUnlockedByFilter] = useState("");
   const [redeemedByFilter, setRedeemedByFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<VoucherRow | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadVouchers = useCallback(() => {
     setLoading(true);
-    return fetch("/api/admin/vouchers/tracking")
+    setLoadError(null);
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+    });
+    if (statusFilter) params.set("status", statusFilter);
+    if (codeFilter.trim()) params.set("code", codeFilter.trim());
+
+    return fetch(`/api/admin/vouchers/tracking?${params}`)
       .then((res) => res.json())
-      .then((data) => setVouchers(data.vouchers ?? []))
-      .catch(() => setVouchers([]))
+      .then((data) => {
+        if (typeof data.error === "string") {
+          setLoadError(data.error);
+          setVouchers([]);
+          setTotal(0);
+          return;
+        }
+        setVouchers(data.vouchers ?? []);
+        setTotal(typeof data.total === "number" ? data.total : 0);
+      })
+      .catch(() => {
+        setLoadError("Could not load vouchers. Check your connection and try again.");
+        setVouchers([]);
+        setTotal(0);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, statusFilter, codeFilter]);
 
   const statusOptions = useMemo(
     () =>
@@ -162,10 +197,16 @@ export default function VoucherTrackingPage() {
         breadcrumbs={[{ label: "Vouchers" }, { label: "Tracking" }]}
         title="Voucher tracking"
       />
+      {loadError ? (
+        <AdminFeedbackBanner variant="error" message={loadError} onDismiss={() => setLoadError(null)} />
+      ) : null}
       <div className="admin-panel">
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">Filters</h2>
-          <p className="admin-panel-head-desc">Narrow the list by code, status, plan, or who unlocked / redeemed.</p>
+          <p className="admin-panel-head-desc">
+            Status and code search run on the server ({PAGE_SIZE} per page). Plan, type, and unlocked/redeemed filters
+            apply to the current page only.
+          </p>
         </div>
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 md:p-5">
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -173,7 +214,10 @@ export default function VoucherTrackingPage() {
             <label className="ui-label !mt-0 text-[10px] text-muted-dim">Code</label>
             <input
               value={codeFilter}
-              onChange={(e) => setCodeFilter(e.target.value)}
+              onChange={(e) => {
+                setCodeFilter(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search voucher code"
               className="ui-input !mt-1 h-11 rounded-none"
             />
@@ -182,7 +226,10 @@ export default function VoucherTrackingPage() {
             <label className="ui-label !mt-0 text-[10px] text-muted-dim">Status</label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
               className="ui-select !mt-1 h-11 rounded-none"
             >
               <option value="">All statuses</option>
@@ -267,6 +314,7 @@ export default function VoucherTrackingPage() {
                 setCodeFilter("");
                 setUnlockedByFilter("");
                 setRedeemedByFilter("");
+                setPage(1);
               }}
               className="ui-btn-ghost h-11 w-full rounded-none text-xs uppercase tracking-wider"
             >
@@ -276,15 +324,15 @@ export default function VoucherTrackingPage() {
         </div>
         {!loading ? (
           <p className="shrink-0 rounded-none border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-slate-600 sm:text-left">
-            {filteredVouchers.length} / {vouchers.length} row{vouchers.length === 1 ? "" : "s"}
+            {filteredVouchers.length} on page · {total} total in database
           </p>
         ) : null}
         </div>
       </div>
       {loading ? (
         <div className="admin-panel space-y-3 p-6">
-          <div className="h-4 w-1/3 animate-pulse rounded-none bg-white/10" />
-          <div className="h-32 animate-pulse rounded-none bg-white/[0.06]" />
+          <div className="h-4 w-1/3 animate-pulse rounded-none bg-slate-200" />
+          <div className="h-32 animate-pulse rounded-none bg-slate-100" />
         </div>
       ) : (
         <div className="admin-panel w-full max-w-full overflow-hidden">
@@ -296,6 +344,8 @@ export default function VoucherTrackingPage() {
                   <th>Status</th>
                   <th>Type</th>
                   <th>Plan</th>
+                  <th>Prepaid</th>
+                  <th>Payment</th>
                   <th>Unlocked by</th>
                   <th className="pr-5 md:pr-6">Redeemed by</th>
                   <th className="w-14 pr-5 text-right md:pr-6">
@@ -317,6 +367,49 @@ export default function VoucherTrackingPage() {
                     </td>
                     <td className="max-w-[200px] truncate text-muted" title={v.planName}>
                       {v.planName}
+                    </td>
+                    <td className="max-w-[140px] text-xs text-slate-700">
+                      {v.prepaidSerial ? (
+                        <>
+                          <span className="block font-mono text-slate-900">{v.prepaidSerial}</span>
+                          {v.retailMarket ? (
+                            <span className="text-slate-500">{v.retailMarket}</span>
+                          ) : null}
+                          {v.faceValueCents != null ? (
+                            <span className="block text-slate-500">
+                              ${(v.faceValueCents / 100).toFixed(2)} face
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="max-w-[120px] text-xs text-slate-700">
+                      {v.purchasePaymentSource || v.amountPaidCents != null ? (
+                        <>
+                          {v.purchasePaymentSource ? (
+                            <span className="block capitalize text-slate-900">
+                              {v.purchasePaymentSource.replace(/_/g, " ")}
+                            </span>
+                          ) : null}
+                          {v.amountPaidCents != null ? (
+                            <span className="text-slate-600">
+                              ${(v.amountPaidCents / 100).toFixed(2)}
+                            </span>
+                          ) : null}
+                          {v.purchaseExternalRef ? (
+                            <span
+                              className="mt-0.5 block truncate font-mono text-[10px] text-slate-500"
+                              title={v.purchaseExternalRef}
+                            >
+                              {v.purchaseExternalRef}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td>
                       <span className="text-sm text-slate-900">{v.activatedByEmail ?? "—"}</span>
@@ -360,6 +453,12 @@ export default function VoucherTrackingPage() {
               No vouchers match this filter.
             </p>
           ) : null}
+          <AdminPagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            onPageChange={setPage}
+          />
         </div>
       )}
       <AdminPageFooter />

@@ -1,10 +1,11 @@
 "use client";
 
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect, useCallback } from "react";
 
-type Plan = { id: string; name: string; planType: string; market: string };
+type Plan = { id: string; name: string; planType: string; market: string; active?: boolean };
 
 export default function AdminVouchersPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -12,12 +13,15 @@ export default function AdminVouchersPage() {
   const [type, setType] = useState<"top_up" | "esim">("top_up");
   const [codesText, setCodesText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ created: number; skipped: number } | null>(null);
 
   const loadPlans = useCallback(() => {
     fetch("/api/admin/plans")
       .then((res) => res.json())
-      .then((data) => setPlans(Array.isArray(data) ? data : []))
+      .then((data) =>
+        setPlans(Array.isArray(data) ? data.filter((p: Plan) => p.active !== false) : []),
+      )
       .catch(() => setPlans([]));
   }, []);
 
@@ -38,10 +42,11 @@ export default function AdminVouchersPage() {
       .map((s) => s.trim())
       .filter(Boolean);
     if (codes.length === 0) {
-      alert("Enter at least one voucher code (one per line or comma-separated).");
+      setError("Enter at least one voucher code (one per line or comma-separated).");
       return;
     }
     setLoading(true);
+    setError(null);
     setResult(null);
     try {
       const res = await fetch("/api/admin/vouchers/import", {
@@ -51,9 +56,9 @@ export default function AdminVouchersPage() {
       });
       const data = await res.json();
       if (res.ok) setResult({ created: data.created, skipped: data.skipped });
-      else alert(data.error ?? "Import failed");
+      else setError(typeof data.error === "string" ? data.error : "Import failed.");
     } catch {
-      alert("Import failed");
+      setError("Import failed. Check your connection and try again.");
     }
     setLoading(false);
   }
@@ -64,6 +69,9 @@ export default function AdminVouchersPage() {
         breadcrumbs={[{ label: "Vouchers" }, { label: "Import vouchers" }]}
         title="Import vouchers"
       />
+      {error ? (
+        <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
+      ) : null}
       <form
         onSubmit={handleImport}
         className="admin-panel max-w-2xl space-y-0 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"

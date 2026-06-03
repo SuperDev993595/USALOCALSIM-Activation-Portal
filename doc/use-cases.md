@@ -181,13 +181,21 @@ This document describes **actors**, **primary use cases**, **alternative flows**
 
 ---
 
-### UC-9 — Plan catalog (data model; no full admin CRUD UI)
+### UC-9 — Plan catalog (admin UI + API)
 
 | Field | Content |
 |-------|---------|
 | **Goal** | Maintain plan definitions used by validation, checkout, emails, and voucher import. |
 
-**Reality in codebase** — Plans live in the database (seed/migrations/Prisma Studio). **`GET /api/admin/plans`** returns the catalog for the **Import vouchers** plan dropdown only; there is **no** separate admin screen to create/edit plans in the app. **SIM hardware deduction** amounts for the **Buy plan** and **partner SIM** toggle are configured per market in **`SimHardwareCostByMarket`** (used by **`/api/plans/public`**, **`/api/stripe/checkout`**, and related logic).
+**Main success scenario**
+
+1. Admin opens **`/admin/plans`**.
+2. Admin **creates** a plan (SKU, name, data allowance, duration, price cents, plan type, market, coverage tier, network).
+3. Admin **edits** an existing plan inline (**PATCH** `/api/admin/plans/[id]`). There is **no delete** in the UI — retire bad SKUs via DB/Prisma Studio if needed.
+
+**Related routes** — `/admin/plans`, `GET|POST /api/admin/plans`, `PATCH /api/admin/plans/[id]`, `GET /api/admin/networks` (network dropdown).
+
+**SIM hardware deduction** — Partner-SIM / buy-plan hardware amounts per market are configured at **`/admin/sim-cost`** (`SimHardwareCostByMarket`), not on the plans screen.
 
 ---
 

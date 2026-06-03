@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import type { PrepaidGeneratedCard } from "@/lib/prepaid-barcode-generate";
@@ -29,6 +30,8 @@ export function AdminPrepaidGenerateClient() {
   const [rows, setRows] = useState<PrepaidGeneratedCard[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [decodeInput, setDecodeInput] = useState("");
@@ -61,6 +64,8 @@ export function AdminPrepaidGenerateClient() {
   const generate = useCallback(async () => {
     setLoading(true);
     setErrors([]);
+    setGenerateError(null);
+    setCopyNotice(null);
     setDecoded(null);
     setDecodeError(null);
     try {
@@ -84,14 +89,14 @@ export function AdminPrepaidGenerateClient() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? "Generate failed");
+        setGenerateError(typeof data.error === "string" ? data.error : "Generate failed.");
         return;
       }
       setRows(data.rows ?? []);
       setErrors(data.errors ?? []);
       setSelectedIndex(0);
     } catch {
-      alert("Generate failed");
+      setGenerateError("Generate failed. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -141,10 +146,15 @@ export function AdminPrepaidGenerateClient() {
     URL.revokeObjectURL(url);
   }
 
-  function copyImportCsv() {
+  async function copyImportCsv() {
     if (rows.length === 0) return;
-    void navigator.clipboard.writeText(prepaidRowsToCsv(rows));
-    alert("CSV copied — paste into Import prepaid cards.");
+    setCopyNotice(null);
+    try {
+      await navigator.clipboard.writeText(prepaidRowsToCsv(rows));
+      setCopyNotice("CSV copied — paste into Import prepaid cards.");
+    } catch {
+      setGenerateError("Could not copy to clipboard.");
+    }
   }
 
   return (
@@ -162,6 +172,21 @@ export function AdminPrepaidGenerateClient() {
           </Link>
         }
       />
+
+      {generateError ? (
+        <AdminFeedbackBanner
+          variant="error"
+          message={generateError}
+          onDismiss={() => setGenerateError(null)}
+        />
+      ) : null}
+      {copyNotice ? (
+        <AdminFeedbackBanner
+          variant="success"
+          message={copyNotice}
+          onDismiss={() => setCopyNotice(null)}
+        />
+      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-2">
         <form

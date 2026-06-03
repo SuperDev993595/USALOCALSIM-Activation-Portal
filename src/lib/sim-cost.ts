@@ -3,10 +3,13 @@ import { prisma } from "@/lib/db";
 const DEFAULT_SIM_HARDWARE_COST_CENTS = Number(process.env.SIM_HARDWARE_COST_CENTS) || 999;
 const ACTION = "config_sim_hardware_cost_set";
 
-export type SimHardwareMarket = "global" | "us";
+export const SIM_HARDWARE_MARKETS = ["global", "us", "uk", "br"] as const;
+export type SimHardwareMarket = (typeof SIM_HARDWARE_MARKETS)[number];
 
 export function normalizeSimHardwareMarket(market: string | null | undefined): SimHardwareMarket {
-  return market === "us" ? "us" : "global";
+  const m = (market ?? "global").toLowerCase();
+  if (m === "us" || m === "uk" || m === "br") return m;
+  return "global";
 }
 
 /** Fallback when no per-market row exists: latest admin “default” audit entry, then env. */
@@ -27,7 +30,7 @@ export async function getSimHardwareCostFallbackCents(): Promise<number> {
   }
 }
 
-/** Hardware deduction for partner-SIM checkout / previews, keyed by plan market (`global` | `us`). */
+/** Hardware deduction for partner-SIM checkout / previews, keyed by plan market. */
 export async function getSimHardwareCostCentsForMarket(market: string | null | undefined): Promise<number> {
   const key = normalizeSimHardwareMarket(market);
   const row = await prisma.simHardwareCostByMarket.findUnique({

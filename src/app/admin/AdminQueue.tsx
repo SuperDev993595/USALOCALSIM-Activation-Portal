@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect } from "react";
 
@@ -29,14 +30,30 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   const [items, setItems] = useState<Item[]>(initial);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [esimQrPayload, setEsimQrPayload] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState<{ type: "warn"; message: string } | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [devicePhotoModalItem, setDevicePhotoModalItem] = useState<Item | null>(null);
 
   async function refresh() {
-    const res = await fetch("/api/admin/queue");
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/admin/queue");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setRefreshError(
+          typeof data.error === "string"
+            ? data.error
+            : res.status === 401
+              ? "Session expired — sign in again to refresh the queue."
+              : "Could not refresh the queue.",
+        );
+        return;
+      }
+      setRefreshError(null);
       const data = await res.json();
       setItems(data.requests ?? []);
+    } catch {
+      setRefreshError("Could not refresh the queue. Check your connection.");
     }
   }
 
@@ -67,7 +84,8 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   }, [devicePhotoModalItem]);
 
   async function handleComplete(id: string) {
-    setNotice(null);
+    setActionError(null);
+    setEmailNotice(null);
     setLoading((s) => ({ ...s, [id]: true }));
     try {
       const item = items.find((x) => x.id === id);
@@ -80,15 +98,14 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; emailWarning?: string };
       if (!res.ok) {
-        alert(typeof data.error === "string" ? data.error : "Failed");
+        setActionError(typeof data.error === "string" ? data.error : "Could not mark this request as active.");
         return;
       }
       await refresh();
       if (typeof data.emailWarning === "string" && data.emailWarning.trim()) {
-        setNotice({
-          type: "warn",
-          message: `Marked active, but the confirmation email may not have sent: ${data.emailWarning}`,
-        });
+        setEmailNotice(
+          `Marked active, but the confirmation email may not have sent: ${data.emailWarning}`,
+        );
       }
     } finally {
       setLoading((s) => ({ ...s, [id]: false }));
@@ -315,20 +332,26 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
           portal — use travel date to prioritize same-day activations.
         </p>
       </div>
-      {notice ? (
-        <div
-          className="flex items-start justify-between gap-3 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-          role="status"
-        >
-          <p>{notice.message}</p>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="shrink-0 rounded-none border border-amber-400/50 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900 hover:bg-amber-100"
-          >
-            Dismiss
-          </button>
-        </div>
+      {refreshError ? (
+        <AdminFeedbackBanner
+          variant="error"
+          message={refreshError}
+          onDismiss={() => setRefreshError(null)}
+        />
+      ) : null}
+      {actionError ? (
+        <AdminFeedbackBanner
+          variant="error"
+          message={actionError}
+          onDismiss={() => setActionError(null)}
+        />
+      ) : null}
+      {emailNotice ? (
+        <AdminFeedbackBanner
+          variant="warning"
+          message={emailNotice}
+          onDismiss={() => setEmailNotice(null)}
+        />
       ) : null}
       {dueToday.length > 0 && (
         <div className="admin-callout admin-callout-emerald">
