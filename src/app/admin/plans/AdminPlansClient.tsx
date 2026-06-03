@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
@@ -119,6 +119,17 @@ function PlanCountPill({
   );
 }
 
+function formatPlanType(value: string): string {
+  if (value === "physical_sim") return "Physical SIM";
+  if (value === "esim") return "eSIM";
+  return value.replace(/_/g, " ");
+}
+
+function formatMarket(value: string): string {
+  if (value === "global") return "Global";
+  return value.toUpperCase();
+}
+
 const emptyCreate = {
   sku: "",
   name: "",
@@ -142,6 +153,12 @@ export function AdminPlansClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<PlanRow | null>(null);
   const [addPlanOpen, setAddPlanOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [marketFilter, setMarketFilter] = useState("us");
+  const [tierFilter, setTierFilter] = useState("basic");
+  const [networkFilter, setNetworkFilter] = useState("t_mobile");
+  const [typeFilter, setTypeFilter] = useState("esim");
+  const [statusFilter, setStatusFilter] = useState<"" | "active" | "archived">("active");
 
   const loadPlans = useCallback(() => {
     setLoading(true);
@@ -299,6 +316,48 @@ export function AdminPlansClient() {
   const activeCount = plans.filter((p) => p.active !== false).length;
   const archivedCount = plans.length - activeCount;
 
+  const marketOptions = useMemo(
+    () => Array.from(new Set(plans.map((p) => p.market))).sort((a, b) => a.localeCompare(b)),
+    [plans],
+  );
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+      marketFilter ||
+      tierFilter ||
+      networkFilter ||
+      typeFilter ||
+      statusFilter,
+  );
+
+  const filteredPlans = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return plans.filter((p) => {
+      if (statusFilter === "active" && p.active === false) return false;
+      if (statusFilter === "archived" && p.active !== false) return false;
+      if (marketFilter && p.market !== marketFilter) return false;
+      if (tierFilter === "__none__" && p.coverageTier) return false;
+      if (tierFilter && tierFilter !== "__none__" && p.coverageTier !== tierFilter) return false;
+      if (networkFilter === "__none__" && p.networkId) return false;
+      if (networkFilter && networkFilter !== "__none__" && p.network?.slug !== networkFilter) return false;
+      if (typeFilter && p.planType !== typeFilter) return false;
+      if (q) {
+        const hay = `${p.name} ${p.sku ?? ""} ${p.dataAllowance} ${p.network?.name ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [plans, searchQuery, marketFilter, tierFilter, networkFilter, typeFilter, statusFilter]);
+
+  function clearFilters() {
+    setSearchQuery("");
+    setMarketFilter("");
+    setTierFilter("");
+    setNetworkFilter("");
+    setTypeFilter("");
+    setStatusFilter("");
+  }
+
   const createFormFields = (
     <div className="admin-form-grid">
             <div>
@@ -422,12 +481,19 @@ export function AdminPlansClient() {
         title="Data plans"
         description="Plans for redeem and checkout. Prices in USD cents; archive to hide from catalog."
         meta={
-          <PlanCountPill
-            total={plans.length}
-            active={activeCount}
-            archived={archivedCount}
-            loading={loading}
-          />
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <PlanCountPill
+              total={plans.length}
+              active={activeCount}
+              archived={archivedCount}
+              loading={loading}
+            />
+            {!loading && hasActiveFilters ? (
+              <span className="inline-flex items-center gap-2 rounded-md border border-accent/25 bg-accent/10 px-3 py-1.5 text-xs font-medium text-slate-700">
+                <strong className="font-semibold text-slate-900">{filteredPlans.length}</strong> shown
+              </span>
+            ) : null}
+          </span>
         }
       />
 
@@ -435,7 +501,132 @@ export function AdminPlansClient() {
         <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
       ) : null}
 
-      <section className="admin-panel">
+      {!loading && plans.length > 0 ? (
+        <section className="admin-panel">
+          <div className="space-y-4 p-5 md:p-6">
+            <div className="admin-settings-block">
+              <div className="admin-settings-block-head">
+                <h2 className="admin-settings-block-title">Filter plans</h2>
+                <p className="admin-settings-block-desc">
+                  Narrow the list by name, SKU, market, network, type, or status.
+                </p>
+              </div>
+              <div className="admin-form-grid lg:grid-cols-4">
+                <div className="admin-form-grid-span-2">
+                  <label htmlFor="plan-filter-search" className="ui-label !mt-0">
+                    Search
+                  </label>
+                  <input
+                    id="plan-filter-search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Name, SKU, data, network…"
+                    className="ui-input !mt-1 rounded-none"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="plan-filter-status" className="ui-label !mt-0">
+                    Status
+                  </label>
+                  <select
+                    id="plan-filter-status"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as "" | "active" | "archived")}
+                    className="ui-select !mt-1 rounded-none"
+                  >
+                    <option value="">All</option>
+                    <option value="active">Active only</option>
+                    <option value="archived">Archived only</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="plan-filter-market" className="ui-label !mt-0">
+                    Market
+                  </label>
+                  <select
+                    id="plan-filter-market"
+                    value={marketFilter}
+                    onChange={(e) => setMarketFilter(e.target.value)}
+                    className="ui-select !mt-1 rounded-none"
+                  >
+                    <option value="">All markets</option>
+                    {marketOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {formatMarket(m)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="plan-filter-type" className="ui-label !mt-0">
+                    Type
+                  </label>
+                  <select
+                    id="plan-filter-type"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="ui-select !mt-1 rounded-none"
+                  >
+                    <option value="">All types</option>
+                    <option value="physical_sim">Physical SIM</option>
+                    <option value="esim">eSIM</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="plan-filter-tier" className="ui-label !mt-0">
+                    Tier
+                  </label>
+                  <select
+                    id="plan-filter-tier"
+                    value={tierFilter}
+                    onChange={(e) => setTierFilter(e.target.value)}
+                    className="ui-select !mt-1 rounded-none"
+                  >
+                    <option value="">All tiers</option>
+                    <option value="__none__">Unassigned</option>
+                    {COVERAGE_TIER_ORDER.map((tier) => (
+                      <option key={tier} value={tier}>
+                        {tier.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="plan-filter-network" className="ui-label !mt-0">
+                    Network
+                  </label>
+                  <select
+                    id="plan-filter-network"
+                    value={networkFilter}
+                    onChange={(e) => setNetworkFilter(e.target.value)}
+                    className="ui-select !mt-1 rounded-none"
+                  >
+                    <option value="">All networks</option>
+                    <option value="__none__">Unassigned</option>
+                    {networks.map((n) => (
+                      <option key={n.id} value={n.slug}>
+                        {n.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-slate-200 pt-4">
+              <button
+                type="button"
+                disabled={!hasActiveFilters}
+                onClick={clearFilters}
+                className="btn-secondary h-10 rounded-none px-4 text-xs disabled:opacity-40"
+              >
+                Clear filters
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="admin-panel overflow-hidden">
         {loading ? (
           <p className="px-5 py-12 text-center text-sm text-slate-500 md:px-6">Loading plans…</p>
         ) : plans.length === 0 ? (
@@ -450,9 +641,26 @@ export function AdminPlansClient() {
               Create your first plan using the form below. Assign a network if this plan is used on voucher redeem.
             </p>
           </div>
+        ) : filteredPlans.length === 0 ? (
+          <div className="admin-empty-state py-12 md:py-16" role="status">
+            <div className="admin-empty-state-icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
+                <path strokeLinecap="round" d="M21 21l-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+              </svg>
+            </div>
+            <h2 className="admin-empty-state-title">No plans match filters</h2>
+            <p className="admin-empty-state-desc">Try different criteria or clear filters to see all plans.</p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="admin-empty-state-action btn-secondary mt-6 inline-flex h-10 items-center rounded-none px-4 text-xs"
+            >
+              Clear filters
+            </button>
+          </div>
         ) : (
           <div className="admin-table-wrap">
-          <table className="admin-table">
+          <table className="admin-table admin-table-compact">
             <thead>
               <tr>
                 <th className="pl-5 md:pl-6">SKU</th>
@@ -465,14 +673,14 @@ export function AdminPlansClient() {
                 <th>Days</th>
                 <th>Price</th>
                 <th>Status</th>
-                <th className="pr-5 text-right md:pr-6">Actions</th>
+                <th className="w-[7.5rem] pr-5 text-right md:pr-6">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {plans.map((p) =>
+              {filteredPlans.map((p) =>
                 editingId === p.id && editDraft ? (
                   <tr key={p.id}>
-                    <td className="pl-5 align-top md:pl-6">
+                    <td className="admin-table-cell-top pl-5 md:pl-6">
                       <input
                         value={editDraft.sku ?? ""}
                         onChange={(e) =>
@@ -482,14 +690,14 @@ export function AdminPlansClient() {
                         placeholder="SKU"
                       />
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <input
                         value={editDraft.name}
                         onChange={(e) => setEditDraft((d) => (d ? { ...d, name: e.target.value } : d))}
                         className="ui-input !mt-0 text-sm"
                       />
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <select
                         value={editDraft.market}
                         onChange={(e) =>
@@ -503,7 +711,7 @@ export function AdminPlansClient() {
                         <option value="br">br</option>
                       </select>
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <select
                         value={editDraft.coverageTier ?? ""}
                         onChange={(e) =>
@@ -521,7 +729,7 @@ export function AdminPlansClient() {
                         ))}
                       </select>
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <select
                         value={editDraft.networkId ?? ""}
                         onChange={(e) =>
@@ -537,7 +745,7 @@ export function AdminPlansClient() {
                         ))}
                       </select>
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <select
                         value={editDraft.planType}
                         onChange={(e) =>
@@ -549,7 +757,7 @@ export function AdminPlansClient() {
                         <option value="esim">esim</option>
                       </select>
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <input
                         value={editDraft.dataAllowance}
                         onChange={(e) =>
@@ -558,7 +766,7 @@ export function AdminPlansClient() {
                         className="ui-input !mt-0 text-sm"
                       />
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <input
                         type="number"
                         min={1}
@@ -571,7 +779,7 @@ export function AdminPlansClient() {
                         className="ui-input !mt-0 w-20 text-sm"
                       />
                     </td>
-                    <td className="align-top">
+                    <td className="admin-table-cell-top">
                       <input
                         type="number"
                         min={0}
@@ -585,8 +793,8 @@ export function AdminPlansClient() {
                       />
                     </td>
                     <td className="text-slate-600">—</td>
-                    <td className="pr-5 text-right md:pr-6">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <td className="admin-table-cell-top pr-5 md:pr-6">
+                      <div className="admin-table-actions">
                         <button
                           type="button"
                           onClick={saveEdit}
@@ -612,15 +820,23 @@ export function AdminPlansClient() {
                   </tr>
                 ) : (
                   <tr key={p.id} className={p.active === false ? "opacity-60" : undefined}>
-                    <td className="pl-5 font-mono text-xs text-slate-600 md:pl-6">{p.sku ?? "—"}</td>
-                    <td className="font-medium text-slate-900">{p.name}</td>
-                    <td className="text-slate-600">{p.market}</td>
-                    <td className="text-slate-600">{p.coverageTier ?? "—"}</td>
-                    <td className="text-slate-600">{p.network?.name ?? "—"}</td>
-                    <td className="text-slate-600">{p.planType}</td>
-                    <td className="text-slate-600">{p.dataAllowance}</td>
-                    <td className="text-slate-600">{p.durationDays}</td>
-                    <td className="font-medium text-slate-900">${(p.priceCents / 100).toFixed(2)}</td>
+                    <td className="pl-5 font-mono text-xs text-slate-600 md:pl-6">{p.sku?.trim() || "—"}</td>
+                    <td className="max-w-[220px]">
+                      <span className="block truncate font-medium text-slate-900" title={p.name}>
+                        {p.name}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap text-slate-700">{formatMarket(p.market)}</td>
+                    <td className="text-slate-600">{p.coverageTier ? p.coverageTier.toUpperCase() : "—"}</td>
+                    <td className="max-w-[120px] truncate text-slate-700" title={p.network?.name ?? undefined}>
+                      {p.network?.name ?? "—"}
+                    </td>
+                    <td className="whitespace-nowrap text-slate-700">{formatPlanType(p.planType)}</td>
+                    <td className="whitespace-nowrap text-slate-700">{p.dataAllowance}</td>
+                    <td className="whitespace-nowrap tabular-nums text-slate-700">{p.durationDays}</td>
+                    <td className="whitespace-nowrap font-medium tabular-nums text-slate-900">
+                      ${(p.priceCents / 100).toFixed(2)}
+                    </td>
                     <td>
                       {p.active === false ? (
                         <span className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
@@ -632,14 +848,14 @@ export function AdminPlansClient() {
                         </span>
                       )}
                     </td>
-                    <td className="pr-5 text-right md:pr-6">
-                      <div className="flex flex-wrap justify-end gap-2">
+                    <td className="pr-5 md:pr-6">
+                      <div className="admin-table-actions">
                         <button
                           type="button"
                           onClick={() => startEdit(p)}
                           title={`Edit ${p.name}`}
                           aria-label={`Edit ${p.name}`}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-none border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
                         >
                           <EditIcon className="h-4 w-4" />
                         </button>
@@ -647,13 +863,10 @@ export function AdminPlansClient() {
                           type="button"
                           onClick={() => void setPlanActive(p, p.active === false)}
                           disabled={savingId === p.id}
-                          className="btn-secondary h-9 rounded-none px-2 text-xs"
+                          title={p.active === false ? "Restore plan" : "Archive plan"}
+                          className="btn-secondary h-8 shrink-0 whitespace-nowrap rounded-none px-2.5 text-xs"
                         >
-                          {savingId === p.id
-                            ? "…"
-                            : p.active === false
-                              ? "Restore"
-                              : "Archive"}
+                          {savingId === p.id ? "…" : p.active === false ? "Restore" : "Archive"}
                         </button>
                       </div>
                     </td>

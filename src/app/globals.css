@@ -605,6 +605,22 @@
     @apply font-medium text-slate-900;
   }
 
+  .admin-table-compact th {
+    @apply py-2.5;
+  }
+
+  .admin-table-compact tbody td {
+    @apply py-2.5 align-middle;
+  }
+
+  .admin-table-compact tbody td.admin-table-cell-top {
+    @apply align-top py-3;
+  }
+
+  .admin-table-actions {
+    @apply flex shrink-0 flex-nowrap items-center justify-end gap-1.5;
+  }
+
   .ui-btn-ghost {
     @apply inline-flex items-center justify-center border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:pointer-events-none disabled:opacity-45;
   }
