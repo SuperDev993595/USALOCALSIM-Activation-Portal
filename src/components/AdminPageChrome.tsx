@@ -11,6 +11,7 @@ export function AdminPageHeader({
   breadcrumbs,
   eyebrow = "Admin",
   title,
+  description,
   meta,
   rightActions,
   showRefresh = true,
@@ -18,6 +19,7 @@ export function AdminPageHeader({
   breadcrumbs?: AdminBreadcrumb[];
   eyebrow?: string;
   title: string;
+  description?: ReactNode;
   meta?: ReactNode;
   rightActions?: ReactNode;
   showRefresh?: boolean;
@@ -51,6 +53,8 @@ export function AdminPageHeader({
           </nav>
 
           <h1 className="admin-page-header-title">{title}</h1>
+
+          {description ? <div className="admin-page-header-desc">{description}</div> : null}
 
           {meta ? <div className="admin-page-header-meta">{meta}</div> : null}
         </div>

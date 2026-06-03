@@ -16,7 +16,7 @@ export function ChangePasswordForm({ variant = "admin" }: { variant?: "admin" | 
 
   const shell = pub
     ? "rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.15)]"
-    : "admin-panel";
+    : "admin-section";
   const head = "border-b border-slate-200 bg-slate-50 px-6 py-4";
   const title = "mt-1 text-sm font-semibold text-slate-900";
   const bodyText = "mt-1 text-xs text-slate-600";

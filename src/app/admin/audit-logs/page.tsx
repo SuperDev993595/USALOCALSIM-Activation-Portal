@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { AdminPagination } from "@/components/AdminPagination";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
@@ -136,7 +136,6 @@ export default function AdminAuditLogsPage() {
         </div>
       )}
 
-      <AdminPageFooter />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import Link from "next/link";
 import { useState } from "react";
@@ -67,7 +67,6 @@ export default function AdminPrepaidSprintReportPage() {
           </button>
         </div>
       </section>
-      <AdminPageFooter />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useCallback, useEffect, useState } from "react";
@@ -394,11 +394,11 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
         }
       />
 
-      <section className="admin-panel">
-        <div className="admin-panel-head">
+      <section className="admin-section">
+        <div className="admin-section-head">
           {saveError ? <p className="mb-3 text-sm font-medium text-red-600">{saveError}</p> : null}
-          <h2 className="admin-panel-head-title">Accounts</h2>
-          <p className="admin-panel-head-desc">Dealers use the dealer panel; admins use this console.</p>
+          <h2 className="admin-section-head-title">Accounts</h2>
+          <p className="admin-section-head-desc">Dealers use the dealer panel; admins use this console.</p>
         </div>
         {loading ? (
           <p className="px-6 py-8 text-sm text-muted md:px-8">Loading…</p>
@@ -468,7 +468,6 @@ export function AdminUsersClient({ currentUserId }: { currentUserId: string }) {
         )}
       </section>
 
-      <AdminPageFooter href="/admin" label="Back to queue" />
 
       <ConfirmDialog
         open={createOpen}

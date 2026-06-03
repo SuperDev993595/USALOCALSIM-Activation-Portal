@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { COVERAGE_TIER_ORDER } from "@/lib/coverage-tier";
 
@@ -609,7 +609,6 @@ export function AdminPlansClient() {
         )}
       </section>
 
-      <AdminPageFooter />
     </div>
   );
 }

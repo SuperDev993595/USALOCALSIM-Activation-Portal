@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { AdminPagination } from "@/components/AdminPagination";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -461,7 +461,6 @@ export default function VoucherTrackingPage() {
           />
         </div>
       )}
-      <AdminPageFooter />
 
       <ConfirmDialog
         open={pendingDelete !== null}

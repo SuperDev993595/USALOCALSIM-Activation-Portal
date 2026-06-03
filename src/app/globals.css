@@ -386,11 +386,39 @@
   }
 
   .admin-page-header-title {
-    @apply mt-3 font-serif text-2xl font-normal leading-tight tracking-tight text-slate-900 md:mt-3.5 md:text-[1.625rem];
+    @apply mt-3 text-2xl font-semibold leading-tight tracking-tight text-slate-900 md:mt-3.5 md:text-[1.75rem];
+  }
+
+  .admin-page-header-desc {
+    @apply mt-2 max-w-3xl text-sm leading-relaxed text-slate-600;
   }
 
   .admin-page-header-meta {
-    @apply mt-2 flex flex-wrap items-center gap-2;
+    @apply mt-3 flex flex-wrap items-center gap-2;
+  }
+
+  .admin-empty-state {
+    @apply mx-auto flex max-w-lg flex-col items-center px-4 py-14 text-center md:py-20;
+  }
+
+  .admin-empty-state-icon {
+    @apply mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400;
+  }
+
+  .admin-empty-state-title {
+    @apply text-base font-semibold text-slate-900;
+  }
+
+  .admin-empty-state-desc {
+    @apply mt-2 text-sm leading-relaxed text-slate-600;
+  }
+
+  .admin-empty-state-hint {
+    @apply mt-4 text-xs text-slate-500;
+  }
+
+  .admin-empty-state-action {
+    @apply no-underline;
   }
 
   .admin-page-header-actions {
@@ -406,8 +434,26 @@
   }
 
   /* Admin console — light theme (matches public-site) */
+  /* Flat page sections (no card chrome) — use under AdminPageHeader */
+  .admin-section {
+    @apply min-w-0;
+  }
+
+  .admin-section-head {
+    @apply border-b border-slate-200 pb-3.5 md:pb-4;
+  }
+
+  .admin-section-head-title {
+    @apply text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500;
+  }
+
+  .admin-section-head-desc {
+    @apply mt-1 max-w-2xl text-xs leading-relaxed text-slate-600;
+  }
+
+  /* Nested cards / filters / tables — bordered, no drop shadow */
   .admin-panel {
-    @apply overflow-hidden rounded-none border border-slate-200 bg-white shadow-[0_20px_50px_-24px_rgba(15,23,42,0.12)];
+    @apply overflow-hidden rounded-none border border-slate-200 bg-white shadow-none;
   }
 
   .admin-panel-head {

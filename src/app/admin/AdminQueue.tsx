@@ -114,9 +114,17 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
 
   if (items.length === 0) {
     return (
-      <div className="admin-callout admin-callout-muted flex-col items-center justify-center py-12 text-center sm:py-14">
-        <p className="text-sm font-semibold text-slate-900">Queue is clear</p>
-        <p className="mt-1 max-w-sm text-sm text-slate-600">New activation requests will show up here automatically.</p>
+      <div className="admin-empty-state" role="status">
+        <div className="admin-empty-state-icon" aria-hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
+            <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h10" />
+          </svg>
+        </div>
+        <h2 className="admin-empty-state-title">Queue is clear</h2>
+        <p className="admin-empty-state-desc">
+          New scheduled activations will appear here when customers complete checkout or redeem a voucher.
+        </p>
+        <p className="admin-empty-state-hint">Updates every 30 seconds · use refresh if you need the latest list</p>
       </div>
     );
   }
@@ -156,7 +164,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
     return (
       <article
         key={r.id}
-        className="group relative overflow-hidden rounded-none border border-slate-200 bg-white p-5 shadow-[0_12px_32px_-16px_rgba(15,23,42,0.15)] transition hover:border-accent/25 md:p-6"
+        className="group relative overflow-hidden rounded-none border border-slate-200 bg-white p-5 transition hover:border-accent/30 md:p-6"
       >
         <div
           className="pointer-events-none absolute -right-12 top-0 h-32 w-32 rounded-full bg-accent/[0.04] blur-2xl transition group-hover:bg-accent/[0.07]"
@@ -324,14 +332,7 @@ export function AdminQueue({ initial }: { initial: Item[] }) {
   }
 
   return (
-    <div className="space-y-4 pt-1">
-      <div className="admin-callout admin-callout-muted text-sm text-slate-700">
-        <p className="font-semibold text-slate-900">Manual activation queue</p>
-        <p className="mt-1">
-          Fulfillment is completed by your team (provisioning + email). There is no automatic carrier API in this
-          portal — use travel date to prioritize same-day activations.
-        </p>
-      </div>
+    <div className="space-y-5">
       {refreshError ? (
         <AdminFeedbackBanner
           variant="error"

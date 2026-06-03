@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
@@ -531,7 +531,6 @@ export function AdminPrepaidGenerateClient() {
         </div>
       </div>
 
-      <AdminPageFooter />
     </div>
   );
 }

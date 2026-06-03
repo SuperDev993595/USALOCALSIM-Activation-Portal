@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminPageFooter, AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useState, useEffect, useCallback } from "react";
@@ -74,7 +74,7 @@ export default function AdminVouchersPage() {
       ) : null}
       <form
         onSubmit={handleImport}
-        className="admin-panel max-w-2xl space-y-0 overflow-hidden shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
+        className="admin-panel max-w-2xl space-y-0 overflow-hidden"
       >
         <div className="admin-panel-head">
           <h2 className="admin-panel-head-title">Import batch</h2>
@@ -137,7 +137,6 @@ export default function AdminVouchersPage() {
           </button>
         </div>
       </form>
-      <AdminPageFooter />
     </div>
   );
 }

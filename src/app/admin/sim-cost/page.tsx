@@ -10,8 +10,8 @@ export default function AdminSimCostPage() {
         breadcrumbs={[{ label: "Catalog" }, { label: "Pricing & hardware" }]}
         title="Pricing &amp; hardware"
       />
-      <section className="admin-panel">
-        <div className="p-5 md:p-6">
+      <section className="admin-section">
+        <div className="pt-2 md:pt-3">
           <AdminSimCostSettings />
         </div>
       </section>
