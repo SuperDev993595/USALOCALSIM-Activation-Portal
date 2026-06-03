@@ -56,7 +56,12 @@
 
 @layer components {
   .public-site {
-    @apply relative overflow-hidden bg-[#f8fbff] text-slate-900;
+    @apply relative overflow-hidden text-slate-900;
+    background-color: #f8fbff;
+    background-image: linear-gradient(rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    background-repeat: repeat;
   }
 
   .public-site::before {
@@ -68,7 +73,7 @@
     background-image:
       radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.08), transparent 34%),
       radial-gradient(circle at 90% 18%, rgba(225, 29, 46, 0.06), transparent 30%),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9));
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.72), rgba(239, 246, 255, 0.58));
   }
 
   /* Home banner: only /redeem (voucher) landing — not other public-site pages */
@@ -233,6 +238,72 @@
   .public-site .ui-table td strong,
   .public-site .ui-table .font-mono {
     @apply text-slate-900;
+  }
+
+  /* Dealer portal shell — keeps public-site map/gradient background */
+  .dealer-shell.public-site {
+    @apply flex h-screen flex-col overflow-hidden;
+  }
+
+  .dealer-shell-main {
+    @apply relative min-h-0 flex-1 overflow-y-auto;
+  }
+
+  .dealer-shell-content {
+    @apply mx-auto w-full max-w-7xl p-4 md:p-6;
+  }
+
+  .dealer-shell-header {
+    @apply relative z-20 shrink-0 bg-white shadow-[0_1px_0_0_rgba(15,23,42,0.06)];
+  }
+
+  .dealer-shell-top {
+    @apply border-b border-slate-200/90;
+  }
+
+  .dealer-shell-brand-link {
+    @apply flex min-w-0 items-center gap-3 no-underline;
+  }
+
+  .dealer-shell-logo-wrap {
+    @apply relative block h-9 w-[4.75rem] shrink-0 sm:h-10 sm:w-20;
+  }
+
+  .dealer-shell-brand-text {
+    @apply hidden min-w-0 flex-col justify-center gap-0.5 border-l border-slate-200 pl-3 sm:flex;
+  }
+
+  .dealer-shell-brand-title {
+    @apply block truncate text-sm font-semibold leading-tight text-slate-900;
+  }
+
+  .dealer-shell-brand-tag {
+    @apply block truncate text-[11px] leading-snug text-slate-500;
+  }
+
+  .dealer-shell-signout {
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800;
+  }
+
+  .dealer-subnav {
+    @apply border-b border-slate-200/90 bg-white;
+  }
+
+  .dealer-subnav-inner {
+    @apply mx-auto flex h-11 max-w-7xl items-stretch overflow-x-auto px-4 sm:px-6;
+  }
+
+  .dealer-subnav-link {
+    @apply relative inline-flex shrink-0 items-center whitespace-nowrap px-3.5 text-sm font-medium text-slate-600 no-underline transition-colors hover:text-slate-900;
+  }
+
+  .dealer-subnav-link--active {
+    @apply font-semibold text-slate-900;
+  }
+
+  .dealer-subnav-link--active::after {
+    content: "";
+    @apply pointer-events-none absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-accent;
   }
 
   .ui-page {

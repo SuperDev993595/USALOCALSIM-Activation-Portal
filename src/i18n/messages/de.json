@@ -478,6 +478,10 @@
     }
   },
   "dealer": {
+    "navEyebrow": "USALOCALSIM",
+    "navTitle": "Händlerportal",
+    "navTagline": "Scannen, verkaufen & nachverfolgen",
+    "navAria": "Händlerbereiche",
     "navBrand": "Händler · Voucher-Panel",
     "navScan": "Scannen & verkaufen",
     "navLegacy": "Legacy-Freischaltung",

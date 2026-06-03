@@ -514,6 +514,10 @@
     }
   },
   "dealer": {
+    "navEyebrow": "USALOCALSIM",
+    "navTitle": "Dealer portal",
+    "navTagline": "Scan, sell & track vouchers",
+    "navAria": "Dealer sections",
     "navBrand": "Dealer · Voucher panel",
     "navScan": "Scan & sell",
     "navLegacy": "Legacy unlock",

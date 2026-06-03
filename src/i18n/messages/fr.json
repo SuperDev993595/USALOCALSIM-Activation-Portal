@@ -484,6 +484,10 @@
     }
   },
   "dealer": {
+    "navEyebrow": "USALOCALSIM",
+    "navTitle": "Portail revendeur",
+    "navTagline": "Scanner, vendre et suivre",
+    "navAria": "Sections revendeur",
     "navBrand": "Revendeur · Panel voucher",
     "navScan": "Scanner & vendre",
     "navLegacy": "Déblocage legacy",

@@ -1,72 +1,116 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+
+const NAV_ITEMS = [
+  { href: "/dealer/scan", labelKey: "navScan" as const, match: (p: string) => p === "/dealer/scan" || p === "/dealer" },
+  { href: "/dealer/unlock", labelKey: "navLegacy" as const, match: (p: string) => p === "/dealer/unlock" },
+  { href: "/dealer/tracking", labelKey: "navTracking" as const, match: (p: string) => p === "/dealer/tracking" },
+  {
+    href: "/dealer/change-password",
+    labelKey: "navPassword" as const,
+    match: (p: string) => p === "/dealer/change-password",
+  },
+] as const;
+
+function SignOutIcon() {
+  return (
+    <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
+function emailInitials(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[.\-_]+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  return (local.slice(0, 2) || "DL").toUpperCase();
+}
 
 export function DealerNav({ email }: { email: string }) {
   const t = useTranslations("dealer");
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
+  const initials = useMemo(() => emailInitials(email), [email]);
 
   async function handleConfirmSignOut() {
     setSigningOut(true);
     await signOut({ callbackUrl: "/login" });
   }
 
-  function linkClass(active: boolean) {
-    return active
-      ? "rounded-lg bg-accent/10 px-2.5 py-1.5 font-medium uppercase tracking-wide text-accent"
-      : "rounded-lg px-2.5 py-1.5 font-medium uppercase tracking-wide text-slate-600 transition hover:bg-slate-100 hover:text-slate-900";
-  }
-
   return (
     <>
-      <header className="relative z-20 shrink-0 border-b border-slate-200/90 bg-white/95 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-3 py-3 sm:px-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-900 sm:text-sm">
-              {t("navBrand")}
-            </span>
-            <span className="max-w-[52vw] truncate text-[11px] text-slate-500 sm:max-w-none sm:text-xs" title={email}>
-              {email}
-            </span>
-          </div>
+      <header className="dealer-shell-header">
+        <div className="dealer-shell-top admin-top-bar">
+          <div className="admin-top-bar-inner">
+            <Link href="/dealer/scan" className="dealer-shell-brand-link">
+              <span className="dealer-shell-logo-wrap">
+                <Image
+                  src="/images/logo-02.webp"
+                  alt="USALOCALSIM"
+                  fill
+                  priority
+                  sizes="80px"
+                  className="object-contain object-left"
+                />
+              </span>
+              <span className="dealer-shell-brand-text">
+                <span className="dealer-shell-brand-title">{t("navTitle")}</span>
+                <span className="dealer-shell-brand-tag">{t("navTagline")}</span>
+              </span>
+            </Link>
 
-          <div className="overflow-x-auto">
-            <div className="flex min-w-max items-center gap-2 pb-1 text-[11px] sm:text-xs">
-              <Link
-                href="/dealer/scan"
-                className={linkClass(pathname === "/dealer/scan" || pathname === "/dealer")}
+            <div className="flex shrink-0 items-center gap-2 md:gap-3">
+              <div
+                className="flex max-w-[min(100%,12rem)] items-center gap-2 rounded-full border border-slate-200/90 bg-[#f8f9fb] py-1 pl-1 pr-2.5 sm:max-w-xs sm:pr-3"
+                title={email}
               >
-                {t("navScan")}
-              </Link>
-              <Link href="/dealer/unlock" className={linkClass(pathname === "/dealer/unlock")}>
-                {t("navLegacy")}
-              </Link>
-              <Link href="/dealer/tracking" className={linkClass(pathname === "/dealer/tracking")}>
-                {t("navTracking")}
-              </Link>
-              <Link
-                href="/dealer/change-password"
-                className={linkClass(pathname === "/dealer/change-password")}
-              >
-                {t("navPassword")}
-              </Link>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-purple/15 text-[10px] font-bold text-brand-purple">
+                  {initials}
+                </span>
+                <span className="hidden truncate text-xs text-slate-600 sm:inline">{email}</span>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowSignOutConfirm(true)}
-                className="rounded-lg px-2.5 py-1.5 font-medium uppercase tracking-wide text-red-600 transition hover:bg-red-50"
+                className="dealer-shell-signout"
+                aria-label={t("navSignOut")}
+                title={t("navSignOut")}
               >
-                {t("navSignOut")}
+                <SignOutIcon />
               </button>
             </div>
           </div>
         </div>
+
+        <nav className="dealer-subnav" aria-label={t("navAria")}>
+          <div className="dealer-subnav-inner">
+            {NAV_ITEMS.map((item) => {
+              const active = item.match(pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={active ? "dealer-subnav-link dealer-subnav-link--active" : "dealer-subnav-link"}
+                >
+                  {t(item.labelKey)}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       </header>
 
       <ConfirmDialog

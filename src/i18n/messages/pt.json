@@ -478,6 +478,10 @@
     }
   },
   "dealer": {
+    "navEyebrow": "USALOCALSIM",
+    "navTitle": "Portal do revendedor",
+    "navTagline": "Digitalizar, vender e acompanhar",
+    "navAria": "Secções do revendedor",
     "navBrand": "Revendedor · Painel voucher",
     "navScan": "Digitalizar & vender",
     "navLegacy": "Desbloqueio legacy",

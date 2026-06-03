@@ -484,6 +484,10 @@
     }
   },
   "dealer": {
+    "navEyebrow": "USALOCALSIM",
+    "navTitle": "Dealerportaal",
+    "navTagline": "Scannen, verkopen en volgen",
+    "navAria": "Dealersecties",
     "navBrand": "Dealer · Voucherpaneel",
     "navScan": "Scannen & verkopen",
     "navLegacy": "Legacy ontgrendelen",
