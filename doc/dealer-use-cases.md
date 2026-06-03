@@ -145,7 +145,7 @@ stateDiagram-v2
 |-------|---------|
 | **Goal** | Activate a **non-prepaid** voucher code after sale. |
 | **Preconditions** | Voucher `inactive`; **no** linked `PrepaidCard` |
-| **Trigger** | **`/dealer`** → enter code → **Unlock** |
+| **Trigger** | **`/dealer/unlock`** → enter code → **Unlock** |
 
 **Main success scenario**
 
@@ -175,17 +175,17 @@ stateDiagram-v2
 |-------|---------|
 | **Goal** | Activate the next N inactive **non-prepaid** vouchers (e.g. stack sale). |
 | **Preconditions** | Enough inactive vouchers without prepaid rows |
-| **Trigger** | **`/dealer`** → bulk count → **Bulk activate** |
+| **Trigger** | **`/dealer/unlock`** → bulk count → **Bulk activate** |
 
 **Main success scenario**
 
-1. UI shows **remaining inactive count** from **`GET /api/dealer/unlock`**.
+1. UI shows **remaining legacy inactive count** (non-prepaid only) from **`GET /api/dealer/unlock`**.
 2. Staff enters count (max 1000 API cap; UI capped by inactive count).
 3. **`POST /api/dealer/unlock`** with `{ bulkCount: N }`.
-4. System takes oldest inactive vouchers, **skips** any with `PrepaidCard`, unlocks rest.
+4. System takes oldest **non-prepaid** inactive vouchers (FIFO by `createdAt`) and unlocks them.
 5. Response: `unlocked`, `skipped`, `unlockedRows` table.
 
-**Note:** This is **not** “unlock these specific codes” — it is FIFO by `createdAt`. For explicit codes use `{ codes: string[] }` on the same API (supported; UI may not expose paste-list on `/dealer` page — API only).
+**Note:** This is **not** “unlock these specific codes” — it is FIFO by `createdAt`. For explicit codes use `{ codes: string[] }` on the same API or the **code list** panel on **`/dealer/unlock`**.
 
 ---
 
@@ -204,18 +204,20 @@ stateDiagram-v2
 
 | Field | Content |
 |-------|---------|
-| **Goal** | See what this dealer unlocked and whether customers redeemed. |
+| **Goal** | See prepaid scan sales and legacy unlocks, and whether customers redeemed. |
 | **Trigger** | **`/dealer/tracking`** |
 
 **Main success scenario**
 
-1. Dealer sets filters: **date range**, **plan**, **voucher type**, **used / unused**.
-2. **`GET /api/dealer/tracking`** returns rows for vouchers **activated by this user** (`activatedById`).
-3. Columns include code, status, plan, activated at, redeemed at, redeemed by.
+1. Dealer sets filters: **date range**, **sale type** (all / prepaid / legacy), **plan**, **voucher type**, **redeemed / not**.
+2. **`GET /api/dealer/tracking`** returns up to **500** merged rows:
+   - **Legacy:** vouchers **activated by this user** (`activatedById`, non-prepaid).
+   - **Prepaid:** audit log entries `dealer_pos_activation` for this user (Scan & sell), joined to purchase/voucher for redemption status.
+3. Columns include code/serial, sale type, status, plan, amount (prepaid), sold at, redeemed by/at.
 
 **Dashboard shortcut**
 
-- **`/dealer`** shows last **25** unlocks for current user (no filters).
+- **`/dealer/unlock`** shows last **25** legacy unlocks for current user (no filters).
 
 ---
 

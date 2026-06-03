@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { getRequestClientMeta } from "@/lib/request-meta";
+import { countLegacyInactiveVouchers } from "@/lib/dealer-tracking";
 
 const bodySchema = z.union([
   z.object({ code: z.string().min(1) }),
@@ -22,9 +23,9 @@ export async function GET() {
   }
 
   const [inactiveCount, recent] = await Promise.all([
-    prisma.voucher.count({ where: { status: "inactive" } }),
+    countLegacyInactiveVouchers(),
     prisma.voucher.findMany({
-      where: { activatedById: session.user.id },
+      where: { activatedById: session.user.id, prepaidCard: null },
       include: { plan: { select: { name: true } } },
       orderBy: { activatedAt: "desc" },
       take: 25,
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
 
   if ("bulkCount" in body) {
     const candidates = await prisma.voucher.findMany({
-      where: { status: "inactive" },
+      where: { status: "inactive", prepaidCard: null },
       include: { plan: { select: { name: true } } },
       orderBy: { createdAt: "asc" },
       take: body.bulkCount,
@@ -78,7 +79,9 @@ export async function POST(req: Request) {
 
     if (candidates.length < body.bulkCount) {
       return NextResponse.json(
-        { error: `Only ${candidates.length} inactive vouchers remain. Reduce bulk count.` },
+        {
+          error: `Only ${candidates.length} legacy inactive vouchers remain. Reduce bulk count.`,
+        },
         { status: 400 },
       );
     }
@@ -93,12 +96,6 @@ export async function POST(req: Request) {
     }> = [];
 
     for (const candidate of candidates) {
-      const hasPrepaid = await prisma.prepaidCard.findUnique({
-        where: { voucherId: candidate.id },
-        select: { id: true },
-      });
-      if (hasPrepaid) continue;
-
       const now = new Date();
       const updated = await prisma.voucher.updateMany({
         where: { id: candidate.id, status: "inactive" },

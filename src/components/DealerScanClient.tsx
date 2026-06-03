@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { DealerPageHeader } from "@/components/DealerPageHeader";
 
 type ScanType = "serial" | "barcode";
 
@@ -260,8 +261,7 @@ export function DealerScanClient() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="text-xl font-bold uppercase tracking-tight text-slate-900">{t("scanTitle")}</h1>
-      <p className="mt-1 text-sm text-slate-600">{t("scanSubtitle")}</p>
+      <DealerPageHeader title={t("scanTitle")} description={t("scanSubtitle")} />
       <p className="mt-2 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-950">
         {t("scanTourismNote")}
       </p>

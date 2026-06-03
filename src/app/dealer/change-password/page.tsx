@@ -1,25 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
+import { DealerPageHeader } from "@/components/DealerPageHeader";
 
 export default function DealerChangePasswordPage() {
+  const t = useTranslations("dealer");
+
   return (
-    <div className="space-y-10">
-      <header className="admin-panel">
-        <div className="admin-panel-head">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Dealer</p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Change password</h1>
-          <p className="mt-2 text-sm text-slate-600">We email you a verification code before updating your password.</p>
-        </div>
-      </header>
+    <div className="mx-auto max-w-lg space-y-8">
+      <DealerPageHeader title={t("passwordTitle")} description={t("passwordSubtitle")} />
       <ChangePasswordForm variant="admin" />
-      <footer className="border-t border-slate-200 pt-8">
-        <Link
-          href="/dealer/scan"
-          className="ui-btn-ghost rounded-none text-xs uppercase tracking-[0.18em]"
-        >
-          ← Back to scan & sell
+      <p>
+        <Link href="/dealer/scan" className="link-accent text-sm">
+          ← {t("passwordBackScan")}
         </Link>
-      </footer>
+      </p>
     </div>
   );
 }
