@@ -203,12 +203,6 @@ export function RedeepPhase2Client({
   const iccidDigitCount = useMemo(() => iccid.replace(/\D/g, "").length, [iccid]);
 
   useEffect(() => {
-    if (wizardStep === stepMap.plans && plans.length === 0) {
-      setWizardStep(stepMap.fulfillment);
-    }
-  }, [wizardStep, plans.length, stepMap.plans, stepMap.fulfillment]);
-
-  useEffect(() => {
     if (!autoNetworkSlug?.trim() || !purchaseId.trim()) return;
     if (selectedNetworkSlug === autoNetworkSlug) return;
     void fetch("/api/redeem/network/select", {
@@ -259,10 +253,10 @@ export function RedeepPhase2Client({
     planId?: string,
     fType?: FulfillmentType,
     addonSkus?: TmobileAddonSku[],
-  ) {
+  ): Promise<{ ok: boolean; plans: PlanRow[] }> {
     if (!purchaseId.trim()) {
       setError(t("errors.unlockFirst"));
-      return;
+      return { ok: false, plans: [] };
     }
     setError(null);
     setLoading("unlock");
@@ -299,7 +293,7 @@ export function RedeepPhase2Client({
       };
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : t("errors.quote"));
-        return;
+        return { ok: false, plans: [] };
       }
       setCreditCents(data.creditAmountCents ?? 0);
       const nextPlans = data.plans ?? [];
@@ -317,9 +311,25 @@ export function RedeepPhase2Client({
       setTotals((prev) =>
         data.totals != null ? data.totals : planId != null && planId !== "" ? prev : data.totals ?? prev,
       );
+      return { ok: true, plans: nextPlans };
+    } catch {
+      setError(t("errors.quote"));
+      return { ok: false, plans: [] };
     } finally {
       setLoading(null);
     }
+  }
+
+  async function continueFromFulfillment() {
+    setSelectedPlanId("");
+    setTotals(null);
+    const { ok, plans: quotedPlans } = await unlockAndQuote(undefined, fulfillmentType);
+    if (!ok) return;
+    if (quotedPlans.length === 0) {
+      setError(t("noPlansForNetwork"));
+      return;
+    }
+    setWizardStep(stepMap.plans);
   }
 
   async function sendRedeemSms() {
@@ -803,14 +813,9 @@ export function RedeepPhase2Client({
                 type="button"
                 className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
                 disabled={loading !== null || !fulfillmentReady}
-                onClick={() => {
-                  setSelectedPlanId("");
-                  setTotals(null);
-                  setWizardStep(stepMap.plans);
-                  void unlockAndQuote(undefined, fulfillmentType);
-                }}
+                onClick={() => void continueFromFulfillment()}
               >
-                {t("continuePlans")}
+                {loading === "unlock" ? t("processingCheckout") : t("continuePlans")}
               </button>
             </div>
           </>

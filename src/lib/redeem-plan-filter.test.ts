@@ -42,4 +42,8 @@ describe("filterRedeemQuotePlans", () => {
   it("returns all plans when credit is zero", () => {
     expect(filterRedeemQuotePlans(plans, 0)).toEqual(plans);
   });
+
+  it("falls back to full list when every plan is below wallet credit", () => {
+    expect(filterRedeemQuotePlans(plans, 6000)).toEqual(plans);
+  });
 });

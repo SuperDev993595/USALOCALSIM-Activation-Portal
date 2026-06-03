@@ -24,38 +24,87 @@ export const NETWORK_SLUGS_BY_TIER: Record<CoverageTier, readonly string[]> = {
   [COVERAGE_TIER.ULTRA]: ["three_uk", "orange", "t_mobile", "linkup_att"],
 };
 
-export const COVERAGE_TIER_UI: Record<
-  CoverageTier,
-  {
-    title: string;
-    subtitle: string;
-    accentClass: string;
-    selectedClass: string;
-    barClass: string;
-  }
-> = {
+type TierAccent = {
+  stripe: string;
+  stripeSelected: string;
+  borderSelected: string;
+  check: string;
+  checkIdle: string;
+  focusRing: string;
+};
+
+const TIER_ACCENT: Record<CoverageTier, TierAccent> = {
+  [COVERAGE_TIER.BASIC]: {
+    stripe: "bg-emerald-600/70",
+    stripeSelected: "bg-emerald-500",
+    borderSelected: "border-emerald-600/55",
+    check: "border-emerald-500/80 bg-emerald-600 text-white",
+    checkIdle: "border-white/15 bg-transparent",
+    focusRing: "focus-visible:ring-emerald-700/35",
+  },
+  [COVERAGE_TIER.PRO]: {
+    stripe: "bg-sky-600/70",
+    stripeSelected: "bg-sky-500",
+    borderSelected: "border-sky-600/55",
+    check: "border-sky-500/80 bg-sky-600 text-white",
+    checkIdle: "border-white/15 bg-transparent",
+    focusRing: "focus-visible:ring-sky-700/35",
+  },
+  [COVERAGE_TIER.ULTRA]: {
+    stripe: "bg-red-600/70",
+    stripeSelected: "bg-red-500",
+    borderSelected: "border-red-600/55",
+    check: "border-red-500/80 bg-red-600 text-white",
+    checkIdle: "border-white/15 bg-transparent",
+    focusRing: "focus-visible:ring-red-800/40",
+  },
+};
+
+export type CoverageTierCardUi = {
+  title: string;
+  subtitle: string;
+  badge: string;
+};
+
+export const COVERAGE_TIER_UI: Record<CoverageTier, CoverageTierCardUi> = {
   [COVERAGE_TIER.BASIC]: {
     title: "BASIC",
     subtitle: "USA · Canada · Mexico",
-    accentClass: "border-emerald-600/40 bg-emerald-950/25",
-    selectedClass: "border-emerald-400 bg-emerald-950/40 ring-2 ring-emerald-400/40",
-    barClass: "bg-emerald-500",
+    badge: "Americas",
   },
   [COVERAGE_TIER.PRO]: {
     title: "PRO",
     subtitle: "72 countries",
-    accentClass: "border-sky-500/40 bg-sky-950/25",
-    selectedClass: "border-sky-400 bg-sky-950/40 ring-2 ring-sky-400/40",
-    barClass: "bg-sky-500",
+    badge: "Global 72",
   },
   [COVERAGE_TIER.ULTRA]: {
     title: "ULTRA",
     subtitle: "200+ countries · eSIM only",
-    accentClass: "border-red-500/40 bg-red-950/25",
-    selectedClass: "border-red-400 bg-red-950/40 ring-2 ring-red-400/40",
-    barClass: "bg-red-600",
+    badge: "Worldwide",
   },
 };
+
+const TIER_CARD_IDLE = "border-white/10 bg-black/30 hover:border-white/20 hover:bg-black/40";
+const TIER_CARD_SELECTED = "border bg-black/45";
+
+export const TIER_CARD_BASE =
+  "relative overflow-hidden rounded-xl text-left transition-[box-shadow,border-color,background-color] duration-200 ease-out motion-reduce:transition-none";
+
+export function coverageTierCardClasses(tier: CoverageTier, selected: boolean) {
+  const accent = TIER_ACCENT[tier];
+  return {
+    card: `${TIER_CARD_BASE} ${selected ? `${TIER_CARD_SELECTED} ${accent.borderSelected}` : TIER_CARD_IDLE}`,
+    stripe: `w-1 shrink-0 self-stretch transition-all duration-200 ease-out ${
+      selected ? `w-1.5 ${accent.stripeSelected}` : accent.stripe
+    }`,
+    indicator: selected ? accent.check : accent.checkIdle,
+    focusRing: accent.focusRing,
+    showCheck: selected,
+    selectAnim: selected ? "animate-tier-select" : "",
+    checkAnim: selected ? "animate-tier-check-pop" : "",
+    pillAnim: selected ? "animate-tier-pill-in" : "",
+  };
+}
 
 export function tierRequiresEsimOnly(tier: CoverageTier): boolean {
   return tier === COVERAGE_TIER.ULTRA;

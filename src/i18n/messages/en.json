@@ -429,6 +429,7 @@
     "continueAfterTier": "Continue",
     "backTier": "Back to coverage tier",
     "tierUltraEsimNote": "eSIM only — no physical SIM",
+    "tierSelected": "Selected",
     "ultraEsimOnlyBanner": "ULTRA tier uses digital eSIM only. Physical SIM options are not available.",
     "stepNetworkTitle": "Choose your network",
     "stepNetworkBody": "Select the mobile network you want to use with your voucher credit. Plans in the next steps depend on this choice.",

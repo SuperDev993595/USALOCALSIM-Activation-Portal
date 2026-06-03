@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   COVERAGE_TIER,
   COVERAGE_TIER_ORDER,
+  coverageTierCardClasses,
   isCoverageTier,
   NETWORK_SLUGS_BY_TIER,
   tierRequiresEsimOnly,
@@ -31,5 +32,26 @@ describe("tierRequiresEsimOnly", () => {
 describe("NETWORK_SLUGS_BY_TIER", () => {
   it("limits BASIC to Americas carriers", () => {
     expect(NETWORK_SLUGS_BY_TIER.basic).toEqual(["t_mobile", "linkup_att"]);
+  });
+});
+
+describe("coverageTierCardClasses", () => {
+  it("shows check only when selected", () => {
+    expect(coverageTierCardClasses(COVERAGE_TIER.BASIC, false).showCheck).toBe(false);
+    expect(coverageTierCardClasses(COVERAGE_TIER.PRO, true).showCheck).toBe(true);
+  });
+
+  it("uses distinct accent on stripe when selected", () => {
+    expect(coverageTierCardClasses(COVERAGE_TIER.BASIC, true).stripe).toContain("emerald");
+    expect(coverageTierCardClasses(COVERAGE_TIER.PRO, true).stripe).toContain("sky");
+    expect(coverageTierCardClasses(COVERAGE_TIER.ULTRA, true).stripe).toContain("red");
+  });
+
+  it("applies selection animations when selected", () => {
+    const selected = coverageTierCardClasses(COVERAGE_TIER.PRO, true);
+    const idle = coverageTierCardClasses(COVERAGE_TIER.PRO, false);
+    expect(selected.selectAnim).toContain("animate-tier-select");
+    expect(selected.checkAnim).toContain("animate-tier-check-pop");
+    expect(idle.selectAnim).toBe("");
   });
 });

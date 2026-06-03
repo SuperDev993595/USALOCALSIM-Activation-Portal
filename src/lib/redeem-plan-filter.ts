@@ -8,5 +8,7 @@ export function filterRedeemQuotePlans<T extends { priceCents: number }>(
   creditAmountCents: number,
 ): T[] {
   if (!hideUnderpricedRedeemPlans() || creditAmountCents <= 0) return plans;
-  return plans.filter((p) => p.priceCents >= creditAmountCents);
+  const eligible = plans.filter((p) => p.priceCents >= creditAmountCents);
+  // Avoid empty quote when catalog SKUs are slightly below common face values (e.g. $49 plan + $50 voucher).
+  return eligible.length > 0 ? eligible : plans;
 }

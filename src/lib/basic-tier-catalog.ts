@@ -46,7 +46,8 @@ export const BASIC_TIER_PLANS: BasicTierPlanSeed[] = [
     name: "T-Mobile Unlimited — 30 days",
     dataAllowance: "Unlimited USA",
     durationDays: 30,
-    priceCents: 4900,
+    /** Matches common $50 prepaid face value for zero-balance redeem. */
+    priceCents: 5000,
     networkSlug: "t_mobile",
     planTypes: ["physical_sim", "esim"],
     tier: "basic",
@@ -76,7 +77,7 @@ export const BASIC_TIER_PLANS: BasicTierPlanSeed[] = [
     name: "LINKUP & AT&T — 50 GB / 30 days",
     dataAllowance: "50 GB",
     durationDays: 30,
-    priceCents: 4500,
+    priceCents: 5000,
     networkSlug: "linkup_att",
     planTypes: ["physical_sim", "esim"],
     tier: "basic",
