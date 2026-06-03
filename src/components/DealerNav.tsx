@@ -39,10 +39,13 @@ export function DealerNav({ email }: { email: string }) {
 
           <div className="overflow-x-auto">
             <div className="flex min-w-max items-center gap-2 pb-1 text-[11px] sm:text-xs">
-              <Link href="/dealer/scan" className={linkClass(pathname === "/dealer/scan")}>
+              <Link
+                href="/dealer/scan"
+                className={linkClass(pathname === "/dealer/scan" || pathname === "/dealer")}
+              >
                 {t("navScan")}
               </Link>
-              <Link href="/dealer" className={linkClass(pathname === "/dealer")}>
+              <Link href="/dealer/unlock" className={linkClass(pathname === "/dealer/unlock")}>
                 {t("navLegacy")}
               </Link>
               <Link href="/dealer/tracking" className={linkClass(pathname === "/dealer/tracking")}>

@@ -34,8 +34,17 @@ export async function findPrepaidCardByScan(
       include: { voucher: true, basePlan: { select: { id: true, market: true } } },
     });
   }
-  return prisma.prepaidCard.findUnique({
+  const bySerial = await prisma.prepaidCard.findUnique({
     where: { serial: norm },
+    include: { voucher: true, basePlan: { select: { id: true, market: true } } },
+  });
+  if (bySerial) return bySerial;
+
+  /** Dealer pasted scratch PIN instead of QR serial — resolve via linked voucher. */
+  const pinCode = scanValue.trim().toUpperCase();
+  if (!pinCode) return null;
+  return prisma.prepaidCard.findFirst({
+    where: { voucher: { code: pinCode } },
     include: { voucher: true, basePlan: { select: { id: true, market: true } } },
   });
 }

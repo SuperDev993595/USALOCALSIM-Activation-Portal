@@ -457,7 +457,7 @@ export function AdminPrepaidGenerateClient() {
               </dl>
               <p className="text-xs text-muted-dim">
                 Test dealer scan: paste barcode into{" "}
-                <Link href="/dealer" className="text-accent hover:underline">
+                <Link href="/dealer/scan" className="text-accent hover:underline">
                   /dealer
                 </Link>{" "}
                 after import.

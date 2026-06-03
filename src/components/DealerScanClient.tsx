@@ -29,6 +29,8 @@ export function DealerScanClient() {
   const scanLoopRef = useRef<number | null>(null);
   const scannerControlsRef = useRef<import("@zxing/browser").IScannerControls | null>(null);
   const regionId = useId();
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const [scanType, setScanType] = useState<ScanType>("serial");
   const [scanValue, setScanValue] = useState("");
@@ -153,10 +155,18 @@ export function DealerScanClient() {
     }
   }, [startNativeScanner, startZxingScanner, stopCamera, t]);
 
+  const scrollToResult = useCallback((target: "feedback" | "preview") => {
+    requestAnimationFrame(() => {
+      const el = target === "preview" ? previewRef.current : feedbackRef.current;
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
   async function lookupCard() {
     const value = scanValue.trim();
     if (!value) {
       setMessage({ type: "err", text: t("enterScanValue") });
+      scrollToResult("feedback");
       return;
     }
     setLoading("preview");
@@ -165,21 +175,39 @@ export function DealerScanClient() {
     try {
       const res = await fetch(
         `/api/dealer/prepaid-preview?scanType=${encodeURIComponent(scanType)}&scanValue=${encodeURIComponent(value)}`,
+        { credentials: "same-origin" },
       );
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         card?: CardPreview;
       };
       if (!res.ok || !data.card) {
-        setMessage({ type: "err", text: data.error ?? t("cardNotFound") });
+        const errText =
+          res.status === 401
+            ? t("sessionExpired")
+            : res.status === 404
+              ? t("cardNotFoundHint")
+              : typeof data.error === "string"
+                ? data.error
+                : t("cardNotFound");
+        setMessage({ type: "err", text: errText });
+        scrollToResult("feedback");
         return;
       }
       setPreview(data.card);
       if (data.card.alreadyPaid) {
         setMessage({ type: "err", text: t("alreadyPaid") });
+        scrollToResult("feedback");
+      } else if (value.toUpperCase() !== data.card.serial.toUpperCase()) {
+        setMessage({ type: "ok", text: t("resolvedViaPin", { serial: data.card.serial }) });
+        scrollToResult("preview");
+      } else {
+        setMessage(null);
+        scrollToResult("preview");
       }
     } catch {
       setMessage({ type: "err", text: t("requestFailed") });
+      scrollToResult("feedback");
     } finally {
       setLoading(null);
     }
@@ -238,17 +266,27 @@ export function DealerScanClient() {
         {t("scanTourismNote")}
       </p>
 
-      {message ? (
-        <p
-          className={`mt-4 rounded-md border px-3 py-3 text-sm ${
-            message.type === "ok"
-              ? "border-accent/35 bg-accent/10 text-accent"
-              : "border-red-200 bg-red-50 text-red-800"
-          }`}
-          role="status"
-        >
-          {message.text}
-        </p>
+      {loading === "preview" || message ? (
+        <div ref={feedbackRef} className="mt-4" aria-live="polite" aria-atomic="true">
+          {loading === "preview" ? (
+            <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700">
+              {t("lookingUp")}
+            </p>
+          ) : null}
+          {message ? (
+            <p
+              className={`rounded-md border px-3 py-3 text-sm ${
+                loading === "preview" ? "mt-2" : ""
+              } ${
+                message.type === "ok"
+                  ? "border-accent/35 bg-accent/10 text-accent"
+                  : "border-red-200 bg-red-50 text-red-800"
+              }`}
+            >
+              {message.text}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {lastSuccess?.redeemUrl ? (
@@ -261,11 +299,15 @@ export function DealerScanClient() {
         </div>
       ) : null}
 
-      <div className="ui-card mt-6 space-y-4 rounded-xl p-4">
+      <div className="ui-card mt-4 space-y-4 rounded-xl p-4">
         <h2 className="font-semibold text-slate-900">{t("cameraTitle")}</h2>
         {cameraSupported ? (
           <>
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-black">
+            <div
+              className={`overflow-hidden rounded-lg border border-slate-200 bg-black ${
+                cameraOn ? "" : "hidden"
+              }`}
+            >
               <video
                 ref={videoRef}
                 className="aspect-[4/3] w-full object-cover"
@@ -319,7 +361,14 @@ export function DealerScanClient() {
             }}
             placeholder={t("scanValuePlaceholder")}
             autoComplete="off"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (loading === null && scanValue.trim()) void lookupCard();
+              }
+            }}
           />
+          <p className="mt-1 text-xs text-slate-500">{t("scanValueHint")}</p>
         </div>
         <button
           type="button"
@@ -332,7 +381,7 @@ export function DealerScanClient() {
       </div>
 
       {preview ? (
-        <div className="ui-card mt-6 space-y-4 rounded-xl p-4">
+        <div ref={previewRef} className="ui-card mt-6 space-y-4 rounded-xl p-4">
           <h2 className="font-semibold text-slate-900">{t("cardPreviewTitle")}</h2>
           <dl className="grid gap-2 text-sm">
             <div className="flex justify-between gap-2">

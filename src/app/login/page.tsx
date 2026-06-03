@@ -42,8 +42,7 @@ export default function LoginPage() {
       window.location.href = callbackUrl ?? "/admin";
       return;
     }
-    // Dealers should always land on the dealer dashboard after sign-in.
-    window.location.href = "/dealer";
+    window.location.href = callbackUrl ?? "/dealer/scan";
   }
 
   return (

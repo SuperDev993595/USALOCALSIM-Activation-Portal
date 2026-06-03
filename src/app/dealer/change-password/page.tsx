@@ -14,10 +14,10 @@ export default function DealerChangePasswordPage() {
       <ChangePasswordForm variant="admin" />
       <footer className="border-t border-slate-200 pt-8">
         <Link
-          href="/dealer"
+          href="/dealer/scan"
           className="ui-btn-ghost rounded-none text-xs uppercase tracking-[0.18em]"
         >
-          ← Back to unlock
+          ← Back to scan & sell
         </Link>
       </footer>
     </div>

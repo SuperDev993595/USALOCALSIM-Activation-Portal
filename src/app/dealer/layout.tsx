@@ -9,7 +9,7 @@ export default async function DealerLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) redirect("/login?callbackUrl=/dealer");
+  if (!session?.user?.email) redirect("/login?callbackUrl=/dealer/scan");
   const role = (session.user as { role?: string }).role;
   if (role === "disabled") {
     redirect(
@@ -17,7 +17,7 @@ export default async function DealerLayout({
         encodeURIComponent("/login?error=AccountDisabled"),
     );
   }
-  if (role !== "admin" && role !== "dealer") redirect("/login?callbackUrl=/dealer");
+  if (role !== "admin" && role !== "dealer") redirect("/login?callbackUrl=/dealer/scan");
   return (
     <div className="public-site flex h-screen flex-col overflow-hidden">
       <DealerNav email={session.user.email ?? ""} />
