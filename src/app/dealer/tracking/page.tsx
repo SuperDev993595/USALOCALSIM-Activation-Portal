@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { DealerPageHeader } from "@/components/DealerPageHeader";
@@ -22,30 +22,34 @@ type Row = {
   amountCents: number | null;
 };
 
+function isoDateDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 function formatMoney(cents: number | null): string {
   if (cents == null || cents <= 0) return "—";
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(cents / 100);
 }
 
-export default function DealerTrackingPage() {
-  const t = useTranslations("dealer");
-  const today = new Date().toISOString().slice(0, 10);
-
-  const [draftDateFrom, setDraftDateFrom] = useState(today);
-  const [draftDateTo, setDraftDateTo] = useState(today);
-  const [draftPlanId, setDraftPlanId] = useState("");
-  const [draftType, setDraftType] = useState("");
-  const [draftIsUsed, setDraftIsUsed] = useState("");
-  const [draftSource, setDraftSource] = useState("all");
-
-  const [applied, setApplied] = useState({
-    dateFrom: today,
-    dateTo: today,
+function defaultFilters() {
+  return {
+    dateFrom: isoDateDaysAgo(6),
+    dateTo: new Date().toISOString().slice(0, 10),
     planId: "",
     type: "",
     isUsed: "",
     source: "all",
-  });
+  };
+}
+
+export default function DealerTrackingPage() {
+  const t = useTranslations("dealer");
+
+  const [draft, setDraft] = useState(defaultFilters);
+  const [applied, setApplied] = useState(defaultFilters);
+  const [activePreset, setActivePreset] = useState<"today" | "7d" | "30d" | "custom">("7d");
 
   const [rows, setRows] = useState<Row[]>([]);
   const [plans, setPlans] = useState<PlanOption[]>([]);
@@ -94,61 +98,127 @@ export default function DealerTrackingPage() {
   }, [applied, t]);
 
   useEffect(() => {
-    loadRows();
+    void loadRows();
   }, [loadRows]);
 
-  function applyFilters() {
-    setApplied({
-      dateFrom: draftDateFrom,
-      dateTo: draftDateTo,
-      planId: draftPlanId,
-      type: draftType,
-      isUsed: draftIsUsed,
-      source: draftSource,
-    });
+  function applyDraft() {
+    setApplied({ ...draft });
   }
 
+  function applyPreset(preset: "today" | "7d" | "30d") {
+    const today = new Date().toISOString().slice(0, 10);
+    const next = {
+      ...draft,
+      dateTo: today,
+      dateFrom: preset === "today" ? today : isoDateDaysAgo(preset === "7d" ? 6 : 29),
+    };
+    setDraft(next);
+    setApplied(next);
+    setActivePreset(preset);
+  }
+
+  function clearFilters() {
+    const next = defaultFilters();
+    setDraft(next);
+    setApplied(next);
+    setActivePreset("7d");
+  }
+
+  const filtersDirty = useMemo(
+    () => JSON.stringify(draft) !== JSON.stringify(applied),
+    [draft, applied],
+  );
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="dealer-page">
       <DealerPageHeader
         title={t("trackingTitle")}
         description={t("trackingSubtitle")}
-        meta={
-          !loading && !error
-            ? t("trackingRowCount", { count: rows.length })
-            : undefined
+        rightActions={
+          !loading && !error ? (
+            <span className="dealer-stat-pill">{t("trackingRowCount", { count: rows.length })}</span>
+          ) : null
         }
       />
 
       {error ? <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} /> : null}
       {truncated ? <AdminFeedbackBanner variant="warning" message={t("trackingTruncated")} /> : null}
 
-      <div className="ui-card rounded-xl p-4">
-        <p className="text-xs text-slate-500">{t("trackingDefaultHint")}</p>
-        <div className="mt-3 grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <section className="dealer-panel">
+        <div className="dealer-scan-panel-head">
+          <h2 className="dealer-scan-panel-title">{t("trackingFiltersTitle")}</h2>
+          <p className="dealer-scan-panel-desc">{t("trackingFiltersDesc")}</p>
+        </div>
+
+        <div className="dealer-filter-presets">
+          <button
+            type="button"
+            className={
+              activePreset === "today" ? "dealer-filter-preset dealer-filter-preset--active" : "dealer-filter-preset"
+            }
+            onClick={() => applyPreset("today")}
+          >
+            {t("trackingPresetToday")}
+          </button>
+          <button
+            type="button"
+            className={
+              activePreset === "7d" ? "dealer-filter-preset dealer-filter-preset--active" : "dealer-filter-preset"
+            }
+            onClick={() => applyPreset("7d")}
+          >
+            {t("trackingPreset7d")}
+          </button>
+          <button
+            type="button"
+            className={
+              activePreset === "30d" ? "dealer-filter-preset dealer-filter-preset--active" : "dealer-filter-preset"
+            }
+            onClick={() => applyPreset("30d")}
+          >
+            {t("trackingPreset30d")}
+          </button>
+        </div>
+
+        <div className="dealer-filter-grid">
           <div>
-            <label className="ui-label !mt-0">{t("trackingDateFrom")}</label>
+            <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="tracking-date-from">
+              {t("trackingDateFrom")}
+            </label>
             <input
+              id="tracking-date-from"
               type="date"
-              value={draftDateFrom}
-              onChange={(e) => setDraftDateFrom(e.target.value)}
+              value={draft.dateFrom}
+              onChange={(e) => {
+                setDraft((d) => ({ ...d, dateFrom: e.target.value }));
+                setActivePreset("custom");
+              }}
               className="ui-input !mt-1"
             />
           </div>
           <div>
-            <label className="ui-label !mt-0">{t("trackingDateTo")}</label>
+            <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="tracking-date-to">
+              {t("trackingDateTo")}
+            </label>
             <input
+              id="tracking-date-to"
               type="date"
-              value={draftDateTo}
-              onChange={(e) => setDraftDateTo(e.target.value)}
+              value={draft.dateTo}
+              onChange={(e) => {
+                setDraft((d) => ({ ...d, dateTo: e.target.value }));
+                setActivePreset("custom");
+              }}
               className="ui-input !mt-1"
             />
           </div>
           <div>
-            <label className="ui-label !mt-0">{t("trackingSource")}</label>
+            <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="tracking-source">
+              {t("trackingSource")}
+            </label>
             <select
-              value={draftSource}
-              onChange={(e) => setDraftSource(e.target.value)}
+              id="tracking-source"
+              value={draft.source}
+              onChange={(e) => setDraft((d) => ({ ...d, source: e.target.value }))}
               className="ui-select !mt-1"
             >
               <option value="all">{t("trackingSourceAll")}</option>
@@ -157,10 +227,13 @@ export default function DealerTrackingPage() {
             </select>
           </div>
           <div>
-            <label className="ui-label !mt-0">{t("trackingPlan")}</label>
+            <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="tracking-plan">
+              {t("trackingPlan")}
+            </label>
             <select
-              value={draftPlanId}
-              onChange={(e) => setDraftPlanId(e.target.value)}
+              id="tracking-plan"
+              value={draft.planId}
+              onChange={(e) => setDraft((d) => ({ ...d, planId: e.target.value }))}
               className="ui-select !mt-1"
             >
               <option value="">{t("trackingPlanAll")}</option>
@@ -172,10 +245,13 @@ export default function DealerTrackingPage() {
             </select>
           </div>
           <div>
-            <label className="ui-label !mt-0">{t("trackingType")}</label>
+            <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="tracking-type">
+              {t("trackingType")}
+            </label>
             <select
-              value={draftType}
-              onChange={(e) => setDraftType(e.target.value)}
+              id="tracking-type"
+              value={draft.type}
+              onChange={(e) => setDraft((d) => ({ ...d, type: e.target.value }))}
               className="ui-select !mt-1"
             >
               <option value="">{t("trackingTypeAll")}</option>
@@ -184,10 +260,13 @@ export default function DealerTrackingPage() {
             </select>
           </div>
           <div>
-            <label className="ui-label !mt-0">{t("trackingUsed")}</label>
+            <label className="ui-label !mt-0 normal-case tracking-normal" htmlFor="tracking-used">
+              {t("trackingUsed")}
+            </label>
             <select
-              value={draftIsUsed}
-              onChange={(e) => setDraftIsUsed(e.target.value)}
+              id="tracking-used"
+              value={draft.isUsed}
+              onChange={(e) => setDraft((d) => ({ ...d, isUsed: e.target.value }))}
               className="ui-select !mt-1"
             >
               <option value="">{t("trackingUsedAll")}</option>
@@ -196,31 +275,40 @@ export default function DealerTrackingPage() {
             </select>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" onClick={applyFilters} className="btn-primary rounded-xl px-4 py-2 text-sm">
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+          <button type="button" onClick={applyDraft} className="btn-primary">
             {t("trackingApply")}
           </button>
           <button
             type="button"
             onClick={() => void loadRows()}
             disabled={loading}
-            className="ui-btn-ghost rounded-xl px-4 py-2 text-sm"
+            className="btn-secondary"
           >
             {loading ? t("trackingRefreshing") : t("trackingRefresh")}
           </button>
+          <button type="button" onClick={clearFilters} className="ui-btn-ghost text-sm">
+            {t("trackingClearFilters")}
+          </button>
+          {filtersDirty ? <span className="text-xs text-amber-700">{t("trackingFiltersPending")}</span> : null}
         </div>
-      </div>
+      </section>
 
-      <div className="ui-card overflow-hidden rounded-xl p-0">
+      <section className="dealer-panel !p-0 overflow-hidden">
+        <div className="border-b border-slate-100 px-4 py-3 md:px-5">
+          <h2 className="dealer-scan-panel-title">{t("trackingResultsTitle")}</h2>
+        </div>
+
         {loading ? (
-          <p className="p-6 text-sm text-slate-600">{t("trackingLoading")}</p>
+          <p className="px-5 py-10 text-center text-sm text-slate-600">{t("trackingLoading")}</p>
         ) : rows.length === 0 && !error ? (
           <div className="admin-empty-state">
             <p className="admin-empty-state-title">{t("trackingEmptyTitle")}</p>
             <p className="admin-empty-state-desc">{t("trackingEmptyDesc")}</p>
           </div>
-        ) : rows.length > 0 ? (
-          <div className="overflow-x-auto">
+        ) : (
+          <div className="ui-table-wrap !rounded-none !border-0 !shadow-none">
             <table className="ui-table min-w-full">
               <thead>
                 <tr>
@@ -239,7 +327,7 @@ export default function DealerTrackingPage() {
                     <td className="font-mono text-xs">
                       {row.serial ? (
                         <>
-                          <span className="block">{row.serial}</span>
+                          <span className="block font-medium text-slate-900">{row.serial}</span>
                           {row.code !== row.serial ? (
                             <span className="block text-[11px] text-muted-dim">{row.code}</span>
                           ) : null}
@@ -248,15 +336,25 @@ export default function DealerTrackingPage() {
                         row.code
                       )}
                     </td>
-                    <td className="text-xs capitalize text-muted">
-                      {row.source === "prepaid"
-                        ? t("trackingSourcePrepaidShort")
-                        : t("trackingSourceLegacyShort")}
+                    <td>
+                      <span
+                        className={
+                          row.source === "prepaid"
+                            ? "dealer-source-badge dealer-source-badge--prepaid"
+                            : "dealer-source-badge dealer-source-badge--legacy"
+                        }
+                      >
+                        {row.source === "prepaid"
+                          ? t("trackingSourcePrepaidShort")
+                          : t("trackingSourceLegacyShort")}
+                      </span>
                     </td>
-                    <td className="capitalize">{row.status}</td>
-                    <td className="text-xs text-muted">{row.planName}</td>
-                    <td className="text-xs text-muted">{formatMoney(row.amountCents)}</td>
-                    <td className="text-xs text-muted">
+                    <td className="capitalize text-slate-700">{row.status}</td>
+                    <td className="max-w-[10rem] truncate text-xs text-muted" title={row.planName}>
+                      {row.planName}
+                    </td>
+                    <td className="text-sm font-medium text-slate-900">{formatMoney(row.amountCents)}</td>
+                    <td className="whitespace-nowrap text-xs text-muted">
                       {row.soldAt ? new Date(row.soldAt).toLocaleString() : "—"}
                     </td>
                     <td className="text-xs text-muted">
@@ -272,8 +370,8 @@ export default function DealerTrackingPage() {
               </tbody>
             </table>
           </div>
-        ) : null}
-      </div>
+        )}
+      </section>
     </div>
   );
 }
