@@ -486,7 +486,7 @@
     "navScan": "Scannen & verkaufen",
     "navLegacy": "Legacy-Freischaltung",
     "navTracking": "Tracking",
-    "navPassword": "Passwort",
+    "navSettings": "Einstellungen",
     "navSignOut": "Abmelden",
     "signOutTitle": "Abmelden?",
     "signOutConfirm": "Abmelden",
@@ -622,8 +622,7 @@
     "trackingEmptyDesc": "Datumsbereich erweitern oder Filter löschen.",
     "trackingLoadFailed": "Tracking-Daten konnten nicht geladen werden.",
     "trackingUnauthorized": "Sitzung abgelaufen. Bitte erneut anmelden.",
-    "passwordTitle": "Passwort ändern",
-    "passwordSubtitle": "Wir senden einen Bestätigungscode per E-Mail.",
-    "passwordBackScan": "Zurück zu Scannen & verkaufen"
+    "settingsTitle": "Einstellungen",
+    "settingsSubtitle": "Anmeldepasswort ändern. Wir senden zuerst einen Bestätigungscode per E-Mail."
   }
 }

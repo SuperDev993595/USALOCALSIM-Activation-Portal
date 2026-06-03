@@ -3,8 +3,13 @@
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { useState } from "react";
 
-export function ChangePasswordForm({ variant = "admin" }: { variant?: "admin" | "public" }) {
+export function ChangePasswordForm({
+  variant = "admin",
+}: {
+  variant?: "admin" | "public" | "dealer";
+}) {
   const pub = variant === "public";
+  const dealer = variant === "dealer";
   const [sent, setSent] = useState(false);
   const [sendMessage, setSendMessage] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -66,6 +71,99 @@ export function ChangePasswordForm({ variant = "admin" }: { variant?: "admin" | 
       setError("Could not update password.");
     }
     setConfirmLoading(false);
+  }
+
+  if (dealer) {
+    return (
+      <div className="space-y-5">
+        {error ? (
+          <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
+        ) : null}
+        {success ? (
+          <AdminFeedbackBanner
+            variant="success"
+            message="Password updated. Use it the next time you sign in."
+            onDismiss={() => setSuccess(false)}
+          />
+        ) : null}
+        {sendMessage && !error ? (
+          <AdminFeedbackBanner variant="info" message={sendMessage} onDismiss={() => setSendMessage(null)} />
+        ) : null}
+
+        <section className="dealer-panel">
+          <div className="dealer-scan-panel-head">
+            <h2 className="dealer-scan-panel-title">Step 1 — Verification code</h2>
+            <p className="dealer-scan-panel-desc">
+              We email a 6-digit code to your account address. Codes expire in 15 minutes.
+            </p>
+          </div>
+          <button type="button" onClick={requestCode} disabled={requestLoading} className="btn-primary">
+            {requestLoading ? "Sending…" : sent ? "Resend code" : "Send verification code"}
+          </button>
+        </section>
+
+        <form onSubmit={confirmChange} className="dealer-panel space-y-4">
+          <div className="dealer-scan-panel-head">
+            <h2 className="dealer-scan-panel-title">Step 2 — New password</h2>
+            <p className="dealer-scan-panel-desc">
+              Enter the code from your email and choose a new password (minimum 8 characters).
+            </p>
+          </div>
+          <div className="space-y-4 max-w-md">
+            <div>
+              <label htmlFor="otp-code" className="ui-label !mt-0 normal-case tracking-normal">
+                Verification code
+              </label>
+              <input
+                id="otp-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="ui-input !mt-1 max-w-[12rem] font-mono tracking-[0.2em]"
+                placeholder="000000"
+                maxLength={12}
+              />
+            </div>
+            <div>
+              <label htmlFor="new-pw" className="ui-label !mt-0 normal-case tracking-normal">
+                New password
+              </label>
+              <input
+                id="new-pw"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+                className="ui-input !mt-1"
+                autoComplete="new-password"
+              />
+            </div>
+            <div>
+              <label htmlFor="confirm-pw" className="ui-label !mt-0 normal-case tracking-normal">
+                Confirm password
+              </label>
+              <input
+                id="confirm-pw"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                className="ui-input !mt-1"
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <div className="border-t border-slate-100 pt-4">
+            <button type="submit" disabled={confirmLoading} className="btn-primary min-w-[10rem]">
+              {confirmLoading ? "Updating…" : "Update password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
   }
 
   if (pub) {

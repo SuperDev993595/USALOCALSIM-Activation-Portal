@@ -13,9 +13,9 @@ const NAV_ITEMS = [
   { href: "/dealer/unlock", labelKey: "navLegacy" as const, match: (p: string) => p === "/dealer/unlock" },
   { href: "/dealer/tracking", labelKey: "navTracking" as const, match: (p: string) => p === "/dealer/tracking" },
   {
-    href: "/dealer/change-password",
-    labelKey: "navPassword" as const,
-    match: (p: string) => p === "/dealer/change-password",
+    href: "/dealer/settings",
+    labelKey: "navSettings" as const,
+    match: (p: string) => p === "/dealer/settings" || p === "/dealer/change-password",
   },
 ] as const;
 

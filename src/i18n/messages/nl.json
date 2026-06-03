@@ -492,7 +492,7 @@
     "navScan": "Scannen & verkopen",
     "navLegacy": "Legacy ontgrendelen",
     "navTracking": "Tracking",
-    "navPassword": "Wachtwoord",
+    "navSettings": "Instellingen",
     "navSignOut": "Uitloggen",
     "signOutTitle": "Uitloggen?",
     "signOutConfirm": "Uitloggen",
@@ -628,8 +628,7 @@
     "trackingEmptyDesc": "Verbreed het datumbereik of wis de filters.",
     "trackingLoadFailed": "Trackinggegevens laden mislukt.",
     "trackingUnauthorized": "Sessie verlopen. Log opnieuw in.",
-    "passwordTitle": "Wachtwoord wijzigen",
-    "passwordSubtitle": "We sturen een verificatiecode per e-mail.",
-    "passwordBackScan": "Terug naar Scannen & verkopen"
+    "settingsTitle": "Instellingen",
+    "settingsSubtitle": "Wijzig uw wachtwoord. We sturen eerst een verificatiecode per e-mail."
   }
 }

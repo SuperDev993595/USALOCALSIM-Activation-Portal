@@ -522,7 +522,7 @@
     "navScan": "Scan & sell",
     "navLegacy": "Legacy unlock",
     "navTracking": "Tracking",
-    "navPassword": "Password",
+    "navSettings": "Settings",
     "navSignOut": "Sign out",
     "signOutTitle": "Sign out?",
     "signOutConfirm": "Sign out",
@@ -658,9 +658,8 @@
     "trackingEmptyDesc": "Try a wider date range or clear filters. Prepaid sales require Scan & sell on this account.",
     "trackingLoadFailed": "Could not load tracking data.",
     "trackingUnauthorized": "Session expired. Sign in again.",
-    "passwordTitle": "Change password",
-    "passwordSubtitle": "We email you a verification code before updating your password.",
-    "passwordBackScan": "Back to scan & sell"
+    "settingsTitle": "Settings",
+    "settingsSubtitle": "Change your sign-in password. We email a verification code first."
   },
   "voucherEntry": {
     "eyebrow": "USALOCALSIM · Redeem",

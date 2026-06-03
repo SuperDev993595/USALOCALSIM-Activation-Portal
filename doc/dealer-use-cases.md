@@ -45,7 +45,7 @@ Customers always redeem at **`/redeem/enter`** (scratch PIN) unless the batch is
 | Scan & sell | `/dealer/scan` | **Primary** — camera/manual scan, POS activate |
 | Legacy unlock | `/dealer` | Non-prepaid voucher unlock |
 | Tracking | `/dealer/tracking` | Filters on unlocks/redemptions |
-| Password | `/dealer/change-password` | OTP password change |
+| Settings | `/dealer/settings` | Password change (OTP); `/dealer/change-password` redirects here |
 | Sign out | — | Ends dealer session |
 
 ---
@@ -226,7 +226,7 @@ stateDiagram-v2
 | Field | Content |
 |-------|---------|
 | **Goal** | Dealer updates credentials securely. |
-| **Route** | `/dealer/change-password` |
+| **Route** | `/dealer/settings` |
 | **Flow** | OTP email flow (same pattern as admin password change) |
 
 ---

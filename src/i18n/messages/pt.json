@@ -486,7 +486,7 @@
     "navScan": "Digitalizar & vender",
     "navLegacy": "Desbloqueio legacy",
     "navTracking": "Rastreio",
-    "navPassword": "Palavra-passe",
+    "navSettings": "Definições",
     "navSignOut": "Sair",
     "signOutTitle": "Sair?",
     "signOutConfirm": "Sair",
@@ -622,8 +622,7 @@
     "trackingEmptyDesc": "Alargue o intervalo de datas ou limpe os filtros.",
     "trackingLoadFailed": "Não foi possível carregar o tracking.",
     "trackingUnauthorized": "Sessão expirada. Inicie sessão novamente.",
-    "passwordTitle": "Alterar palavra-passe",
-    "passwordSubtitle": "Enviaremos um código de verificação por e-mail.",
-    "passwordBackScan": "Voltar a Digitalizar & vender"
+    "settingsTitle": "Definições",
+    "settingsSubtitle": "Altere a palavra-passe. Enviaremos primeiro um código de verificação por e-mail."
   }
 }
