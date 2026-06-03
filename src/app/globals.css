@@ -240,6 +240,96 @@
     @apply text-slate-900;
   }
 
+  .public-site .site-header-checkout {
+    @apply bg-white shadow-[0_1px_0_0_rgba(15,23,42,0.06),0_4px_14px_-6px_rgba(0,16,78,0.12)];
+  }
+
+  .public-site .site-header-checkout-top {
+    @apply bg-[#00195f] text-white;
+  }
+
+  .public-site .site-header-checkout-bar {
+    @apply mx-auto flex h-9 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6;
+  }
+
+  .public-site .site-header-checkout-support {
+    @apply inline-flex min-w-0 items-center gap-2 text-[11px] font-medium text-white/95 no-underline transition hover:text-white sm:text-xs;
+  }
+
+  .public-site .site-header-checkout-support-icon {
+    @apply h-3.5 w-3.5 shrink-0 fill-[#ff1236];
+  }
+
+  .public-site .site-header-checkout-secure {
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90 sm:text-[11px];
+  }
+
+  .public-site .site-header-checkout-main {
+    @apply border-b border-slate-200/90 bg-white;
+  }
+
+  .public-site .site-header-checkout-bar--main {
+    @apply h-[4.25rem] gap-4 sm:h-[4.5rem];
+  }
+
+  .public-site .site-header-checkout-brand {
+    @apply flex min-w-0 flex-1 items-center gap-2.5 no-underline sm:gap-3;
+  }
+
+  .public-site .site-header-checkout-logo {
+    @apply relative block h-10 w-[5.5rem] shrink-0 sm:h-11 sm:w-24;
+  }
+
+  .public-site .site-header-checkout-brand-text {
+    @apply flex min-w-0 flex-col justify-center gap-0.5 border-l border-slate-200 pl-2.5 sm:pl-3;
+  }
+
+  .public-site .site-header-checkout-brand-title {
+    @apply truncate text-sm font-semibold leading-tight text-slate-900 sm:text-[0.9375rem];
+  }
+
+  .public-site .site-header-checkout-brand-tag {
+    @apply hidden truncate text-[11px] leading-snug text-slate-500 sm:text-xs;
+  }
+
+  @media (min-width: 380px) {
+    .public-site .site-header-checkout-brand-tag {
+      display: block;
+    }
+  }
+
+  .public-site .site-header-checkout-nav {
+    @apply hidden items-center gap-0.5 md:flex;
+  }
+
+  .public-site .site-header-checkout-nav-link {
+    @apply rounded-md px-3 py-2 text-sm font-medium text-slate-600 no-underline transition hover:bg-slate-100 hover:text-[#00104E];
+  }
+
+  .public-site .site-header-checkout-actions {
+    @apply flex shrink-0 items-center gap-2;
+  }
+
+  .public-site .site-header-checkout-help-mobile {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-[#00104E] no-underline transition hover:border-slate-300 hover:bg-white md:hidden;
+  }
+
+  .public-site .site-header-checkout-accent {
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      rgb(0 16 78 / 0) 0%,
+      rgb(0 16 78 / 0.14) 22%,
+      rgb(255 18 54 / 0.1) 50%,
+      rgb(0 16 78 / 0.14) 78%,
+      rgb(0 16 78 / 0) 100%
+    );
+  }
+
+  .public-site.public-site--cart .ui-card {
+    @apply shadow-[0_12px_32px_-14px_rgba(0,16,78,0.18)];
+  }
+
   /* Dealer portal shell — keeps public-site map/gradient background */
   .dealer-shell.public-site {
     @apply flex h-screen flex-col overflow-hidden;

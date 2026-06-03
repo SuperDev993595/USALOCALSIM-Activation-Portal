@@ -119,15 +119,16 @@ export function CartRegistrationAndPayment({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId, email, customerName, payAmountCents: cents }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
       if (res.status === 501) {
         setError(t("mercadopagoUnavailable"));
         return;
       }
-      if (!res.ok) {
+      if (!res.ok || !data.url) {
         setError(typeof data.error === "string" ? data.error : t("errorGeneric"));
         return;
       }
+      window.location.href = data.url;
     } finally {
       setLoading(null);
     }
@@ -157,7 +158,7 @@ export function CartRegistrationAndPayment({
             autoComplete="name"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
+            className="ui-input !mt-0 w-full rounded-none text-sm"
           />
         </div>
         <div className="space-y-2.5">
@@ -170,7 +171,7 @@ export function CartRegistrationAndPayment({
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
+            className="ui-input !mt-0 w-full rounded-none text-sm"
           />
         </div>
         {selectedPlan ? (
@@ -191,7 +192,7 @@ export function CartRegistrationAndPayment({
                   value={payDollars}
                   onChange={(e) => setPayDollars(e.target.value)}
                   readOnly={lockPayAmountCents != null && lockPayAmountCents > 0}
-                  className="w-full rounded border border-slate-300 py-2 pl-7 pr-3 text-sm text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E] read-only:bg-slate-100 read-only:text-slate-700"
+                  className="ui-input !mt-0 w-full rounded-none py-2 pl-7 pr-3 text-sm read-only:bg-slate-100 read-only:text-slate-700"
                   placeholder={DEFAULT_BUNDLED_PACK_PAY_DOLLARS}
                   aria-describedby="cart-pay-hint"
                 />

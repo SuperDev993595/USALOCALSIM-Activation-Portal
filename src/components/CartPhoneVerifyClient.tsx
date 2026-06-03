@@ -103,7 +103,14 @@ export function CartPhoneVerifyClient({
         </div>
       </div>
       {resumeBanner ? (
-        <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">{resumeBanner}</p>
+        <div className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+          <p>{resumeBanner}</p>
+          {resumeQuery === "pending" ? (
+            <Link href="/redeem/enter" className="btn-primary mt-3 inline-block w-full py-2 text-center text-sm font-semibold">
+              {t("resumeRedeemCta")}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
       {needVoucherCreditBanner ? (
         <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
@@ -143,7 +150,7 @@ export function CartPhoneVerifyClient({
                 if (loading || !manualSerial.trim()) return;
                 void submitManualSerial();
               }}
-              className="w-full rounded border border-slate-300 px-3 py-2 text-sm uppercase text-slate-900 shadow-sm focus:border-[#00104E] focus:outline-none focus:ring-1 focus:ring-[#00104E]"
+              className="ui-input !mt-0 w-full rounded-none text-sm uppercase"
               placeholder={t("phase1SerialPlaceholder")}
             />
           </div>
