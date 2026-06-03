@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AdminPageHeader } from "@/components/AdminPageChrome";
+import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { COVERAGE_TIER_ORDER } from "@/lib/coverage-tier";
 
@@ -78,6 +79,46 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
+function PlanCountPill({
+  total,
+  active,
+  archived,
+  loading,
+}: {
+  total: number;
+  active: number;
+  archived: number;
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+        Loading…
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
+        <span className="inline-flex h-2 w-2 rounded-full bg-slate-400" aria-hidden />
+        <strong className="font-semibold text-slate-900">{total}</strong> plan{total === 1 ? "" : "s"}
+      </span>
+      {total > 0 ? (
+        <>
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800">
+            <strong className="font-semibold">{active}</strong> active
+          </span>
+          {archived > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-900">
+              <strong className="font-semibold">{archived}</strong> archived
+            </span>
+          ) : null}
+        </>
+      ) : null}
+    </span>
+  );
+}
+
 const emptyCreate = {
   sku: "",
   name: "",
@@ -100,6 +141,7 @@ export function AdminPlansClient() {
   const [createForm, setCreateForm] = useState(emptyCreate);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<PlanRow | null>(null);
+  const [addPlanOpen, setAddPlanOpen] = useState(false);
 
   const loadPlans = useCallback(() => {
     setLoading(true);
@@ -132,6 +174,12 @@ export function AdminPlansClient() {
     window.addEventListener(ADMIN_REFRESH_EVENT, onRefresh);
     return () => window.removeEventListener(ADMIN_REFRESH_EVENT, onRefresh);
   }, [loadPlans]);
+
+  useEffect(() => {
+    if (!loading) {
+      setAddPlanOpen(plans.length === 0);
+    }
+  }, [loading, plans.length]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -248,24 +296,11 @@ export function AdminPlansClient() {
     setSavingId(null);
   }
 
-  return (
-    <div className="admin-page-stack">
-      <AdminPageHeader
-        breadcrumbs={[{ label: "Catalog" }, { label: "Plans" }]}
-        title="Data plans"
-      />
+  const activeCount = plans.filter((p) => p.active !== false).length;
+  const archivedCount = plans.length - activeCount;
 
-      {error ? (
-        <p className="rounded-none border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
-      ) : null}
-
-      <section className="admin-panel">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">Add plan</h2>
-          <p className="admin-panel-head-desc">Create a new sellable product. Price is in USD cents (e.g. 9999 = $99.99).</p>
-        </div>
-        <form onSubmit={handleCreate} className="space-y-4 p-5 md:p-6">
-          <div className="grid gap-4 md:grid-cols-2">
+  const createFormFields = (
+    <div className="admin-form-grid">
             <div>
               <label className="ui-label !mt-0">SKU</label>
               <input
@@ -362,7 +397,7 @@ export function AdminPlansClient() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="admin-form-grid-span-2">
               <label className="ui-label !mt-0">Network (voucher redeem)</label>
               <select
                 value={createForm.networkId}
@@ -377,22 +412,49 @@ export function AdminPlansClient() {
                 ))}
               </select>
             </div>
-          </div>
-          <button type="submit" disabled={creating} className="btn-primary rounded-none">
-            {creating ? "Creating…" : "Create plan"}
-          </button>
-        </form>
-      </section>
+    </div>
+  );
+
+  return (
+    <div className="admin-page-stack">
+      <AdminPageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Plans" }]}
+        title="Data plans"
+        description={
+          <>
+            Sellable products for redeem and checkout. Prices are stored in USD cents (e.g. 9999 = $99.99). Archive a
+            plan to hide it from the public catalog without deleting history.
+          </>
+        }
+        meta={
+          <PlanCountPill
+            total={plans.length}
+            active={activeCount}
+            archived={archivedCount}
+            loading={loading}
+          />
+        }
+      />
+
+      {error ? (
+        <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
+      ) : null}
 
       <section className="admin-panel">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">All plans</h2>
-          <p className="admin-panel-head-desc">{loading ? "Loading…" : `${plans.length} plan(s)`}</p>
-        </div>
         {loading ? (
-          <p className="p-6 text-sm text-slate-600">Loading…</p>
+          <p className="px-5 py-12 text-center text-sm text-slate-500 md:px-6">Loading plans…</p>
         ) : plans.length === 0 ? (
-          <p className="p-6 text-sm text-slate-600">No plans yet. Add one above.</p>
+          <div className="admin-empty-state py-12 md:py-16" role="status">
+            <div className="admin-empty-state-icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
+                <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h10" />
+              </svg>
+            </div>
+            <h2 className="admin-empty-state-title">No plans yet</h2>
+            <p className="admin-empty-state-desc">
+              Create your first plan using the form below. Assign a network if this plan is used on voucher redeem.
+            </p>
+          </div>
         ) : (
           <div className="admin-table-wrap">
           <table className="admin-table">
@@ -609,6 +671,27 @@ export function AdminPlansClient() {
         )}
       </section>
 
+      <details
+        className="admin-disclosure"
+        open={addPlanOpen}
+        onToggle={(e) => setAddPlanOpen(e.currentTarget.open)}
+      >
+        <summary className="admin-disclosure-summary">
+          <span>
+            <span className="admin-disclosure-summary-title">Add plan</span>
+            <span className="admin-disclosure-summary-desc">
+              New sellable product · price in USD cents
+            </span>
+          </span>
+          <span className="admin-disclosure-chevron" aria-hidden />
+        </summary>
+        <form onSubmit={handleCreate} className="admin-disclosure-body space-y-4">
+          {createFormFields}
+          <button type="submit" disabled={creating} className="btn-primary rounded-none">
+            {creating ? "Creating…" : "Create plan"}
+          </button>
+        </form>
+      </details>
     </div>
   );
 }

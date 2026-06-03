@@ -1,7 +1,8 @@
 "use client";
 
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function parseOptionalCents(raw: string): number | null | "invalid" {
   const t = raw.trim();
@@ -9,6 +10,20 @@ function parseOptionalCents(raw: string): number | null | "invalid" {
   const n = Number(t);
   if (!Number.isFinite(n) || n < 0) return "invalid";
   return Math.floor(n);
+}
+
+function formatUsd(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function centsPreview(raw: string, fallback?: number): string | null {
+  const t = raw.trim();
+  if (t === "") {
+    return fallback != null ? `Uses default (${formatUsd(fallback)})` : null;
+  }
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return formatUsd(Math.floor(n));
 }
 
 type MarketField = "globalCents" | "usCents" | "ukCents" | "brCents";
@@ -28,6 +43,7 @@ export function AdminSimCostSettings() {
     ukCents: "",
     brCents: "",
   });
+  const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<{ variant: "success" | "error"; message: string } | null>(null);
 
@@ -43,11 +59,17 @@ export function AdminSimCostSettings() {
           ukCents: data.ukCents != null ? String(data.ukCents) : "",
           brCents: data.brCents != null ? String(data.brCents) : "",
         });
+        setLoaded(true);
       })
       .catch(() => {
         setBanner({ variant: "error", message: "Failed to load SIM cost config." });
       });
   }, []);
+
+  const defaultCents = useMemo(() => {
+    const n = Number(fallbackCents);
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+  }, [fallbackCents]);
 
   async function save() {
     const fb = Number(fallbackCents);
@@ -99,58 +121,111 @@ export function AdminSimCostSettings() {
   }
 
   return (
-    <div className="rounded-none border border-slate-200 bg-slate-50/80 p-4 md:p-5">
-      {banner ? (
-        <div className="mb-4">
-          <AdminFeedbackBanner
-            variant={banner.variant}
-            message={banner.message}
-            onDismiss={() => setBanner(null)}
-          />
-        </div>
-      ) : null}
-      <p className="text-xs text-slate-600">
-        Partner-SIM checkout subtracts this hardware amount from the plan price. Per-market overrides match plan{" "}
-        <code className="rounded bg-slate-100 px-1">market</code> tags; leave blank to use the default.
-      </p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="min-w-0 sm:col-span-2 lg:col-span-3">
-          <label htmlFor="sim-cost-fallback" className="ui-label !mt-0">
-            Default (cents)
-          </label>
-          <p className="mt-1 text-xs text-slate-600">Used when no market override is set. Example: 999 = $9.99.</p>
-          <input
-            id="sim-cost-fallback"
-            type="number"
-            min={0}
-            value={fallbackCents}
-            onChange={(e) => setFallbackCents(e.target.value)}
-            className="ui-input !mt-2 w-full max-w-[220px] rounded-none"
-          />
-        </div>
-        {MARKET_FIELDS.map(({ key, label, hint }) => (
-          <div key={key} className="min-w-0">
-            <label htmlFor={`sim-cost-${key}`} className="ui-label !mt-0">
-              {label} override
-            </label>
-            <p className="mt-1 text-xs text-slate-600">{hint}. Blank = default.</p>
-            <input
-              id={`sim-cost-${key}`}
-              type="number"
-              min={0}
-              placeholder="Fallback"
-              value={marketCents[key]}
-              onChange={(e) => setMarketCents((s) => ({ ...s, [key]: e.target.value }))}
-              className="ui-input !mt-2 w-full max-w-[220px] rounded-none"
+    <div className="admin-page-stack">
+      <AdminPageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Pricing & hardware" }]}
+        title="Pricing & hardware"
+        description={
+          <>
+            Partner-SIM checkout subtracts this hardware amount from the plan price. Per-market overrides match plan{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">market</code> tags; leave a field blank
+            to use the default.
+          </>
+        }
+        meta={
+          <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
+            {loaded && defaultCents != null ? (
+              <>
+                Default deduction: <strong className="font-semibold text-slate-900">{formatUsd(defaultCents)}</strong>
+                <span className="text-slate-500">({defaultCents}¢)</span>
+              </>
+            ) : (
+              <span className="text-slate-500">Loading…</span>
+            )}
+          </span>
+        }
+      />
+
+      <section className="admin-panel">
+        <div className="space-y-6 p-5 md:p-6">
+          {banner ? (
+            <AdminFeedbackBanner
+              variant={banner.variant}
+              message={banner.message}
+              onDismiss={() => setBanner(null)}
             />
+          ) : null}
+
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <h2 className="admin-settings-block-title">Default hardware deduction</h2>
+              <p className="admin-settings-block-desc">
+                Applied when no market override is set. Enter cents — e.g. 999 = $9.99.
+              </p>
+            </div>
+            <div className="max-w-xs">
+              <label htmlFor="sim-cost-fallback" className="ui-label !mt-0">
+                Amount (cents)
+              </label>
+              <input
+                id="sim-cost-fallback"
+                type="number"
+                min={0}
+                value={fallbackCents}
+                onChange={(e) => setFallbackCents(e.target.value)}
+                className="ui-input !mt-1 w-full rounded-none"
+              />
+              {defaultCents != null ? (
+                <p className="mt-1.5 text-xs text-slate-500">Preview: {formatUsd(defaultCents)}</p>
+              ) : null}
+            </div>
           </div>
-        ))}
-      </div>
-      <div className="mt-4 flex justify-end">
-        <button type="button" onClick={save} disabled={loading} className="btn-primary h-11 min-w-[120px] rounded-none">
-          {loading ? "Saving…" : "Save"}
-        </button>
-      </div>
+
+          <div className="admin-settings-block border-t border-slate-200 pt-6">
+            <div className="admin-settings-block-head">
+              <h2 className="admin-settings-block-title">Per-market overrides</h2>
+              <p className="admin-settings-block-desc">
+                Optional. Blank uses the default deduction for that market.
+              </p>
+            </div>
+            <div className="admin-form-grid">
+              {MARKET_FIELDS.map(({ key, label, hint }) => {
+                const preview = defaultCents != null ? centsPreview(marketCents[key], defaultCents) : null;
+                return (
+                  <div key={key} className="min-w-0">
+                    <label htmlFor={`sim-cost-${key}`} className="ui-label !mt-0">
+                      {label}
+                    </label>
+                    <p className="mt-0.5 text-xs text-slate-500">{hint}</p>
+                    <input
+                      id={`sim-cost-${key}`}
+                      type="number"
+                      min={0}
+                      placeholder="Use default"
+                      value={marketCents[key]}
+                      onChange={(e) => setMarketCents((s) => ({ ...s, [key]: e.target.value }))}
+                      className="ui-input !mt-2 w-full rounded-none"
+                    />
+                    {preview ? <p className="mt-1.5 text-xs text-slate-500">{preview}</p> : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-slate-500">Changes apply to new partner-SIM checkouts immediately after save.</p>
+            <button
+              type="button"
+              onClick={save}
+              disabled={loading}
+              className="btn-primary h-10 min-w-[120px] shrink-0 rounded-none sm:ml-auto"
+            >
+              {loading ? "Saving…" : "Save settings"}
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

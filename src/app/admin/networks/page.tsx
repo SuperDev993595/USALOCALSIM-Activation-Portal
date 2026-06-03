@@ -1,11 +1,5 @@
 import { AdminNetworksClient } from "@/app/admin/networks/AdminNetworksClient";
-import { AdminPageHeader } from "@/components/AdminPageChrome";
 
 export default function AdminNetworksPage() {
-  return (
-    <div className="admin-page-stack">
-      <AdminPageHeader breadcrumbs={[{ label: "Catalog" }, { label: "Networks" }]} title="Networks" />
-      <AdminNetworksClient />
-    </div>
-  );
+  return <AdminNetworksClient />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useCallback, useEffect, useState } from "react";
@@ -12,6 +13,46 @@ type NetworkRow = {
   active: boolean;
 };
 
+function NetworkCountPill({
+  total,
+  active,
+  inactive,
+  loading,
+}: {
+  total: number;
+  active: number;
+  inactive: number;
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+        Loading…
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
+        <span className="inline-flex h-2 w-2 rounded-full bg-slate-400" aria-hidden />
+        <strong className="font-semibold text-slate-900">{total}</strong> network{total === 1 ? "" : "s"}
+      </span>
+      {total > 0 ? (
+        <>
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200/90 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-800">
+            <strong className="font-semibold">{active}</strong> active
+          </span>
+          {inactive > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs text-amber-900">
+              <strong className="font-semibold">{inactive}</strong> inactive
+            </span>
+          ) : null}
+        </>
+      ) : null}
+    </span>
+  );
+}
+
 const emptyCreate = { slug: "", name: "", displayOrder: "0" };
 
 export function AdminNetworksClient() {
@@ -23,6 +64,7 @@ export function AdminNetworksClient() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<NetworkRow | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -53,6 +95,12 @@ export function AdminNetworksClient() {
     window.addEventListener(ADMIN_REFRESH_EVENT, onRefresh);
     return () => window.removeEventListener(ADMIN_REFRESH_EVENT, onRefresh);
   }, [load]);
+
+  useEffect(() => {
+    if (!loading) {
+      setAddOpen(networks.length === 0);
+    }
+  }, [loading, networks.length]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -123,70 +171,94 @@ export function AdminNetworksClient() {
     }
   }
 
+  const activeCount = networks.filter((n) => n.active).length;
+  const inactiveCount = networks.length - activeCount;
+
+  const createFormFields = (
+    <div className="admin-form-grid-3">
+      <div>
+        <label className="ui-label !mt-0">Slug</label>
+        <input
+          value={createForm.slug}
+          onChange={(e) => setCreateForm((s) => ({ ...s, slug: e.target.value.toLowerCase() }))}
+          className="ui-input !mt-1 rounded-none font-mono text-sm"
+          placeholder="t_mobile"
+          required
+        />
+      </div>
+      <div>
+        <label className="ui-label !mt-0">Display name</label>
+        <input
+          value={createForm.name}
+          onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
+          className="ui-input !mt-1 rounded-none"
+          required
+        />
+      </div>
+      <div>
+        <label className="ui-label !mt-0">Sort order</label>
+        <input
+          type="number"
+          min={0}
+          value={createForm.displayOrder}
+          onChange={(e) => setCreateForm((s) => ({ ...s, displayOrder: e.target.value }))}
+          className="ui-input !mt-1 rounded-none"
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <>
+    <div className="admin-page-stack">
+      <AdminPageHeader
+        breadcrumbs={[{ label: "Catalog" }, { label: "Networks" }]}
+        title="Networks"
+        description={
+          <>
+            Carriers shown during voucher redeem plan selection. Use a stable lowercase slug (e.g.{" "}
+            <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">t_mobile</code>) and sort order to
+            control list position.
+          </>
+        }
+        meta={
+          <NetworkCountPill
+            total={networks.length}
+            active={activeCount}
+            inactive={inactiveCount}
+            loading={loading}
+          />
+        }
+      />
+
       {error ? (
         <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
       ) : null}
 
       <section className="admin-panel">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">Add network</h2>
-          <p className="admin-panel-head-desc">
-            Carriers used on redeem plan selection (e.g. <code className="rounded bg-slate-100 px-1">t_mobile</code>).
-          </p>
-        </div>
-        <form onSubmit={handleCreate} className="grid gap-4 p-5 sm:grid-cols-3 md:p-6">
-          <div>
-            <label className="ui-label !mt-0">Slug</label>
-            <input
-              value={createForm.slug}
-              onChange={(e) => setCreateForm((s) => ({ ...s, slug: e.target.value.toLowerCase() }))}
-              className="ui-input !mt-1 font-mono text-sm"
-              placeholder="t_mobile"
-              required
-            />
-          </div>
-          <div>
-            <label className="ui-label !mt-0">Display name</label>
-            <input
-              value={createForm.name}
-              onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
-              className="ui-input !mt-1"
-              required
-            />
-          </div>
-          <div>
-            <label className="ui-label !mt-0">Sort order</label>
-            <input
-              type="number"
-              min={0}
-              value={createForm.displayOrder}
-              onChange={(e) => setCreateForm((s) => ({ ...s, displayOrder: e.target.value }))}
-              className="ui-input !mt-1"
-            />
-          </div>
-          <div className="sm:col-span-3">
-            <button type="submit" disabled={creating} className="btn-primary rounded-none">
-              {creating ? "Creating…" : "Create network"}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="admin-panel">
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">All networks</h2>
-          <p className="admin-panel-head-desc">{loading ? "Loading…" : `${networks.length} network(s)`}</p>
-        </div>
         {loading ? (
-          <p className="p-6 text-sm text-slate-600">Loading…</p>
+          <p className="px-5 py-12 text-center text-sm text-slate-500 md:px-6">Loading networks…</p>
+        ) : networks.length === 0 ? (
+          <div className="admin-empty-state py-12 md:py-16" role="status">
+            <div className="admin-empty-state-icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M2.34 8.223a9.75 9.75 0 0 1 13.32 0"
+                />
+              </svg>
+            </div>
+            <h2 className="admin-empty-state-title">No networks yet</h2>
+            <p className="admin-empty-state-desc">
+              Add carriers below, then link plans to a network on the Plans page for voucher redeem.
+            </p>
+          </div>
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th className="pl-5 md:pl-6">Order</th>
+                  <th className="w-20 pl-5 md:pl-6">Order</th>
                   <th>Slug</th>
                   <th>Name</th>
                   <th>Status</th>
@@ -197,7 +269,7 @@ export function AdminNetworksClient() {
                 {networks.map((n) =>
                   editingId === n.id && editDraft ? (
                     <tr key={n.id}>
-                      <td className="pl-5 md:pl-6">
+                      <td className="pl-5 align-top md:pl-6">
                         <input
                           type="number"
                           min={0}
@@ -207,10 +279,10 @@ export function AdminNetworksClient() {
                               d ? { ...d, displayOrder: Number.parseInt(e.target.value, 10) || 0 } : d,
                             )
                           }
-                          className="ui-input !mt-0 w-20"
+                          className="ui-input !mt-0 w-20 text-sm"
                         />
                       </td>
-                      <td>
+                      <td className="align-top">
                         <input
                           value={editDraft.slug}
                           onChange={(e) =>
@@ -219,15 +291,15 @@ export function AdminNetworksClient() {
                           className="ui-input !mt-0 font-mono text-sm"
                         />
                       </td>
-                      <td>
+                      <td className="align-top">
                         <input
                           value={editDraft.name}
                           onChange={(e) => setEditDraft((d) => (d ? { ...d, name: e.target.value } : d))}
-                          className="ui-input !mt-0"
+                          className="ui-input !mt-0 text-sm"
                         />
                       </td>
-                      <td>
-                        <label className="flex items-center gap-2 text-sm">
+                      <td className="align-top">
+                        <label className="flex items-center gap-2 text-sm text-slate-700">
                           <input
                             type="checkbox"
                             checked={editDraft.active}
@@ -246,7 +318,7 @@ export function AdminNetworksClient() {
                             disabled={savingId === n.id}
                             className="btn-primary h-9 rounded-none px-3 text-xs"
                           >
-                            Save
+                            {savingId === n.id ? "Saving…" : "Save"}
                           </button>
                           <button
                             type="button"
@@ -264,13 +336,17 @@ export function AdminNetworksClient() {
                   ) : (
                     <tr key={n.id} className={!n.active ? "opacity-60" : undefined}>
                       <td className="pl-5 text-slate-600 md:pl-6">{n.displayOrder}</td>
-                      <td className="font-mono text-sm text-slate-800">{n.slug}</td>
+                      <td className="font-mono text-sm text-slate-700">{n.slug}</td>
                       <td className="font-medium text-slate-900">{n.name}</td>
                       <td>
                         {n.active ? (
-                          <span className="text-xs font-semibold text-emerald-700">Active</span>
+                          <span className="rounded-none border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                            Active
+                          </span>
                         ) : (
-                          <span className="text-xs font-semibold text-amber-800">Inactive</span>
+                          <span className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                            Inactive
+                          </span>
                         )}
                       </td>
                       <td className="pr-5 text-right md:pr-6">
@@ -293,6 +369,22 @@ export function AdminNetworksClient() {
           </div>
         )}
       </section>
-    </>
+
+      <details className="admin-disclosure" open={addOpen} onToggle={(e) => setAddOpen(e.currentTarget.open)}>
+        <summary className="admin-disclosure-summary">
+          <span>
+            <span className="admin-disclosure-summary-title">Add network</span>
+            <span className="admin-disclosure-summary-desc">Slug, display name, and sort order</span>
+          </span>
+          <span className="admin-disclosure-chevron" aria-hidden />
+        </summary>
+        <form onSubmit={handleCreate} className="admin-disclosure-body space-y-4">
+          {createFormFields}
+          <button type="submit" disabled={creating} className="btn-primary rounded-none">
+            {creating ? "Creating…" : "Create network"}
+          </button>
+        </form>
+      </details>
+    </div>
   );
 }
