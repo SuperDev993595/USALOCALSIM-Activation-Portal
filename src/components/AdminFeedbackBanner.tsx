@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 type AdminFeedbackVariant = "error" | "success" | "warning" | "info";
 
 const variantClass: Record<AdminFeedbackVariant, string> = {
@@ -15,17 +17,18 @@ export function AdminFeedbackBanner({
   onDismiss,
 }: {
   variant: AdminFeedbackVariant;
-  message: string;
+  message: ReactNode;
   onDismiss?: () => void;
 }) {
-  if (!message.trim()) return null;
+  if (message == null || message === false) return null;
+  if (typeof message === "string" && !message.trim()) return null;
 
   return (
     <div
       className={`${variantClass[variant]} items-start justify-between gap-3`}
       role={variant === "error" ? "alert" : "status"}
     >
-      <p className="min-w-0 flex-1 leading-relaxed">{message}</p>
+      <div className="min-w-0 flex-1 leading-relaxed">{message}</div>
       {onDismiss ? (
         <button
           type="button"

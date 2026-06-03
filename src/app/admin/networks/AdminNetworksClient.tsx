@@ -213,13 +213,7 @@ export function AdminNetworksClient() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Catalog" }, { label: "Networks" }]}
         title="Networks"
-        description={
-          <>
-            Carriers shown during voucher redeem plan selection. Use a stable lowercase slug (e.g.{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">t_mobile</code>) and sort order to
-            control list position.
-          </>
-        }
+        description="Carriers for redeem. Use lowercase slugs (e.g. t_mobile) and sort order."
         meta={
           <NetworkCountPill
             total={networks.length}

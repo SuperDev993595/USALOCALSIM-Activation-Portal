@@ -1,28 +1,39 @@
 "use client";
 
+import Link from "next/link";
 import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
-import { useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 
 type Plan = { id: string; name: string; planType: string; market: string; active?: boolean };
 
+function parseCodes(text: string): string[] {
+  return text
+    .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export default function AdminVouchersPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
   const [planId, setPlanId] = useState("");
   const [type, setType] = useState<"top_up" | "esim">("top_up");
   const [codesText, setCodesText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ created: number; skipped: number } | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadPlans = useCallback(() => {
+    setPlansLoading(true);
     fetch("/api/admin/plans")
       .then((res) => res.json())
       .then((data) =>
         setPlans(Array.isArray(data) ? data.filter((p: Plan) => p.active !== false) : []),
       )
-      .catch(() => setPlans([]));
+      .catch(() => setPlans([]))
+      .finally(() => setPlansLoading(false));
   }, []);
 
   useEffect(() => {
@@ -35,19 +46,20 @@ export default function AdminVouchersPage() {
     return () => window.removeEventListener(ADMIN_REFRESH_EVENT, onHeaderRefresh);
   }, [loadPlans]);
 
+  const codeCount = useMemo(() => parseCodes(codesText).length, [codesText]);
+  const selectedPlan = plans.find((p) => p.id === planId);
+
   async function handleImport(e: React.FormEvent) {
     e.preventDefault();
-    const codes = codesText
-      .split(/[\n,]/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const codes = parseCodes(codesText);
     if (codes.length === 0) {
       setError("Enter at least one voucher code (one per line or comma-separated).");
+      setSuccessMessage(null);
       return;
     }
     setLoading(true);
     setError(null);
-    setResult(null);
+    setSuccessMessage(null);
     try {
       const res = await fetch("/api/admin/vouchers/import", {
         method: "POST",
@@ -55,8 +67,14 @@ export default function AdminVouchersPage() {
         body: JSON.stringify({ codes, planId, type }),
       });
       const data = await res.json();
-      if (res.ok) setResult({ created: data.created, skipped: data.skipped });
-      else setError(typeof data.error === "string" ? data.error : "Import failed.");
+      if (res.ok) {
+        setSuccessMessage(
+          `Imported ${data.created} code${data.created === 1 ? "" : "s"} (${data.skipped} duplicate${data.skipped === 1 ? "" : "s"} skipped).`,
+        );
+        setCodesText("");
+      } else {
+        setError(typeof data.error === "string" ? data.error : "Import failed.");
+      }
     } catch {
       setError("Import failed. Check your connection and try again.");
     }
@@ -68,73 +86,142 @@ export default function AdminVouchersPage() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Vouchers" }, { label: "Import vouchers" }]}
         title="Import vouchers"
+        description="Bulk-import codes by plan and type. Duplicates are skipped."
+        meta={
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
+              {plansLoading ? (
+                <span className="text-slate-500">Loading plans…</span>
+              ) : (
+                <>
+                  <strong className="font-semibold text-slate-900">{plans.length}</strong> active plan
+                  {plans.length === 1 ? "" : "s"}
+                </>
+              )}
+            </span>
+            {codeCount > 0 ? (
+              <span className="inline-flex items-center gap-2 rounded-md border border-accent/25 bg-accent/10 px-3 py-1.5 text-xs font-medium text-slate-700">
+                <strong className="font-semibold text-slate-900">{codeCount}</strong> code{codeCount === 1 ? "" : "s"}{" "}
+                ready to import
+              </span>
+            ) : null}
+          </span>
+        }
       />
+
       {error ? (
         <AdminFeedbackBanner variant="error" message={error} onDismiss={() => setError(null)} />
       ) : null}
-      <form
-        onSubmit={handleImport}
-        className="admin-panel max-w-2xl space-y-0 overflow-hidden"
-      >
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-head-title">Import batch</h2>
-          <p className="admin-panel-head-desc">
-            Choose plan and type, then paste codes. Duplicates in the database are skipped. For cart physical-card PINs,
-            any <span className="font-mono">physical_sim</span> top-up plan is fine — checkout sets the sold plan; redeem
-            updates each voucher to match the purchase.
-          </p>
-        </div>
-        <div className="divide-y divide-slate-100 px-6 py-5 md:px-8 md:py-6">
-          <div className="pb-5 md:pb-6">
-            <label className="ui-label">Plan</label>
-            <select
-              value={planId}
-              onChange={(e) => setPlanId(e.target.value)}
-              required
-              className="ui-select"
-            >
-              <option value="">Select plan</option>
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.planType}, {p.market})
-                </option>
-              ))}
-            </select>
+      {successMessage ? (
+        <AdminFeedbackBanner
+          variant="success"
+          message={successMessage}
+          onDismiss={() => setSuccessMessage(null)}
+        />
+      ) : null}
+
+      {!plansLoading && plans.length === 0 ? (
+        <AdminFeedbackBanner
+          variant="warning"
+          message={
+            <>
+              No active plans found.{" "}
+              <Link href="/admin/plans" className="font-semibold underline underline-offset-2">
+                Create or restore a plan
+              </Link>{" "}
+              before importing vouchers.
+            </>
+          }
+        />
+      ) : null}
+
+      <form onSubmit={handleImport} className="admin-panel">
+        <div className="space-y-6 p-5 md:p-6">
+          <div className="admin-settings-block">
+            <div className="admin-settings-block-head">
+              <h2 className="admin-settings-block-title">Batch settings</h2>
+              <p className="admin-settings-block-desc">
+                Plan and type for this batch. Cart PINs: any physical_sim top-up plan is fine.
+              </p>
+            </div>
+            <div className="admin-form-grid">
+              <div>
+                <label htmlFor="voucher-plan" className="ui-label !mt-0">
+                  Plan
+                </label>
+                <select
+                  id="voucher-plan"
+                  value={planId}
+                  onChange={(e) => setPlanId(e.target.value)}
+                  required
+                  disabled={plansLoading || plans.length === 0}
+                  className="ui-select !mt-1 rounded-none"
+                >
+                  <option value="">Select plan</option>
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.planType}, {p.market})
+                    </option>
+                  ))}
+                </select>
+                {selectedPlan ? (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    {selectedPlan.planType} · {selectedPlan.market}
+                  </p>
+                ) : null}
+              </div>
+              <div>
+                <label htmlFor="voucher-type" className="ui-label !mt-0">
+                  Voucher type
+                </label>
+                <select
+                  id="voucher-type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as "top_up" | "esim")}
+                  className="ui-select !mt-1 rounded-none"
+                >
+                  <option value="top_up">Top-up (physical SIM)</option>
+                  <option value="esim">eSIM</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div className="py-5 md:py-6">
-            <label className="ui-label">Voucher type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as "top_up" | "esim")}
-              className="ui-select"
-            >
-              <option value="top_up">Top-up (physical SIM)</option>
-              <option value="esim">eSIM</option>
-            </select>
-          </div>
-          <div className="pt-5 md:pt-6">
-            <label className="ui-label">Codes (one per line or comma-separated)</label>
+
+          <div className="admin-settings-block border-t border-slate-200 pt-6">
+            <div className="admin-settings-block-head">
+              <h2 className="admin-settings-block-title">Voucher codes</h2>
+              <p className="admin-settings-block-desc">One code per line, or comma-separated.</p>
+            </div>
             <textarea
+              id="voucher-codes"
               value={codesText}
               onChange={(e) => setCodesText(e.target.value)}
-              rows={10}
-              placeholder="VOUCHER1&#10;VOUCHER2&#10;..."
-              className="ui-textarea min-h-[200px] rounded-none"
+              rows={12}
+              placeholder={"VOUCHER1\nVOUCHER2\nVOUCHER3"}
+              disabled={plans.length === 0}
+              className="ui-input mt-1 min-h-[220px] w-full resize-y rounded-none font-mono text-sm"
             />
           </div>
-        </div>
-        <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50/90 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
-          {result ? (
-            <p className="text-sm text-accent">
-              <span className="font-semibold text-accent-hover">{result.created}</span> created ·{" "}
-              <span className="text-muted">{result.skipped} skipped (duplicates)</span>
+
+          <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-slate-500">
+              Codes are stored inactive until unlocked by a dealer.
+              {codeCount > 0 ? (
+                <>
+                  {" "}
+                  This batch has <strong className="font-semibold text-slate-700">{codeCount}</strong> unique
+                  line{codeCount === 1 ? "" : "s"}.
+                </>
+              ) : null}
             </p>
-          ) : (
-            <p className="text-xs text-muted-dim">Codes are stored inactive until unlocked by a dealer.</p>
-          )}
-          <button type="submit" disabled={loading} className="btn-primary w-full shrink-0 md:w-auto md:min-w-[140px]">
-            {loading ? "Importing…" : "Import codes"}
-          </button>
+            <button
+              type="submit"
+              disabled={loading || plansLoading || plans.length === 0}
+              className="btn-primary h-10 min-w-[140px] shrink-0 rounded-none sm:ml-auto"
+            >
+              {loading ? "Importing…" : "Import codes"}
+            </button>
+          </div>
         </div>
       </form>
     </div>

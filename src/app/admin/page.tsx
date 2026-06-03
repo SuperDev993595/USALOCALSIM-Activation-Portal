@@ -48,12 +48,7 @@ export default async function AdminPage() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Activation" }, { label: "Queue" }]}
         title="Scheduled activations"
-        description={
-          <>
-            Manual fulfillment by your team (no live carrier API). Work in travel-date order; for eSIM vouchers,
-            paste the QR or LPA payload before marking active so the customer email can send.
-          </>
-        }
+        description="Manual fulfillment in travel-date order. Paste eSIM QR/LPA before marking active."
         meta={<QueueCountPill count={pending.length} />}
       />
       <AdminQueue initial={pending} />

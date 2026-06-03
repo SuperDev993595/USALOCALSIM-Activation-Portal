@@ -125,13 +125,7 @@ export function AdminSimCostSettings() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Catalog" }, { label: "Pricing & hardware" }]}
         title="Pricing & hardware"
-        description={
-          <>
-            Partner-SIM checkout subtracts this hardware amount from the plan price. Per-market overrides match plan{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs">market</code> tags; leave a field blank
-            to use the default.
-          </>
-        }
+        description="Partner-SIM hardware deduction in USD cents. Blank market fields use the default."
         meta={
           <span className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700">
             {loaded && defaultCents != null ? (

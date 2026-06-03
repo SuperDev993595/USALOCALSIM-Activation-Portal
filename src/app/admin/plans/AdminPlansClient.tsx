@@ -420,12 +420,7 @@ export function AdminPlansClient() {
       <AdminPageHeader
         breadcrumbs={[{ label: "Catalog" }, { label: "Plans" }]}
         title="Data plans"
-        description={
-          <>
-            Sellable products for redeem and checkout. Prices are stored in USD cents (e.g. 9999 = $99.99). Archive a
-            plan to hide it from the public catalog without deleting history.
-          </>
-        }
+        description="Plans for redeem and checkout. Prices in USD cents; archive to hide from catalog."
         meta={
           <PlanCountPill
             total={plans.length}

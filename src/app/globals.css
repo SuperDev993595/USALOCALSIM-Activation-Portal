@@ -482,6 +482,30 @@
     @apply mt-1 text-xs leading-relaxed text-slate-600;
   }
 
+  .admin-file-picker {
+    @apply flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3;
+  }
+
+  .admin-file-picker-btn {
+    @apply btn-secondary inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-none px-4 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .admin-file-picker-name {
+    @apply min-w-0 truncate text-sm text-slate-600;
+  }
+
+  .admin-option-card {
+    @apply flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-slate-50/60 p-4 transition hover:border-slate-300;
+  }
+
+  .admin-option-card:has(input:checked) {
+    @apply border-amber-300/90 bg-amber-50/90;
+  }
+
+  .admin-option-card input[type="checkbox"] {
+    @apply mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-amber-600 focus:ring-amber-500/30;
+  }
+
   .admin-page-header-actions {
     @apply flex shrink-0 flex-wrap items-center justify-end gap-2.5;
   }

@@ -73,16 +73,9 @@ export default async function AdminCompletedPage({
         breadcrumbs={[{ label: "Activation" }, { label: "Active" }]}
         title="Active activations"
         description={
-          total > 0 ? (
-            <>
-              Completed activations, newest first ({PAGE_SIZE} per page). Showing {start}–{end} of {total}.
-            </>
-          ) : (
-            <>
-              Completed activations appear here after you mark a scheduled request active from the queue. Newest
-              completions are listed first ({PAGE_SIZE} per page).
-            </>
-          )
+          total > 0
+            ? `Newest first · ${PAGE_SIZE} per page · showing ${start}–${end} of ${total}.`
+            : "Shown here after you mark a queue item active."
         }
         meta={<ActiveCountPill count={total} />}
       />
