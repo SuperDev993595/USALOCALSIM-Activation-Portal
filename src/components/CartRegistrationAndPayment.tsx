@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { CartPhase1StepNav, cartPhase1BackButtonClass } from "@/components/CartPhase1StepNav";
-import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
+import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
+import { CART_FLOW_CLASS, CART_INPUT_CLASS, CART_PANEL_CLASS, CART_PRIMARY_BUTTON_CLASS } from "@/lib/cart-panel";
 import { isCartMercadoPagoUiEnabled } from "@/lib/mercadopago-config";
 
 export type CartPlanRow = {
@@ -135,19 +135,17 @@ export function CartRegistrationAndPayment({
   }
 
   return (
-    <div className="mx-auto w-full max-w-lg">
+    <div className={CART_FLOW_CLASS}>
       <CartPhase1StepNav currentStep={2} />
-      <div className="mb-3 flex items-start gap-3">
-        <Link href="/cart" className={cartPhase1BackButtonClass} aria-label={t("backCartAria")}>
-          <BackChevronIcon />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-slate-900">{t("plansTitlePrepaidPhase1")}</h1>
-          <p className="mt-1.5 text-sm text-slate-600">{t("plansSubtitlePrepaidPhase1")}</p>
-        </div>
-      </div>
 
-      <div className="ui-card mt-3 space-y-6 p-5">
+      <div className={CART_PANEL_CLASS}>
+        <header className="cart-flow-header">
+          <p className="cart-flow-eyebrow">{t("phase1NavStep2")}</p>
+          <h1 className="cart-flow-title">{t("plansTitlePrepaidPhase1")}</h1>
+          <p className="cart-flow-subtitle">{t("plansSubtitlePrepaidPhase1")}</p>
+        </header>
+
+        <div className="cart-flow-body space-y-6">
         <div className="space-y-2.5">
           <label className="block text-sm font-medium text-slate-800" htmlFor="cart-name">
             {t("customerNameLabel")}
@@ -158,7 +156,7 @@ export function CartRegistrationAndPayment({
             autoComplete="name"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="ui-input !mt-0 w-full rounded-none text-sm"
+            className={CART_INPUT_CLASS}
           />
         </div>
         <div className="space-y-2.5">
@@ -171,7 +169,7 @@ export function CartRegistrationAndPayment({
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="ui-input !mt-0 w-full rounded-none text-sm"
+            className={CART_INPUT_CLASS}
           />
         </div>
         {selectedPlan ? (
@@ -192,7 +190,7 @@ export function CartRegistrationAndPayment({
                   value={payDollars}
                   onChange={(e) => setPayDollars(e.target.value)}
                   readOnly={lockPayAmountCents != null && lockPayAmountCents > 0}
-                  className="ui-input !mt-0 w-full rounded-none py-2 pl-7 pr-3 text-sm read-only:bg-slate-100 read-only:text-slate-700"
+                  className={`${CART_INPUT_CLASS} py-2 pl-7 pr-3 read-only:bg-slate-100 read-only:text-slate-700`}
                   placeholder={DEFAULT_BUNDLED_PACK_PAY_DOLLARS}
                   aria-describedby="cart-pay-hint"
                 />
@@ -205,11 +203,11 @@ export function CartRegistrationAndPayment({
             </div>
           </div>
         ) : null}
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
         <div className={mercadoPagoEnabled ? "flex flex-col gap-3" : undefined}>
           <button
             type="button"
-            className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
+            className={CART_PRIMARY_BUTTON_CLASS}
             disabled={loading !== null || !customerName.trim() || !email.trim() || !planId || !payAmountValid}
             onClick={() => void checkoutStripe()}
           >
@@ -226,6 +224,13 @@ export function CartRegistrationAndPayment({
             </button>
           ) : null}
         </div>
+        </div>
+
+        <footer className="cart-flow-footer">
+          <Link href="/cart" className="cart-flow-footer-link">
+            {t("backCart")}
+          </Link>
+        </footer>
       </div>
     </div>
   );

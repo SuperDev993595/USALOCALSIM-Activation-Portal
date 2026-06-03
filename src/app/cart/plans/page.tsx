@@ -49,7 +49,7 @@ export default async function CartPlansPage() {
     prepaid.faceValueCents > 0 ? prepaid.faceValueCents : prepaid.basePlan.priceCents;
 
   return (
-    <div className="flex flex-1 justify-center pb-6 pt-1 sm:pb-8 sm:pt-2">
+    <div className="cart-flow-page">
       <CartRegistrationAndPayment
         plans={plans}
         defaultPayCents={defaultPayCents}

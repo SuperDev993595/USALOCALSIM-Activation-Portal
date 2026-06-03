@@ -18,7 +18,7 @@ export default function CartPage({
   const needSerial = firstParam(searchParams.needSerial);
   const needVoucherCredit = firstParam(searchParams.needVoucherCredit);
   return (
-    <div className="flex flex-1 items-start justify-center pt-4 sm:pt-8">
+    <div className="cart-flow-page">
       <CartPhoneVerifyClient
         resumeQuery={firstParam(searchParams.resume)}
         /** Phase 1: link browser to card from QR serial — SMS OTP only in Phase 2 (/redeem after scratch PIN). */

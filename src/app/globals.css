@@ -330,6 +330,98 @@
     @apply shadow-[0_12px_32px_-14px_rgba(0,16,78,0.18)];
   }
 
+  .public-site--cart .cart-flow-page {
+    @apply flex w-full flex-1 flex-col items-center justify-center py-2 sm:py-4;
+  }
+
+  .public-site--cart .cart-flow-panel {
+    @apply rounded-xl border border-slate-200/90 bg-white p-6 shadow-[0_16px_40px_-18px_rgba(0,16,78,0.2)] sm:p-8;
+  }
+
+  .public-site--cart .cart-flow-header {
+    @apply border-b border-slate-100 pb-5 text-center sm:pb-6 sm:text-left;
+  }
+
+  .public-site--cart .cart-flow-eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-[#00104E]/75;
+  }
+
+  .public-site--cart .cart-flow-title {
+    @apply mt-1.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl;
+  }
+
+  .public-site--cart .cart-flow-subtitle {
+    @apply mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 sm:mx-0;
+  }
+
+  .public-site--cart .cart-flow-body {
+    @apply pt-6;
+  }
+
+  .public-site--cart .cart-flow-serial-panel {
+    @apply space-y-4 rounded-lg border border-slate-200 bg-gradient-to-b from-slate-50/90 to-white p-4 sm:p-5;
+  }
+
+  .public-site--cart .cart-flow-serial-icon {
+    @apply mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#00104E]/10 text-[#00104E] sm:mx-0;
+  }
+
+  .public-site--cart .cart-flow-footer {
+    @apply mt-6 border-t border-slate-100 pt-5 text-center;
+  }
+
+  .public-site--cart .cart-flow-footer-link {
+    @apply text-sm font-medium text-slate-600 no-underline transition hover:text-[#00104E];
+  }
+
+  .public-site--cart .cart-flow-notice {
+    @apply flex flex-col gap-3 rounded-lg border px-3.5 py-3 text-sm leading-relaxed sm:px-4;
+  }
+
+  .public-site--cart .cart-flow-notice--info {
+    @apply border-sky-200/90 bg-sky-50/90 text-sky-950;
+  }
+
+  .public-site--cart .cart-flow-notice--success {
+    @apply border-emerald-200/90 bg-emerald-50/90 text-emerald-950;
+  }
+
+  .public-site--cart .cart-flow-notice--warning {
+    @apply border-amber-200/90 bg-amber-50/95 text-amber-950;
+  }
+
+  .public-site--cart .cart-flow-notice--error {
+    @apply border-red-200/90 bg-red-50/95 text-red-800;
+  }
+
+  .public-site--cart .cart-flow-loading {
+    @apply flex items-center justify-center gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-6 text-sm text-slate-600;
+  }
+
+  .public-site--cart .cart-flow-spinner {
+    @apply h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-[#00104E];
+  }
+
+  .public-site--cart .cart-phase1-nav {
+    @apply mb-6 rounded-xl border border-slate-200/80 bg-white/90 p-3 shadow-[0_8px_24px_-16px_rgba(0,16,78,0.15)] backdrop-blur-sm sm:p-4;
+  }
+
+  .public-site--cart .cart-phase1-nav-progress {
+    @apply mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+
+  .public-site--cart .cart-phase1-nav-label {
+    @apply max-w-[4.25rem] truncate px-0.5 text-center text-[9px] font-medium leading-tight text-slate-500 sm:max-w-[5rem] sm:text-[10px];
+  }
+
+  .public-site--cart .cart-phase1-nav-label--current {
+    @apply font-bold text-slate-900;
+  }
+
+  .public-site--cart .cart-phase1-nav-label--past {
+    @apply text-emerald-800/90;
+  }
+
   /* Dealer portal shell — keeps public-site map/gradient background */
   .dealer-shell.public-site {
     @apply flex h-screen flex-col overflow-hidden;

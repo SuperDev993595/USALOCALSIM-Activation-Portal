@@ -317,6 +317,9 @@
   "cart": {
     "title": "Card checkout · link your card",
     "subtitle": "SMS verification happens later when someone redeems with the scratch PIN. Here you only link this browser to your physical card (from the QR), then register and pay to load credit.",
+    "linkCardTitle": "Link your physical card",
+    "linkCardSubtitle": "Open the QR on your card or enter the serial below. Next you’ll register and pay; phone verification happens at redemption with your scratch PIN.",
+    "phase1SerialHeading": "Card serial from QR or packaging",
     "phase1SerialInstructions": "If you did not open this page from the QR, paste the serial code from the card or packaging (same value encoded in the QR).",
     "phase1SerialLabel": "Card serial / QR code value",
     "phase1SerialPlaceholder": "e.g. ABC123…",

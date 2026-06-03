@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import type { useTranslations } from "next-intl";
+import { useActiveStepPulse } from "@/lib/step-nav-pulse";
 
 const BADGE_SLOT = "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center md:h-11 md:w-11";
 const BADGE_ROW = "flex h-10 w-full items-center md:h-11";
@@ -12,17 +13,6 @@ function segmentStateBetween(_fromStep: number, toStep: number, currentStep: num
   if (toStep < currentStep) return "completed";
   if (toStep === currentStep) return "current";
   return "upcoming";
-}
-
-/** JS-driven pulse — works when OS “reduced motion” disables CSS @keyframes. */
-function useActiveStepPulse(enabled: boolean) {
-  const [pulseOn, setPulseOn] = useState(true);
-  useEffect(() => {
-    if (!enabled) return;
-    const id = window.setInterval(() => setPulseOn((v) => !v), 800);
-    return () => window.clearInterval(id);
-  }, [enabled]);
-  return pulseOn;
 }
 
 function StepSegment({

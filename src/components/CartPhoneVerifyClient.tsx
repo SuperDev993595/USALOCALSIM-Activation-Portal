@@ -4,8 +4,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CartPhase1StepNav, cartPhase1BackButtonClass } from "@/components/CartPhase1StepNav";
-import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
+import { CartNotice } from "@/components/CartNotice";
+import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
+import { CART_FLOW_CLASS, CART_INPUT_CLASS, CART_PANEL_CLASS, CART_PRIMARY_BUTTON_CLASS } from "@/lib/cart-panel";
+
+function SerialQrIcon() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path strokeLinecap="round" d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3" />
+      <rect x="7" y="7" width="4" height="4" rx="0.5" />
+      <rect x="13" y="7" width="4" height="4" rx="0.5" />
+      <rect x="7" y="13" width="4" height="4" rx="0.5" />
+      <rect x="13" y="13" width="4" height="4" rx="0.5" />
+    </svg>
+  );
+}
 
 export function CartPhoneVerifyClient({
   resumeQuery,
@@ -14,11 +27,8 @@ export function CartPhoneVerifyClient({
   needVoucherCreditBanner,
 }: {
   resumeQuery: string | null;
-  /** From physical card QR (`/cart?serial=` or `/pay?serial=`). */
   prepaidSerialFromQr?: string | null;
-  /** Opened /cart after hitting payment step without a linked card (e.g. /cart/plans redirect). */
   needSerialBanner?: boolean;
-  /** Voucher has no `credit_amount` — Phase 1 does not use plan list price. */
   needVoucherCreditBanner?: boolean;
 }) {
   const t = useTranslations("cart");
@@ -89,88 +99,116 @@ export function CartPhoneVerifyClient({
   }
 
   const showManualSerialForm = !prepaidSerialFromQr?.trim() || needSerialBanner;
+  const autoLinking =
+    Boolean(prepaidSerialFromQr?.trim()) &&
+    !needSerialBanner &&
+    !needVoucherCreditBanner &&
+    loading &&
+    !redirectingToRedeem;
 
   return (
-    <div className="ui-card mx-auto w-full max-w-md p-6 sm:p-8">
+    <div className={CART_FLOW_CLASS}>
       <CartPhase1StepNav currentStep={1} />
-      <div className="flex items-start gap-3">
-        <Link href="/redeem" className={cartPhase1BackButtonClass} aria-label={t("backRedeemAria")}>
-          <BackChevronIcon />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-slate-900">{t("title")}</h1>
-          <p className="mt-2 text-sm text-slate-600">{t("subtitle")}</p>
-        </div>
-      </div>
-      {resumeBanner ? (
-        <div className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
-          <p>{resumeBanner}</p>
-          {resumeQuery === "pending" ? (
-            <Link href="/redeem/enter" className="btn-primary mt-3 inline-block w-full py-2 text-center text-sm font-semibold">
-              {t("resumeRedeemCta")}
-            </Link>
+
+      <div className={CART_PANEL_CLASS}>
+        <header className="cart-flow-header">
+          <p className="cart-flow-eyebrow">{t("phase1NavStep1")}</p>
+          <h1 className="cart-flow-title">{t("linkCardTitle")}</h1>
+          <p className="cart-flow-subtitle">{t("linkCardSubtitle")}</p>
+        </header>
+
+        <div className="cart-flow-body space-y-4">
+          {resumeBanner ? (
+            <CartNotice
+              variant={resumeQuery === "pending" ? "info" : "warning"}
+              action={
+                resumeQuery === "pending" ? (
+                  <Link href="/redeem/enter" className={`${CART_PRIMARY_BUTTON_CLASS} !min-h-10 text-center`}>
+                    {t("resumeRedeemCta")}
+                  </Link>
+                ) : undefined
+              }
+            >
+              {resumeBanner}
+            </CartNotice>
           ) : null}
-        </div>
-      ) : null}
-      {needVoucherCreditBanner ? (
-        <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
-          {t("needVoucherCreditBanner")}
-        </p>
-      ) : needSerialBanner ? (
-        <p className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950" role="alert">
-          {t("needSerialBanner")}
-        </p>
-      ) : null}
-      {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() && redirectingToRedeem ? (
-        <p className="mt-4 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-950">
-          {t("alreadyPaidSerialBanner")}
-        </p>
-      ) : null}
-      {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() && !redirectingToRedeem ? (
-        <p className="mt-4 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
-          {t("serialQrBanner")}
-        </p>
-      ) : null}
 
-      {showManualSerialForm && !needVoucherCreditBanner ? (
-        <div className="mt-6 space-y-4">
-          <p className="text-sm text-slate-600">{t("phase1SerialInstructions")}</p>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-800" htmlFor="cart-serial">
-              {t("phase1SerialLabel")}
-            </label>
-            <input
-              id="cart-serial"
-              autoComplete="off"
-              value={manualSerial}
-              onChange={(e) => setManualSerial(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
-                e.preventDefault();
-                if (loading || !manualSerial.trim()) return;
-                void submitManualSerial();
-              }}
-              className="ui-input !mt-0 w-full rounded-none text-sm uppercase"
-              placeholder={t("phase1SerialPlaceholder")}
-            />
-          </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <button
-            type="button"
-            className="btn-primary w-full py-2.5 text-sm font-semibold disabled:opacity-60"
-            disabled={loading || !manualSerial.trim()}
-            onClick={() => void submitManualSerial()}
-          >
-            {loading ? t("phase1Linking") : t("phase1Continue")}
-          </button>
-        </div>
-      ) : (
-        !showManualSerialForm && error ? <p className="mt-6 text-sm text-red-600">{error}</p> : null
-      )}
+          {needVoucherCreditBanner ? (
+            <CartNotice variant="warning">{t("needVoucherCreditBanner")}</CartNotice>
+          ) : needSerialBanner ? (
+            <CartNotice variant="warning">{t("needSerialBanner")}</CartNotice>
+          ) : null}
 
-      {prepaidSerialFromQr?.trim() && !needSerialBanner && !needVoucherCreditBanner && loading ? (
-        <p className="mt-4 text-sm text-slate-600">{t("phase1Linking")}</p>
-      ) : null}
+          {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() && redirectingToRedeem ? (
+            <CartNotice variant="info">{t("alreadyPaidSerialBanner")}</CartNotice>
+          ) : null}
+
+          {!needSerialBanner && !needVoucherCreditBanner && prepaidSerialFromQr?.trim() && !redirectingToRedeem && !loading ? (
+            <CartNotice variant="success">{t("serialQrBanner")}</CartNotice>
+          ) : null}
+
+          {autoLinking ? (
+            <div className="cart-flow-loading" role="status" aria-live="polite">
+              <span className="cart-flow-spinner" aria-hidden />
+              {t("phase1Linking")}
+            </div>
+          ) : null}
+
+          {showManualSerialForm && !needVoucherCreditBanner ? (
+            <section className="cart-flow-serial-panel" aria-labelledby="cart-serial-heading">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="cart-flow-serial-icon">
+                  <SerialQrIcon />
+                </div>
+                <div className="min-w-0 flex-1 space-y-4 text-center sm:text-left">
+                  <div>
+                    <h2 id="cart-serial-heading" className="text-sm font-semibold text-slate-900">
+                      {t("phase1SerialHeading")}
+                    </h2>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{t("phase1SerialInstructions")}</p>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-left text-sm font-medium text-slate-800" htmlFor="cart-serial">
+                      {t("phase1SerialLabel")}
+                    </label>
+                    <input
+                      id="cart-serial"
+                      autoComplete="off"
+                      value={manualSerial}
+                      onChange={(e) => setManualSerial(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        if (loading || !manualSerial.trim()) return;
+                        void submitManualSerial();
+                      }}
+                      className={CART_INPUT_CLASS}
+                      placeholder={t("phase1SerialPlaceholder")}
+                    />
+                  </div>
+                  {error ? <CartNotice variant="error">{error}</CartNotice> : null}
+                  <button
+                    type="button"
+                    className={CART_PRIMARY_BUTTON_CLASS}
+                    disabled={loading || !manualSerial.trim()}
+                    onClick={() => void submitManualSerial()}
+                  >
+                    {loading ? t("phase1Linking") : t("phase1Continue")}
+                  </button>
+                </div>
+              </div>
+            </section>
+          ) : (
+            !showManualSerialForm && error ? <CartNotice variant="error">{error}</CartNotice> : null
+          )}
+        </div>
+
+        <footer className="cart-flow-footer">
+          <Link href="/redeem/enter" className="cart-flow-footer-link">
+            {t("backRedeem")}
+          </Link>
+        </footer>
+      </div>
     </div>
   );
 }
