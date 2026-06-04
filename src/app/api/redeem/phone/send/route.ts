@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Enter a valid phone number (international with country code, e.g. +63… or 63…; US/Canada can use 10 digits).",
+          "Enter a valid phone number (international with country code, e.g. +1… or 1…; US/Canada can use 10 digits).",
       },
       { status: 400 },
     );
