@@ -1287,3 +1287,81 @@
     transform: none;
   }
 }
+
+/* Redeem network picker — brand shimmer on hover (transform-based for reliability) */
+@keyframes network-picker-shimmer-slide {
+  0% {
+    transform: translateX(-140%) skewX(-14deg);
+  }
+  100% {
+    transform: translateX(340%) skewX(-14deg);
+  }
+}
+
+.network-picker-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.network-picker-card__shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.network-picker-card__shimmer-wash {
+  position: absolute;
+  inset: 0;
+  opacity: 0.85;
+}
+
+.network-picker-card__shimmer-bar {
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  left: 0;
+  width: 72%;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.45));
+  will-change: transform;
+  transform: translateX(-140%) skewX(-14deg);
+}
+
+.network-picker-card:hover .network-picker-card__shimmer,
+.network-picker-card:focus-visible .network-picker-card__shimmer {
+  opacity: 1;
+}
+
+.network-picker-card:hover .network-picker-card__shimmer-bar,
+.network-picker-card:focus-visible .network-picker-card__shimmer-bar {
+  animation: network-picker-shimmer-slide 1.35s linear infinite;
+}
+
+.network-picker-card__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dark redeem panel: keep cards light; shimmer reads on slate card surface */
+@media (prefers-color-scheme: dark) {
+  .network-picker-card {
+    background-color: rgba(241, 245, 249, 0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-picker-card:hover .network-picker-card__shimmer-bar,
+  .network-picker-card:focus-visible .network-picker-card__shimmer-bar {
+    animation: none;
+    transform: translateX(40%) skewX(-12deg);
+  }
+}
