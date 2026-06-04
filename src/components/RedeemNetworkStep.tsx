@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { NETWORK_DISPLAY, type GlobalNetworkSlug } from "@/lib/network-catalog";
-import { networkBrandCardStyle } from "@/lib/network-brand";
+import { NetworkMark } from "@/components/NetworkMark";
+import { NETWORK_BRAND, isGlobalNetworkSlug } from "@/lib/network-brand";
 
 type NetworkRow = { slug: string; name: string };
 
@@ -100,7 +101,7 @@ export function RedeemNetworkStep({
         <p className="mt-4 rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
       ) : null}
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-2 gap-2.5">
         {loading === "load" ? (
           <p className="col-span-full text-sm text-slate-400">{t("loadingNetworks")}</p>
         ) : networks.length === 0 ? (
@@ -114,17 +115,37 @@ export function RedeemNetworkStep({
               NETWORK_DISPLAY[n.slug as GlobalNetworkSlug] ||
               n.slug.toUpperCase();
             const isSelected = selected === n.slug;
-            const brand = networkBrandCardStyle(n.slug, isSelected);
+            const brandHex = isGlobalNetworkSlug(n.slug) ? NETWORK_BRAND[n.slug].hex : "#64748b";
             return (
               <button
                 key={n.slug}
                 type="button"
-                className={`min-h-[4.5rem] rounded-lg border px-4 py-3.5 text-left text-sm font-semibold leading-snug transition ${brand.className}`}
-                style={brand.style}
+                aria-label={label}
+                aria-pressed={isSelected}
+                className={`relative flex h-[5rem] items-center justify-center rounded-lg border bg-slate-100/95 px-2.5 py-2 shadow-sm transition duration-150 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 ${
+                  isSelected ? "border-2" : "border border-white/20 hover:border-white/35"
+                }`}
+                style={
+                  isSelected
+                    ? {
+                        borderColor: brandHex,
+                        boxShadow: `0 0 0 1px ${brandHex}66`,
+                      }
+                    : undefined
+                }
                 disabled={loading === "save"}
                 onClick={() => setSelected(n.slug)}
               >
-                {label}
+                <NetworkMark slug={n.slug} />
+                {isSelected ? (
+                  <span
+                    className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[0.6rem] font-bold text-white shadow"
+                    style={{ backgroundColor: brandHex }}
+                    aria-hidden
+                  >
+                    ✓
+                  </span>
+                ) : null}
               </button>
             );
           })
