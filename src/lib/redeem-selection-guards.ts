@@ -1,6 +1,6 @@
 import { redeemUsesTierStep } from "@/lib/redeem-config";
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
-import { planMarketForTier } from "@/lib/tier-plan-seed";
+import { planMarketsForRedeem, planMatchesRedeemMarkets } from "@/lib/redeem-plan-markets";
 import { networkRequiredForVoucher, resolveNetworkForRedeem } from "@/lib/redeem-network";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
 import { isThreeUkExclusiveVoucher } from "@/lib/three-uk-redeem";
@@ -27,7 +27,9 @@ export type RedeemWizardSelections = {
   network: { slug: string; id: string } | null;
   ultraEsimOnly: boolean;
   threeUkExclusive: boolean;
+  /** Primary market (first allowed); kept for logging and legacy callers. */
   planMarket: string;
+  planMarkets: string[];
 };
 
 export async function validateRedeemWizardSelections(
@@ -61,12 +63,16 @@ export async function validateRedeemWizardSelections(
   }
 
   const cardMarket = purchase.prepaidCard?.retailMarket ?? "us";
-  const planMarket = threeUkExclusive
-    ? "uk"
-    : planMarketForTier(isCoverageTier(tier) ? tier : "", cardMarket);
+  const planMarkets = planMarketsForRedeem({
+    tier,
+    networkSlug: network?.slug ?? purchase.redemptionNetworkSlug,
+    cardMarket,
+    threeUkExclusive,
+  });
+  const planMarket = planMarkets[0] ?? "us";
   const ultraEsimOnly = isCoverageTier(tier) && tierRequiresEsimOnly(tier);
 
-  return { ok: true, tier, network, ultraEsimOnly, threeUkExclusive, planMarket };
+  return { ok: true, tier, network, ultraEsimOnly, threeUkExclusive, planMarket, planMarkets };
 }
 
 export function validateRedeemPlanForSelections(input: {
@@ -81,7 +87,7 @@ export function validateRedeemPlanForSelections(input: {
   fulfillmentType?: string | null;
 }): RedeemSelectionError | null {
   const { plan, selections, fulfillmentType } = input;
-  const { tier, network, ultraEsimOnly, threeUkExclusive, planMarket } = selections;
+  const { tier, network, ultraEsimOnly, threeUkExclusive, planMarkets } = selections;
 
   if (threeUkExclusive) {
     if (plan.market !== "uk" || plan.network?.slug !== "three_uk") {
@@ -90,7 +96,7 @@ export function validateRedeemPlanForSelections(input: {
     return null;
   }
 
-  if (plan.market !== planMarket) {
+  if (!planMatchesRedeemMarkets(plan.market, planMarkets)) {
     return { error: "This plan is not available for your coverage selection.", status: 400 };
   }
 

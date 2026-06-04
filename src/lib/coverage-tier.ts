@@ -17,7 +17,7 @@ export function isCoverageTier(value: string): value is CoverageTier {
   return (COVERAGE_TIER_ORDER as string[]).includes(value);
 }
 
-/** Networks offered in the picker for each tier (until full PRO/ULTRA catalogs exist). */
+/** Networks offered in the picker when REDEEM_USE_TIER_STEP=true (card-design flow). Briefing flow shows all four carriers. */
 export const NETWORK_SLUGS_BY_TIER: Record<CoverageTier, readonly string[]> = {
   [COVERAGE_TIER.BASIC]: ["t_mobile", "linkup_att"],
   [COVERAGE_TIER.PRO]: ["three_uk", "orange"],

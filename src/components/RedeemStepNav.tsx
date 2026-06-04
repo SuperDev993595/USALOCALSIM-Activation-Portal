@@ -119,19 +119,23 @@ export function RedeemStepNav({
   totalSteps,
   steps,
   t,
+  flowVariant = "standard",
 }: {
   currentStep: number;
   totalSteps: number;
   steps: { key: string; step: number }[];
   t: ReturnType<typeof useTranslations<"redeemWizard">>;
+  /** Briefing flow: SMS → network → plans (feedback 2026-05-28). */
+  flowVariant?: "standard" | "briefing";
 }) {
+  const bannerKey = flowVariant === "briefing" ? "briefingBanner" : "phase2Banner";
   const hasActiveStep = steps.some((s) => s.step === currentStep);
   const pulseOn = useActiveStepPulse(hasActiveStep);
 
   return (
     <nav aria-label={t("navAria")} className="mb-6 border-b border-white/10 pb-5">
       <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-        {t("phase2Banner")}
+        {t(bannerKey)}
       </p>
       <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
         {t("stepProgress", { current: currentStep, total: totalSteps })}

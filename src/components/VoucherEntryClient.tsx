@@ -58,6 +58,9 @@ export function VoucherEntryClient() {
         <p className="text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
           {t("eyebrow")}
         </p>
+        <p className="mt-1 text-center text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          {t("stepProgress")}
+        </p>
         <h1 className="mt-2 text-center text-2xl font-bold text-white">{t("title")}</h1>
         <p className="mt-3 text-center text-sm leading-relaxed text-slate-300">{t("body")}</p>
 

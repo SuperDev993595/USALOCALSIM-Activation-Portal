@@ -50,6 +50,15 @@ function initialWizardStep(
 }
 
 function navSteps(stepMap: ReturnType<typeof buildRedeemWizardStepMap>): { key: string; step: number }[] {
+  if (stepMap.showNetwork && !stepMap.showTier) {
+    return [
+      { key: "navBriefingVerify", step: stepMap.phone },
+      { key: "navBriefingNetwork", step: stepMap.network },
+      { key: "navBriefingSim", step: stepMap.fulfillment },
+      { key: "navBriefingPlan", step: stepMap.plans },
+      { key: "navBriefingActivate", step: stepMap.date },
+    ];
+  }
   const items: { key: string; step: number }[] = [];
   if (!stepMap.skipPin) items.push({ key: "navStep1", step: stepMap.pin });
   items.push({ key: "navStep2", step: stepMap.phone });
@@ -439,6 +448,7 @@ export function RedeepPhase2Client({
           currentStep={wizardStep}
           totalSteps={stepMap.total}
           steps={navStepsList}
+          flowVariant={showNetworkStep && !showTierStep ? "briefing" : "standard"}
           t={t}
         />
         <PaymentMethodsNote className="mb-4" />

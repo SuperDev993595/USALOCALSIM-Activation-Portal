@@ -82,7 +82,11 @@ export async function POST(req: Request) {
       { status: wizardSel.status },
     );
   }
-  const { tier, network, ultraEsimOnly, threeUkExclusive, planMarket } = wizardSel;
+  const { tier, network, ultraEsimOnly, threeUkExclusive, planMarkets } = wizardSel;
+  const marketWhere =
+    planMarkets.length === 1
+      ? { market: planMarkets[0]! }
+      : { market: { in: planMarkets } };
   const fulfillment = body.fulfillmentType;
   const planTypeWhere = ultraEsimOnly
     ? { planType: "esim" as const }
@@ -106,7 +110,7 @@ export async function POST(req: Request) {
       ...(threeUkExclusive && network
         ? threeUkExclusivePlanWhere(network.id)
         : {
-            market: planMarket,
+            ...marketWhere,
             ...(network ? planFilterForNetwork(network.id) : {}),
             ...(isCoverageTier(tier) ? { coverageTier: tier } : {}),
           }),

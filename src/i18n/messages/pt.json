@@ -442,6 +442,12 @@
   },
   "redeemWizard": {
     "phase2Banner": "Phase 2 · Voucher redeem",
+    "briefingBanner": "Ativar o seu voucher",
+    "navBriefingVerify": "Verificar",
+    "navBriefingNetwork": "Rede",
+    "navBriefingSim": "SIM",
+    "navBriefingPlan": "Plano",
+    "navBriefingActivate": "Ativar",
     "navAria": "Redemption progress",
     "navStep1": "PIN",
     "navStep2": "Phone",

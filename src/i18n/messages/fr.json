@@ -448,6 +448,12 @@
   },
   "redeemWizard": {
     "phase2Banner": "Phase 2 · Échange du bon",
+    "briefingBanner": "Activer votre bon",
+    "navBriefingVerify": "Vérifier",
+    "navBriefingNetwork": "Réseau",
+    "navBriefingSim": "SIM",
+    "navBriefingPlan": "Forfait",
+    "navBriefingActivate": "Activer",
     "navAria": "Redemption progress",
     "navStep1": "PIN",
     "navStep2": "Phone",

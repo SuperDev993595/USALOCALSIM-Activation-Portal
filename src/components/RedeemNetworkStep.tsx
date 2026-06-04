@@ -100,9 +100,13 @@ export function RedeemNetworkStep({
         <p className="mt-4 rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
       ) : null}
 
-      <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+      <div className="mt-5 grid grid-cols-2 gap-3">
         {loading === "load" ? (
           <p className="col-span-full text-sm text-slate-400">{t("loadingNetworks")}</p>
+        ) : networks.length === 0 ? (
+          <p className="col-span-full rounded border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
+            {t("networksUnavailable")}
+          </p>
         ) : (
           networks.map((n) => {
             const label =
@@ -115,7 +119,7 @@ export function RedeemNetworkStep({
               <button
                 key={n.slug}
                 type="button"
-                className={`rounded-lg border px-4 py-3 text-left text-sm font-semibold transition ${brand.className}`}
+                className={`min-h-[4.5rem] rounded-lg border px-4 py-3.5 text-left text-sm font-semibold leading-snug transition ${brand.className}`}
                 style={brand.style}
                 disabled={loading === "save"}
                 onClick={() => setSelected(n.slug)}

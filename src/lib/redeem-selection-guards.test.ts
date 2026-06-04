@@ -27,6 +27,7 @@ function selections(overrides: Partial<RedeemWizardSelections> = {}): RedeemWiza
     ultraEsimOnly: false,
     threeUkExclusive: false,
     planMarket: "us",
+    planMarkets: ["us"],
     ...overrides,
   };
 }
@@ -42,6 +43,7 @@ describe("validateRedeemWizardSelections", () => {
   });
 
   it("requires tier when tier step enabled", async () => {
+    process.env.REDEEM_USE_TIER_STEP = "true";
     const result = await validateRedeemWizardSelections(
       { redemptionCoverageTier: null, redemptionNetworkSlug: "t_mobile", prepaidCard: { retailMarket: "us" } },
       globalVoucher,
@@ -52,8 +54,7 @@ describe("validateRedeemWizardSelections", () => {
     }
   });
 
-  it("skips tier requirement when REDEEM_USE_TIER_STEP=false", async () => {
-    process.env.REDEEM_USE_TIER_STEP = "false";
+  it("skips tier requirement in default briefing flow", async () => {
     const result = await validateRedeemWizardSelections(
       { redemptionCoverageTier: null, redemptionNetworkSlug: "t_mobile", prepaidCard: { retailMarket: "us" } },
       globalVoucher,
@@ -61,11 +62,24 @@ describe("validateRedeemWizardSelections", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.tier).toBe("");
-      expect(result.planMarket).toBe("us");
+      expect(result.planMarkets).toEqual(["us"]);
+    }
+  });
+
+  it("uses global markets for three_uk in briefing flow", async () => {
+    resolveNetwork.mockResolvedValue({ slug: "three_uk", id: "net-3uk" });
+    const result = await validateRedeemWizardSelections(
+      { redemptionCoverageTier: null, redemptionNetworkSlug: "three_uk", prepaidCard: { retailMarket: "us" } },
+      globalVoucher,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.planMarkets).toEqual(["global", "uk"]);
     }
   });
 
   it("requires network for global voucher", async () => {
+    process.env.REDEEM_USE_TIER_STEP = "true";
     resolveNetwork.mockResolvedValue(null);
     const result = await validateRedeemWizardSelections(
       {
@@ -82,6 +96,7 @@ describe("validateRedeemWizardSelections", () => {
   });
 
   it("sets ultraEsimOnly for ultra tier", async () => {
+    process.env.REDEEM_USE_TIER_STEP = "true";
     const result = await validateRedeemWizardSelections(
       {
         redemptionCoverageTier: "ultra",
@@ -118,6 +133,7 @@ describe("validateRedeemPlanForSelections", () => {
   });
 
   it("rejects tier mismatch", () => {
+    process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "us",
@@ -132,6 +148,7 @@ describe("validateRedeemPlanForSelections", () => {
   });
 
   it("rejects physical plan for ultra", () => {
+    process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "global",
@@ -144,12 +161,14 @@ describe("validateRedeemPlanForSelections", () => {
         tier: "ultra",
         ultraEsimOnly: true,
         planMarket: "global",
+        planMarkets: ["global"],
       }),
     });
     expect(err?.code).toBe("ULTRA_ESIM_ONLY");
   });
 
   it("rejects non-esim fulfillment for ultra", () => {
+    process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "global",
@@ -162,6 +181,7 @@ describe("validateRedeemPlanForSelections", () => {
         tier: "ultra",
         ultraEsimOnly: true,
         planMarket: "global",
+        planMarkets: ["global"],
       }),
       fulfillmentType: REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
     });

@@ -3,6 +3,7 @@ import { BASIC_TIER_NETWORKS, BASIC_TIER_PLANS } from "../src/lib/basic-tier-cat
 import { PRO_TIER_MOCK_PLANS } from "../src/lib/pro-tier-catalog-mock";
 import { parseSkuFromPlanName } from "../src/lib/plan-sku";
 import { tierPlanSeedRow, type TierPlanSeed } from "../src/lib/tier-plan-seed";
+import { GLOBAL_BRIEFING_PLANS } from "../src/lib/global-briefing-catalog";
 import { THREE_UK_EXCLUSIVE_MOCK_PLANS } from "../src/lib/three-uk-exclusive-catalog";
 import { ULTRA_TIER_MOCK_PLANS } from "../src/lib/ultra-tier-catalog-mock";
 
@@ -106,6 +107,11 @@ export async function seedTierCatalogs(prisma: PrismaClient): Promise<void> {
   const basic = await seedPlanRows(prisma, basicPlans, networkIdBySlug);
   console.log(
     `Seeded BASIC tier: ${basic.created} created, ${basic.updated} updated (${BASIC_TIER_PLANS.length} SKUs).`,
+  );
+
+  const briefing = await seedPlanRows(prisma, GLOBAL_BRIEFING_PLANS, networkIdBySlug);
+  console.log(
+    `Seeded global briefing ($35 match): ${briefing.created} created, ${briefing.updated} updated (${GLOBAL_BRIEFING_PLANS.length} SKUs).`,
   );
 
   const pro = await seedPlanRows(prisma, PRO_TIER_MOCK_PLANS, networkIdBySlug);
