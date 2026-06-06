@@ -49,23 +49,38 @@ function initialWizardStep(
   return stepMap.skipPin ? stepMap.phone : stepMap.pin;
 }
 
-function navSteps(stepMap: ReturnType<typeof buildRedeemWizardStepMap>): { key: string; step: number }[] {
-  if (stepMap.showNetwork && !stepMap.showTier) {
+function navSteps(
+  stepMap: ReturnType<typeof buildRedeemWizardStepMap>,
+  skipFulfillmentStep: boolean,
+): { key: string; step: number }[] {
+  if (skipFulfillmentStep && !stepMap.showNetwork && !stepMap.showTier) {
     return [
       { key: "navBriefingVerify", step: stepMap.phone },
-      { key: "navBriefingNetwork", step: stepMap.network },
-      { key: "navBriefingSim", step: stepMap.fulfillment },
       { key: "navBriefingPlan", step: stepMap.plans },
       { key: "navBriefingActivate", step: stepMap.date },
     ];
+  }
+  if (stepMap.showNetwork && !stepMap.showTier) {
+    const items: { key: string; step: number }[] = [
+      { key: "navBriefingVerify", step: stepMap.phone },
+      { key: "navBriefingNetwork", step: stepMap.network },
+    ];
+    if (!skipFulfillmentStep) {
+      items.push({ key: "navBriefingSim", step: stepMap.fulfillment });
+    }
+    items.push(
+      { key: "navBriefingPlan", step: stepMap.plans },
+      { key: "navBriefingActivate", step: stepMap.date },
+    );
+    return items;
   }
   const items: { key: string; step: number }[] = [];
   if (!stepMap.skipPin) items.push({ key: "navStep1", step: stepMap.pin });
   items.push({ key: "navStep2", step: stepMap.phone });
   if (stepMap.showTier) items.push({ key: "navStepTier", step: stepMap.tier });
   if (stepMap.showNetwork) items.push({ key: "navStepNetwork", step: stepMap.network });
+  if (!skipFulfillmentStep) items.push({ key: "navStep3", step: stepMap.fulfillment });
   items.push(
-    { key: "navStep3", step: stepMap.fulfillment },
     { key: "navStep4", step: stepMap.plans },
     { key: "navStep5", step: stepMap.date },
   );
@@ -84,6 +99,8 @@ export function RedeepPhase2Client({
   autoNetworkSlug = null,
   initialNetworkSlug = null,
   initialCoverageTier = null,
+  /** Three UK: after SMS go straight to plan selection (SIM step only if needed at checkout). */
+  skipFulfillmentStep = false,
 }: {
   purchaseId?: string | null;
   accessToken?: string | null;
@@ -103,6 +120,7 @@ export function RedeepPhase2Client({
   autoNetworkSlug?: string | null;
   initialNetworkSlug?: string | null;
   initialCoverageTier?: string | null;
+  skipFulfillmentStep?: boolean;
 }) {
   const t = useTranslations("redeemWizard");
   const router = useRouter();
@@ -116,7 +134,7 @@ export function RedeepPhase2Client({
       }),
     [showTierStep, showNetworkStep, skipPinStep],
   );
-  const navStepsList = useMemo(() => navSteps(stepMap), [stepMap]);
+  const navStepsList = useMemo(() => navSteps(stepMap, skipFulfillmentStep), [stepMap, skipFulfillmentStep]);
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
   const [selectedCoverageTier, setSelectedCoverageTier] = useState(initialCoverageTier ?? "");
@@ -150,9 +168,13 @@ export function RedeepPhase2Client({
     if (skipPinStep && purchaseIdProp?.trim()) {
       if (!redemptionPhoneVerifiedInitial) return stepMap.phone;
       if (resumeAfterPaidUpgrade) return stepMap.date;
-      if (showTierStep && !initialCoverageTier) return stepMap.tier || stepMap.fulfillment;
-      if (showNetworkStep && !initialNetworkSlug) return stepMap.network || stepMap.fulfillment;
-      return stepMap.fulfillment;
+      if (showTierStep && !initialCoverageTier) {
+        return stepMap.tier || (skipFulfillmentStep ? stepMap.plans : stepMap.fulfillment);
+      }
+      if (showNetworkStep && !initialNetworkSlug) {
+        return stepMap.network || (skipFulfillmentStep ? stepMap.plans : stepMap.fulfillment);
+      }
+      return skipFulfillmentStep ? stepMap.plans : stepMap.fulfillment;
     }
     return initialWizardStep(stepMap, resumeAfterPaidUpgrade, redemptionPhoneVerifiedInitial);
   });
@@ -183,6 +205,13 @@ export function RedeepPhase2Client({
       if (res.ok) setSelectedNetworkSlug(autoNetworkSlug);
     });
   }, [autoNetworkSlug, purchaseId, accessToken, selectedNetworkSlug]);
+
+  useEffect(() => {
+    if (!skipFulfillmentStep || !purchaseId.trim() || !redemptionPhoneVerifiedInitial) return;
+    if (wizardStep !== stepMap.plans || plans.length > 0) return;
+    void continueToPlans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resume once when landing on plans after verified phone
+  }, [skipFulfillmentStep, purchaseId, redemptionPhoneVerifiedInitial, wizardStep, plans.length]);
 
   async function redeemStartFromPin() {
     setError(null);
@@ -286,16 +315,26 @@ export function RedeepPhase2Client({
     }
   }
 
-  async function continueFromFulfillment() {
-    setSelectedPlanId("");
-    setTotals(null);
-    const { ok, plans: quotedPlans } = await unlockAndQuote(undefined, fulfillmentType);
+  async function continueToPlans(opts?: { preserveSelectedPlan?: boolean }) {
+    const preservePlan = Boolean(opts?.preserveSelectedPlan && selectedPlanId);
+    if (!preservePlan) {
+      setSelectedPlanId("");
+      setTotals(null);
+    }
+    const { ok, plans: quotedPlans } = await unlockAndQuote(
+      preservePlan ? selectedPlanId : undefined,
+      preservePlan ? fulfillmentType : undefined,
+    );
     if (!ok) return;
     if (quotedPlans.length === 0) {
       setError(t("noPlansForNetwork"));
       return;
     }
     setWizardStep(stepMap.plans);
+  }
+
+  async function continueFromFulfillment() {
+    await continueToPlans({ preserveSelectedPlan: skipFulfillmentStep });
   }
 
   async function sendRedeemSms() {
@@ -349,6 +388,8 @@ export function RedeepPhase2Client({
         setWizardStep(stepMap.tier);
       } else if (showNetworkStep) {
         setWizardStep(stepMap.network);
+      } else if (skipFulfillmentStep) {
+        await continueToPlans();
       } else {
         setWizardStep(stepMap.fulfillment);
       }
@@ -359,6 +400,10 @@ export function RedeepPhase2Client({
 
   async function checkoutBalance() {
     if (!selectedPlanId) return;
+    if (skipFulfillmentStep && !fulfillmentReady) {
+      setWizardStep(stepMap.fulfillment);
+      return;
+    }
     setError(null);
     setLoading("checkout");
     try {
@@ -448,7 +493,7 @@ export function RedeepPhase2Client({
           currentStep={wizardStep}
           totalSteps={stepMap.total}
           steps={navStepsList}
-          flowVariant={showNetworkStep && !showTierStep ? "briefing" : "standard"}
+          flowVariant={skipFulfillmentStep || (showNetworkStep && !showTierStep) ? "briefing" : "standard"}
           t={t}
         />
         <PaymentMethodsNote className="mb-4" />
@@ -643,11 +688,13 @@ export function RedeepPhase2Client({
                 disabled={loading !== null}
                 onClick={() =>
                   setWizardStep(
-                    stepMap.showNetwork
-                      ? stepMap.network
-                      : stepMap.showTier
-                        ? stepMap.tier
-                        : stepMap.phone,
+                    skipFulfillmentStep && plans.length > 0
+                      ? stepMap.plans
+                      : stepMap.showNetwork
+                        ? stepMap.network
+                        : stepMap.showTier
+                          ? stepMap.tier
+                          : stepMap.phone,
                   )
                 }
               >
@@ -763,7 +810,7 @@ export function RedeepPhase2Client({
             loading={loading !== null}
             voucherFromPurchase={voucherFromPurchase}
             voucherCode={voucherCode}
-            onBack={() => setWizardStep(stepMap.fulfillment)}
+            onBack={() => setWizardStep(skipFulfillmentStep ? stepMap.phone : stepMap.fulfillment)}
             onSelectPlan={(planId) => {
               setSelectedPlanId(planId);
               const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];

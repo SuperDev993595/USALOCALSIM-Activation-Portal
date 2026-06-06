@@ -52,6 +52,7 @@ export default async function RedeemThreeUkPage({
           skipPinStep
           autoNetworkSlug="three_uk"
           initialNetworkSlug="three_uk"
+          skipFulfillmentStep
         />
       </div>
     </RedeemPageBackground>
