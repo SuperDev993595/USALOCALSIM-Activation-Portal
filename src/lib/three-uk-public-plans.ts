@@ -51,7 +51,9 @@ function groupPlanRows(
       planTypes: [planType],
     });
   }
-  return [...byKey.values()].sort((a, b) => a.priceCents - b.priceCents || a.name.localeCompare(b.name));
+  return Array.from(byKey.values()).sort(
+    (a, b) => a.priceCents - b.priceCents || a.name.localeCompare(b.name),
+  );
 }
 
 /** Active Three UK exclusive plans for the public marketing page at /redeem/three-uk. */
