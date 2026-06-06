@@ -1,12 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { seedDemoPrepaidCards } from "./seed-demo-prepaid";
 import { seedTierCatalogs } from "./seed-tier-catalogs";
 
 const prisma = new PrismaClient();
-
-function pinLast4(raw: string): string {
-  return raw.trim().toUpperCase().slice(-4);
-}
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@usalocalsim.com";
@@ -84,49 +81,10 @@ async function main() {
       },
     });
   }
-  const demoPin = "SCRATCHDEMO1";
-  let demoVoucher = await prisma.voucher.findUnique({ where: { code: demoPin } });
-  if (!demoVoucher) {
-    demoVoucher = await prisma.voucher.create({
-      data: {
-        code: demoPin,
-        pinCodeHash: await hash(demoPin.toUpperCase(), 10),
-        pinLast4: pinLast4(demoPin),
-        status: "inactive",
-        type: "top_up",
-        planId: prepaidBasic.id,
-        /** Prepaid cart charges voucher credit only (e.g. $50 bundled pack), not the linked plan list price. */
-        creditAmountCents: 5000,
-      },
-    });
-  } else {
-    demoVoucher = await prisma.voucher.update({
-      where: { id: demoVoucher.id },
-      data: { creditAmountCents: 5000 },
-    });
-  }
-  const demoSerial = process.env.PREPAID_DEMO_SERIAL?.trim() || "USALOCALDEMO123";
-  await prisma.prepaidCard.upsert({
-    where: { serial: demoSerial },
-    create: {
-      serial: demoSerial,
-      barcodePayload: demoSerial,
-      retailMarket: "us",
-      faceValueCents: 5000,
-      voucherId: demoVoucher.id,
-      basePlanId: prepaidBasic.id,
-      upgradePlanId: prepaidPremium.id,
-    },
-    update: {
-      barcodePayload: demoSerial,
-      retailMarket: "us",
-      faceValueCents: 5000,
-      voucherId: demoVoucher.id,
-      basePlanId: prepaidBasic.id,
-      upgradePlanId: prepaidPremium.id,
-    },
+  await seedDemoPrepaidCards(prisma, {
+    basePlanId: prepaidBasic.id,
+    upgradePlanId: prepaidPremium.id,
   });
-  console.log("Seeded demo PrepaidCard serial:", demoSerial, "PIN:", demoPin);
 }
 
 main()

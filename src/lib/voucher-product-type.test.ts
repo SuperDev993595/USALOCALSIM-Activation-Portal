@@ -23,6 +23,10 @@ describe("inferVoucherProductTypeFromCode", () => {
   it("returns global for unrelated prefix", () => {
     expect(inferVoucherProductTypeFromCode("SCRATCHDEMO1")).toBe(VOUCHER_PRODUCT_TYPE.GLOBAL);
   });
+
+  it("returns global for USL-G- scratch prefix", () => {
+    expect(inferVoucherProductTypeFromCode("USL-G-K7H2M9P4")).toBe(VOUCHER_PRODUCT_TYPE.GLOBAL);
+  });
 });
 
 describe("resolvePrepaidImportProductType", () => {

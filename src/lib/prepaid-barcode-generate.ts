@@ -1,6 +1,7 @@
 import { composeGs1BarcodeV1, expiryYymmddFromDate, type Gs1ComposeInput } from "./gs1-128";
 import { validateGtinOptional } from "./gs1-barcode";
-import type { VoucherProductType } from "./voucher-product-type";
+import { generateScratchPinForProductType } from "./scratch-pin-format";
+import { VOUCHER_PRODUCT_TYPE, type VoucherProductType } from "./voucher-product-type";
 
 export type PrepaidGenerateMode = "test" | "gs1";
 
@@ -37,20 +38,14 @@ export type PrepaidGeneratedCard = {
 const MARKETS = new Set(["us", "br", "uk", "global"]);
 const MAX_BATCH = 500;
 
-const PIN_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
 export function normalizeSerialPrefix(raw: string): string {
   const t = raw.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
   return t.slice(0, 24) || "USALOCAL";
 }
 
+/** @deprecated Use generateScratchPinForProductType — keeps legacy importers working. */
 export function generateScratchPin(length = 12): string {
-  const n = Math.min(24, Math.max(8, length));
-  let out = "";
-  for (let i = 0; i < n; i++) {
-    out += PIN_CHARS[Math.floor(Math.random() * PIN_CHARS.length)];
-  }
-  return out;
+  return generateScratchPinForProductType(VOUCHER_PRODUCT_TYPE.GLOBAL, Math.min(16, Math.max(6, length - 6)));
 }
 
 export function formatSerial(prefix: string, seq: number, width = 6): string {
@@ -87,7 +82,8 @@ export function buildPrepaidCardRow(
 ): PrepaidGeneratedCard | { error: string } {
   const retailMarket = MARKETS.has(config.retailMarket) ? config.retailMarket : "us";
   const serial = formatSerial(config.serialPrefix, config.serialStart + seq - 1);
-  const pin = generateScratchPin();
+  const voucherProductType = config.voucherProductType ?? VOUCHER_PRODUCT_TYPE.GLOBAL;
+  const pin = generateScratchPinForProductType(voucherProductType);
 
   let barcodePayload = serial;
   let gtin: string | null = config.gtin?.trim() || null;
@@ -110,8 +106,6 @@ export function buildPrepaidCardRow(
     gs1HumanReadable = composed.humanReadable;
     gtin = gtin.replace(/\D/g, "");
   }
-
-  const voucherProductType = config.voucherProductType ?? "global";
 
   return {
     serial,

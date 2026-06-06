@@ -329,6 +329,13 @@ export function AdminPrepaidGenerateClient() {
                     <option value="global">Global (tier + network redeem)</option>
                     <option value="three_uk">Three UK exclusive</option>
                   </select>
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Scratch PINs use prefix{" "}
+                    <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">
+                      {voucherProductType === "three_uk" ? "USLTUK-" : "USL-G-"}
+                    </code>{" "}
+                    + random code (see <code className="font-mono text-[11px]">doc/scratch-pin-formats.md</code>).
+                  </p>
                 </div>
               </div>
             </div>
