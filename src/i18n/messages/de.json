@@ -672,5 +672,17 @@
     "trackingUnauthorized": "Sitzung abgelaufen. Bitte erneut anmelden.",
     "settingsTitle": "Einstellungen",
     "settingsSubtitle": "Anmeldepasswort ändern. Wir senden zuerst einen Bestätigungscode per E-Mail."
+  },
+  "threeUkLanding": {
+    "title": "Three UK Mobile Tarife",
+    "body": "Aktivieren Sie hier Ihren USALOCALSIM Three UK Gutschein. Code eingeben, per SMS bestätigen, dann einen passenden Tarif wählen.",
+    "plansHeading": "Verfügbare Tarife",
+    "plansNote": "Der Endpreis hängt von Ihrem Gutscheinguthaben ab.",
+    "durationDays": "{days} Tage",
+    "planTypePhysical": "Physische SIM",
+    "planTypeEsim": "eSIM",
+    "planTypeBoth": "Physische SIM · eSIM",
+    "ctaActivate": "Gutschein aktivieren",
+    "ctaHint": "Auf der nächsten Seite geben Sie den Code von Ihrer Karte ein. Die Karte muss im Geschäft aktiviert worden sein."
   }
 }

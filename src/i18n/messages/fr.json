@@ -678,5 +678,17 @@
     "trackingUnauthorized": "Session expirée. Reconnectez-vous.",
     "settingsTitle": "Paramètres",
     "settingsSubtitle": "Modifier votre mot de passe. Un code de vérification vous sera envoyé par e-mail."
+  },
+  "threeUkLanding": {
+    "title": "Forfaits Three UK Mobile",
+    "body": "Activez votre bon USALOCALSIM Three UK ici. Saisissez le code, vérifiez par SMS, puis choisissez un forfait.",
+    "plansHeading": "Forfaits disponibles",
+    "plansNote": "Le prix final dépend du crédit de votre bon.",
+    "durationDays": "{days} jours",
+    "planTypePhysical": "SIM physique",
+    "planTypeEsim": "eSIM",
+    "planTypeBoth": "SIM physique · eSIM",
+    "ctaActivate": "Activer votre bon",
+    "ctaHint": "Vous saisirez le code de votre carte à l'écran suivant. La carte doit avoir été activée en magasin."
   }
 }

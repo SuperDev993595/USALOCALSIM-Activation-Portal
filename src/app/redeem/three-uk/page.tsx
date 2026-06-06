@@ -1,28 +1,14 @@
-import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
+import { RedeemPageBackground } from "@/components/RedeemPageBackground";
 import { RedeepPhase2Client } from "@/components/RedeepPhase2Client";
+import { ThreeUkLanding } from "@/components/ThreeUkLanding";
 import { loadRedeemWizardPageContext } from "@/lib/redeem-page-load";
+import { listThreeUkPublicPlans } from "@/lib/three-uk-public-plans";
 
-function RedeemPageBackground({ children }: { children: ReactNode }) {
-  return (
-    <div className="public-site relative isolate flex min-h-screen flex-col text-slate-900">
-      <div
-        className="pointer-events-none absolute inset-0 z-0 bg-slate-300 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url(/images/home-banner-01.webp)" }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-slate-900/50 via-slate-900/35 to-slate-900/55"
-        aria-hidden
-      />
-      <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/** Three UK exclusive vouchers: SMS → plans (network step skipped per feedback 2026-05-28). */
+/**
+ * Three UK hub (injectable marketing URL):
+ * - /redeem/three-uk — public plans + activate CTA
+ * - /redeem/three-uk?purchaseId=…&access=… — redeem wizard (network skipped)
+ */
 export default async function RedeemThreeUkPage({
   searchParams,
 }: {
@@ -37,7 +23,12 @@ export default async function RedeemThreeUkPage({
   const upgrade = Array.isArray(searchParams.upgrade) ? searchParams.upgrade[0] : searchParams.upgrade;
 
   if (!purchaseId?.trim()) {
-    redirect("/redeem/enter");
+    const plans = await listThreeUkPublicPlans();
+    return (
+      <RedeemPageBackground>
+        <ThreeUkLanding plans={plans} />
+      </RedeemPageBackground>
+    );
   }
 
   const ctx = await loadRedeemWizardPageContext({

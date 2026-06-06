@@ -710,6 +710,18 @@
     "settingsTitle": "Settings",
     "settingsSubtitle": "Change your sign-in password. We email a verification code first."
   },
+  "threeUkLanding": {
+    "title": "Three UK Mobile plans",
+    "body": "Activate your USALOCALSIM Three UK voucher here. Scratch your card, enter your code, verify by SMS, then choose a plan below that matches your voucher credit.",
+    "plansHeading": "Available plans",
+    "plansNote": "Final price at checkout depends on your voucher credit. Upgrade options may show a balance to pay.",
+    "durationDays": "{days} days",
+    "planTypePhysical": "Physical SIM",
+    "planTypeEsim": "eSIM",
+    "planTypeBoth": "Physical SIM · eSIM",
+    "ctaActivate": "Activate your voucher",
+    "ctaHint": "You will enter the scratch code from your card on the next screen. The card must be activated by the shop where you bought it."
+  },
   "voucherEntry": {
     "eyebrow": "USALOCALSIM · Redeem",
     "stepProgress": "Step 1 of 5 · Voucher",

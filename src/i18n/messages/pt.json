@@ -672,5 +672,17 @@
     "trackingUnauthorized": "Sessão expirada. Inicie sessão novamente.",
     "settingsTitle": "Definições",
     "settingsSubtitle": "Altere a palavra-passe. Enviaremos primeiro um código de verificação por e-mail."
+  },
+  "threeUkLanding": {
+    "title": "Planos Three UK Mobile",
+    "body": "Ative aqui o seu voucher USALOCALSIM Three UK. Introduza o código, verifique por SMS e escolha um plano.",
+    "plansHeading": "Planos disponíveis",
+    "plansNote": "O preço final depende do crédito do seu voucher.",
+    "durationDays": "{days} dias",
+    "planTypePhysical": "SIM físico",
+    "planTypeEsim": "eSIM",
+    "planTypeBoth": "SIM físico · eSIM",
+    "ctaActivate": "Ativar o seu voucher",
+    "ctaHint": "No ecrã seguinte introduz o código da sua cartão. A cartão deve ter sido ativada na loja."
   }
 }

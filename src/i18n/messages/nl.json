@@ -678,5 +678,17 @@
     "trackingUnauthorized": "Sessie verlopen. Log opnieuw in.",
     "settingsTitle": "Instellingen",
     "settingsSubtitle": "Wijzig uw wachtwoord. We sturen eerst een verificatiecode per e-mail."
+  },
+  "threeUkLanding": {
+    "title": "Three UK Mobile-abonnementen",
+    "body": "Activeer hier uw USALOCALSIM Three UK-voucher. Voer de code in, verifieer via SMS en kies een abonnement.",
+    "plansHeading": "Beschikbare abonnementen",
+    "plansNote": "De uiteindelijke prijs hangt af van uw voucher-tegoed.",
+    "durationDays": "{days} dagen",
+    "planTypePhysical": "Fysieke SIM",
+    "planTypeEsim": "eSIM",
+    "planTypeBoth": "Fysieke SIM · eSIM",
+    "ctaActivate": "Voucher activeren",
+    "ctaHint": "Op het volgende scherm voert u de code van uw kaart in. De kaart moet in de winkel zijn geactiveerd."
   }
 }
