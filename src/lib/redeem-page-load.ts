@@ -93,8 +93,12 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
   const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
   const productType = voucher ? effectiveVoucherProductType(voucher) : "global";
 
-  if (productType === "three_uk" && opts.threeUkPath) {
-    redirect(redeemUrlWithAccess(opts.threeUkPath, purchase.id, access, resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined));
+  // Canonical paths: Three UK vouchers belong on /redeem/three-uk; global on /redeem.
+  // Do not redirect when already on the correct page (threeUkPath set = rendering /redeem/three-uk).
+  if (productType === "three_uk" && !opts.threeUkPath) {
+    redirect(
+      redeemUrlWithAccess("/redeem/three-uk", purchase.id, access, resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined),
+    );
   }
   if (productType !== "three_uk" && opts.threeUkPath) {
     redirect(redeemUrlWithAccess("/redeem", purchase.id, access, resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined));
