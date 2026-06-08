@@ -46,11 +46,12 @@ export function RedeemPlanPaymentStep({
   loading,
   voucherFromPurchase,
   voucherCode,
-  onBack,
   onSelectPlan,
   onAddonChange,
   onCheckout,
   shippingMethodId,
+  variant = "page",
+  onBack,
 }: {
   creditCents: number;
   fulfillmentType: string;
@@ -66,11 +67,12 @@ export function RedeemPlanPaymentStep({
   loading: boolean;
   voucherFromPurchase: boolean;
   voucherCode: string;
-  onBack: () => void;
   onSelectPlan: (planId: string) => void;
   onAddonChange: (skus: TmobileAddonSku[]) => void;
   onCheckout: () => void;
   shippingMethodId?: ShippingMethodId;
+  variant?: "page" | "embedded";
+  onBack?: () => void;
 }) {
   const t = useTranslations("redeemWizard");
   const shippingMethod =
@@ -159,32 +161,36 @@ export function RedeemPlanPaymentStep({
 
   return (
     <>
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          className={backArrowButtonClass}
-          aria-label={t("backFulfillment")}
-          disabled={loading}
-          onClick={onBack}
-        >
-          <BackChevronIcon />
-        </button>
-        <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white md:text-xl">
-          {t("step4Title")}
-        </h2>
-      </div>
-      <p className="mt-2 text-sm leading-relaxed text-slate-300 md:text-[15px]">
-        <span className="inline">
-          {fulfillmentType === "ESIM"
-            ? t.rich("step4BodyEsim", { kind: (chunks) => <strong className="text-white">{chunks}</strong> })
-            : t.rich("step4BodyPhysical", {
-                kind: (chunks) => <strong className="text-white">{chunks}</strong>,
-              })}
-        </span>{" "}
-        <span>{t("step4BodyTail")}</span>
-      </p>
+      {variant === "page" ? (
+        <>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className={backArrowButtonClass}
+              aria-label={t("backFulfillment")}
+              disabled={loading}
+              onClick={onBack}
+            >
+              <BackChevronIcon />
+            </button>
+            <h2 id="redeem-step4-heading" className="text-lg font-semibold text-white md:text-xl">
+              {t("step4Title")}
+            </h2>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300 md:text-[15px]">
+            <span className="inline">
+              {fulfillmentType === "ESIM"
+                ? t.rich("step4BodyEsim", { kind: (chunks) => <strong className="text-white">{chunks}</strong> })
+                : t.rich("step4BodyPhysical", {
+                    kind: (chunks) => <strong className="text-white">{chunks}</strong>,
+                  })}
+            </span>{" "}
+            <span>{t("step4BodyTail")}</span>
+          </p>
+        </>
+      ) : null}
 
-      <div className="mt-6 space-y-6">
+      <div className={variant === "page" ? "mt-6 space-y-6" : "space-y-5"}>
         <div className="flex flex-col gap-1 rounded-lg border border-emerald-500/25 bg-emerald-950/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/90">

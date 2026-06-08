@@ -4,23 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
-import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
+import { RedeemCombinedSetupStep, type SetupHighlight } from "@/components/RedeemCombinedSetupStep";
+import { RedeemPaymentStep } from "@/components/RedeemPaymentStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
-import { RedeemFulfillmentPicker } from "@/components/RedeemFulfillmentPicker";
-import {
-  RedeemFulfillmentContextHeader,
-  RedeemSelectedNetworkBadge,
-} from "@/components/RedeemFulfillmentContextHeader";
-import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressForm";
-import { RedeemShippingMethodStep } from "@/components/RedeemShippingMethodStep";
-import { RedeemShippingWizardSubnav } from "@/components/RedeemShippingWizardSubnav";
 import {
   EMPTY_REDEEM_SHIPPING,
   formatRedeemShippingAddress,
   isRedeemShippingComplete,
   type RedeemShippingForm,
 } from "@/lib/redeem-shipping-address";
-import { RedeemPlanPaymentStep } from "@/components/RedeemPlanPaymentStep";
 import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
@@ -35,6 +27,7 @@ import { PaymentMethodsNote } from "@/components/PaymentMethodsNote";
 import {
   REDEEM_PANEL_CLASS,
   REDEEM_PRIMARY_BUTTON_CLASS,
+  REDEEM_SETUP_SHELL_CLASS,
   REDEEM_SHELL_CLASS,
 } from "@/lib/redeem-panel";
 
@@ -70,32 +63,19 @@ function initialWizardStep(
 
 function navSteps(
   stepMap: ReturnType<typeof buildRedeemWizardStepMap>,
-  skipFulfillmentStep: boolean,
-  includeShippingMethodNav: boolean,
+  showConfigInNav: boolean,
 ): { key: string; step: number }[] {
-  if (skipFulfillmentStep && !stepMap.showNetwork && !stepMap.showTier) {
-    return [
-      { key: "navBriefingVerify", step: stepMap.phone },
-      { key: "navBriefingPlan", step: stepMap.plans },
-      { key: "navBriefingActivate", step: stepMap.date },
-    ];
-  }
-  if (stepMap.showNetwork && !stepMap.showTier) {
+  if (stepMap.skipPin && !stepMap.showTier) {
     const items: { key: string; step: number }[] = [
       { key: "navBriefingVerify", step: stepMap.phone },
-      { key: "navBriefingNetwork", step: stepMap.network },
     ];
-    if (!skipFulfillmentStep) {
-      items.push(
-        { key: "navBriefingSim", step: stepMap.fulfillment },
-        { key: "navBriefingDetails", step: stepMap.fulfillmentDetails },
-      );
-      if (includeShippingMethodNav) {
-        items.push({ key: "navBriefingShip", step: stepMap.shippingMethod });
-      }
+    if (showConfigInNav) {
+      items.push({ key: "navBriefingSetup", step: stepMap.setup });
+    } else {
+      items.push({ key: "navBriefingPlan", step: stepMap.setup });
     }
     items.push(
-      { key: "navBriefingPlan", step: stepMap.plans },
+      { key: "navBriefingPayment", step: stepMap.payment },
       { key: "navBriefingActivate", step: stepMap.date },
     );
     return items;
@@ -104,20 +84,9 @@ function navSteps(
   if (!stepMap.skipPin) items.push({ key: "navStep1", step: stepMap.pin });
   items.push({ key: "navStep2", step: stepMap.phone });
   if (stepMap.showTier) items.push({ key: "navStepTier", step: stepMap.tier });
-  if (stepMap.showNetwork) items.push({ key: "navStepNetwork", step: stepMap.network });
-  if (!skipFulfillmentStep) {
-    items.push(
-      { key: "navStep3", step: stepMap.fulfillment },
-      { key: "navStep3Details", step: stepMap.fulfillmentDetails },
-    );
-    if (includeShippingMethodNav) {
-      items.push({ key: "navStep3Ship", step: stepMap.shippingMethod });
-    }
-  }
-  items.push(
-    { key: "navStep4", step: stepMap.plans },
-    { key: "navStep5", step: stepMap.date },
-  );
+  if (showConfigInNav) items.push({ key: "navStepSetup", step: stepMap.setup });
+  items.push({ key: "navStepPayment", step: stepMap.payment });
+  items.push({ key: "navStep5", step: stepMap.date });
   return items;
 }
 
@@ -205,12 +174,9 @@ export function RedeepPhase2Client({
       if (!redemptionPhoneVerifiedInitial) return stepMap.phone;
       if (resumeAfterPaidUpgrade) return stepMap.date;
       if (showTierStep && !initialCoverageTier) {
-        return stepMap.tier || (skipFulfillmentStep ? stepMap.plans : stepMap.fulfillment);
+        return stepMap.tier || stepMap.setup;
       }
-      if (showNetworkStep && !initialNetworkSlug) {
-        return stepMap.network || (skipFulfillmentStep ? stepMap.plans : stepMap.fulfillment);
-      }
-      return skipFulfillmentStep ? stepMap.plans : stepMap.fulfillment;
+      return stepMap.setup;
     }
     return initialWizardStep(stepMap, resumeAfterPaidUpgrade, redemptionPhoneVerifiedInitial);
   });
@@ -218,18 +184,17 @@ export function RedeepPhase2Client({
   const [redeemPhone, setRedeemPhone] = useState("");
   const [redeemOtpCode, setRedeemOtpCode] = useState("");
   const [redeemOtpUiStep, setRedeemOtpUiStep] = useState<"phone" | "code">("phone");
+  const [setupHighlight, setSetupHighlight] = useState<SetupHighlight>(null);
+  const [forceShowConfig, setForceShowConfig] = useState(false);
 
-  const includeShippingMethodNav =
-    !skipFulfillmentStep &&
-    (fulfillmentType === "NEW_SIM_SHIPPING" || wizardStep >= stepMap.shippingMethod);
+  const showConfigColumn = !skipFulfillmentStep || forceShowConfig;
+  const showConfigInNav = showConfigColumn;
   const navStepsList = useMemo(
-    () => navSteps(stepMap, skipFulfillmentStep, includeShippingMethodNav),
-    [stepMap, skipFulfillmentStep, includeShippingMethodNav],
+    () => navSteps(stepMap, showConfigInNav),
+    [stepMap, showConfigInNav],
   );
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
-  const baselinePlans = useMemo(() => plans.filter((p) => p.matchesVoucherCredit), [plans]);
-  const upgradePlans = useMemo(() => plans.filter((p) => !p.matchesVoucherCredit), [plans]);
   const showTmobileAddons =
     addonsAllowedForNetwork(selectedNetworkSlug) && Boolean(selectedPlanId);
   const iccidDigitCount = useMemo(() => iccid.replace(/\D/g, "").length, [iccid]);
@@ -251,11 +216,17 @@ export function RedeepPhase2Client({
   }, [autoNetworkSlug, purchaseId, accessToken, selectedNetworkSlug]);
 
   useEffect(() => {
-    if (!skipFulfillmentStep || !purchaseId.trim() || !redemptionPhoneVerifiedInitial) return;
-    if (wizardStep !== stepMap.plans || plans.length > 0) return;
-    void continueToPlans();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- resume once when landing on plans after verified phone
-  }, [skipFulfillmentStep, purchaseId, redemptionPhoneVerifiedInitial, wizardStep, plans.length]);
+    if (!purchaseId.trim() || wizardStep !== stepMap.setup || plans.length > 0) return;
+    if (showNetworkStep && !selectedNetworkSlug && !autoNetworkSlug) return;
+    void loadPlansQuote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load plans once when entering configure
+  }, [wizardStep, purchaseId, plans.length, showNetworkStep, selectedNetworkSlug, autoNetworkSlug]);
+
+  useEffect(() => {
+    if (ultraEsimOnly && fulfillmentType !== "ESIM") {
+      setFulfillmentType("ESIM");
+    }
+  }, [ultraEsimOnly, fulfillmentType]);
 
   async function redeemStartFromPin() {
     setError(null);
@@ -343,7 +314,9 @@ export function RedeepPhase2Client({
       setCreditCents(data.creditAmountCents ?? 0);
       const nextPlans = data.plans ?? [];
       setPlans(nextPlans);
-      if (data.selectedFulfillmentType) setFulfillmentType(data.selectedFulfillmentType);
+      if (data.selectedFulfillmentType && !fType) {
+        setFulfillmentType(data.selectedFulfillmentType);
+      }
       if (Array.isArray(data.tmobileAddons)) {
         setTmobileAddonOptions(data.tmobileAddons);
       }
@@ -365,7 +338,11 @@ export function RedeepPhase2Client({
     }
   }
 
-  async function continueToPlans(opts?: { preserveSelectedPlan?: boolean }) {
+  async function loadPlansQuote(opts?: {
+    preserveSelectedPlan?: boolean;
+    fulfillmentType?: FulfillmentType;
+  }) {
+    const quoteFulfillment = opts?.fulfillmentType ?? fulfillmentType;
     const preservePlan = Boolean(opts?.preserveSelectedPlan && selectedPlanId);
     if (!preservePlan) {
       setSelectedPlanId("");
@@ -373,50 +350,60 @@ export function RedeepPhase2Client({
     }
     const { ok, plans: quotedPlans } = await unlockAndQuote(
       preservePlan ? selectedPlanId : undefined,
-      preservePlan ? fulfillmentType : undefined,
+      quoteFulfillment,
     );
-    if (!ok) return;
+    if (!ok) return false;
     if (quotedPlans.length === 0) {
       setError(t("noPlansForNetwork"));
-      return;
+      return false;
     }
-    setWizardStep(stepMap.plans);
-  }
-
-  function continueFromFulfillment() {
-    setWizardStep(stepMap.fulfillmentDetails);
-  }
-
-  async function continueFromFulfillmentDetails() {
-    if (fulfillmentType === "NEW_SIM_SHIPPING") {
-      setWizardStep(stepMap.shippingMethod);
-      return;
-    }
-    await continueToPlans({ preserveSelectedPlan: skipFulfillmentStep });
-  }
-
-  async function continueFromShippingMethod() {
-    await continueToPlans({ preserveSelectedPlan: skipFulfillmentStep });
+    return true;
   }
 
   function redirectToIncompleteFulfillment() {
-    if (ultraEsimOnly || fulfillmentType === "ESIM") {
-      setWizardStep(stepMap.fulfillmentDetails);
-      return;
-    }
-    if (fulfillmentType === "EXISTING_SIM" && iccid.trim().length < 15) {
-      setWizardStep(stepMap.fulfillmentDetails);
-      return;
-    }
-    if (fulfillmentType === "NEW_SIM_SHIPPING") {
-      if (!isRedeemShippingComplete(shippingForm)) {
-        setWizardStep(stepMap.fulfillmentDetails);
-        return;
+    setSetupHighlight(null);
+    if (
+      showConfigColumn &&
+      ((showNetworkStep && !selectedNetworkSlug) ||
+        (fulfillmentType === "EXISTING_SIM" && iccid.trim().length < 15) ||
+        (fulfillmentType === "NEW_SIM_SHIPPING" &&
+          (!isRedeemShippingComplete(shippingForm) || !shippingMethodId)))
+    ) {
+      setWizardStep(stepMap.setup);
+      setForceShowConfig(true);
+      if (showNetworkStep && !selectedNetworkSlug) {
+        setSetupHighlight("network");
+      } else {
+        setSetupHighlight("details");
       }
-      setWizardStep(stepMap.shippingMethod);
       return;
     }
-    setWizardStep(stepMap.fulfillment);
+    if (!selectedPlanId) {
+      setWizardStep(stepMap.setup);
+      setSetupHighlight("plan");
+      return;
+    }
+    setWizardStep(stepMap.payment);
+  }
+
+  function continueFromSetup() {
+    setError(null);
+    setSetupHighlight(null);
+    if (!selectedPlanId) {
+      setSetupHighlight("plan");
+      return;
+    }
+    setWizardStep(stepMap.payment);
+  }
+
+  function handleNetworkSelect(slug: string) {
+    setSelectedNetworkSlug(slug);
+    setSelectedAddonSkus([]);
+    setSelectedPlanId("");
+    setTotals(null);
+    setPlans([]);
+    setSetupHighlight(null);
+    void loadPlansQuote();
   }
 
   async function sendRedeemSms() {
@@ -468,12 +455,11 @@ export function RedeepPhase2Client({
         setWizardStep(stepMap.date);
       } else if (showTierStep) {
         setWizardStep(stepMap.tier);
-      } else if (showNetworkStep) {
-        setWizardStep(stepMap.network);
-      } else if (skipFulfillmentStep) {
-        await continueToPlans();
       } else {
-        setWizardStep(stepMap.fulfillment);
+        setWizardStep(stepMap.setup);
+        if (skipFulfillmentStep || !showNetworkStep || selectedNetworkSlug || autoNetworkSlug) {
+          await loadPlansQuote();
+        }
       }
     } finally {
       setLoading(null);
@@ -550,28 +536,35 @@ export function RedeepPhase2Client({
     }
   }
 
+  const onWideStep = wizardStep === stepMap.setup || wizardStep === stepMap.payment;
+  const shellClass = onWideStep ? REDEEM_SETUP_SHELL_CLASS : REDEEM_SHELL_CLASS;
+
+  const setupReady =
+    (!showNetworkStep || Boolean(selectedNetworkSlug)) &&
+    (skipFulfillmentStep && !forceShowConfig
+      ? true
+      : ultraEsimOnly || fulfillmentType === "ESIM"
+        ? true
+        : fulfillmentType === "EXISTING_SIM"
+          ? iccid.trim().length >= 15
+          : fulfillmentType === "NEW_SIM_SHIPPING"
+            ? isRedeemShippingComplete(shippingForm) && Boolean(shippingMethodId)
+            : false);
   const panelClass = REDEEM_PANEL_CLASS;
 
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
 
-  const fulfillmentDetailsReady =
-    ultraEsimOnly || fulfillmentType === "ESIM"
-      ? true
-      : fulfillmentType === "EXISTING_SIM"
-        ? iccid.trim().length >= 15
-        : fulfillmentType === "NEW_SIM_SHIPPING"
-          ? isRedeemShippingComplete(shippingForm)
-          : false;
-
   const fulfillmentReady =
-    ultraEsimOnly || fulfillmentType === "ESIM"
+    skipFulfillmentStep && !forceShowConfig
       ? true
-      : fulfillmentType === "EXISTING_SIM"
-        ? iccid.trim().length >= 15
-        : fulfillmentType === "NEW_SIM_SHIPPING"
-          ? isRedeemShippingComplete(shippingForm) && Boolean(shippingMethodId)
-          : false;
+      : ultraEsimOnly || fulfillmentType === "ESIM"
+        ? true
+        : fulfillmentType === "EXISTING_SIM"
+          ? iccid.trim().length >= 15
+          : fulfillmentType === "NEW_SIM_SHIPPING"
+            ? isRedeemShippingComplete(shippingForm) && Boolean(shippingMethodId)
+            : false;
 
   function selectFulfillmentType(next: FulfillmentType) {
     const prevPlan = plans.find((p) => p.id === selectedPlanId);
@@ -586,8 +579,8 @@ export function RedeepPhase2Client({
     if (next !== "NEW_SIM_SHIPPING") {
       setShippingMethodId(DEFAULT_SHIPPING_METHOD_ID);
     }
-    if (!incompatible && selectedPlanId) {
-      void unlockAndQuote(selectedPlanId, next, undefined, DEFAULT_SHIPPING_METHOD_ID);
+    if (wizardStep === stepMap.setup && (selectedNetworkSlug || !showNetworkStep)) {
+      void loadPlansQuote({ preserveSelectedPlan: !incompatible, fulfillmentType: next });
     }
   }
 
@@ -608,7 +601,7 @@ export function RedeepPhase2Client({
   }
 
   return (
-    <div className={REDEEM_SHELL_CLASS}>
+    <div className={shellClass}>
       <section className={panelClass} aria-labelledby={`redeem-step${wizardStep}-heading`}>
         <RedeemStepNav
           currentStep={wizardStep}
@@ -776,201 +769,47 @@ export function RedeepPhase2Client({
               if (tierRequiresEsimOnly(tier)) {
                 setFulfillmentType("ESIM");
               }
-              setWizardStep(stepMap.showNetwork ? stepMap.network : stepMap.fulfillment);
+              setWizardStep(stepMap.setup);
             }}
           />
         ) : null}
 
-        {wizardStep === stepMap.network && stepMap.showNetwork ? (
-          <RedeemNetworkStep
+        {wizardStep === stepMap.setup ? (
+          <RedeemCombinedSetupStep
             purchaseId={purchaseId}
             accessToken={accessToken}
+            showNetworkSection={showConfigColumn && showNetworkStep}
+            showFulfillmentSection={showConfigColumn}
             coverageTier={selectedCoverageTier || null}
-            initialSlug={selectedNetworkSlug || null}
-            backLabel={t("backTier")}
-            onBack={() => setWizardStep(stepMap.tier || stepMap.phone)}
-            onContinue={(slug) => {
-              setSelectedNetworkSlug(slug);
-              setSelectedAddonSkus([]);
-              setWizardStep(stepMap.fulfillment);
-            }}
-          />
-        ) : null}
-
-        {wizardStep === stepMap.fulfillment ? (
-          <>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className={backArrowButtonClass}
-                aria-label={
-                  stepMap.showNetwork ? t("backNetwork") : stepMap.showTier ? t("backTier") : t("backPhone")
-                }
-                disabled={loading !== null}
-                onClick={() =>
-                  setWizardStep(
-                    skipFulfillmentStep && plans.length > 0
-                      ? stepMap.plans
-                      : stepMap.showNetwork
-                        ? stepMap.network
-                        : stepMap.showTier
-                          ? stepMap.tier
-                          : stepMap.phone,
-                  )
-                }
-              >
-                <BackChevronIcon />
-              </button>
-              <h2 id="redeem-step3-heading" className="text-lg font-semibold text-white md:text-xl">
-                {t("step3Title")}
-              </h2>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step3Body")}</p>
-            {ultraEsimOnly ? (
-              <p className="mt-2 rounded border border-red-500/30 bg-red-950/35 px-3 py-2 text-sm text-red-100">
-                {t("ultraEsimOnlyBanner")}
-              </p>
-            ) : null}
-
-            <div className="mt-5 space-y-4">
-              {selectedNetworkSlug ? (
-                <RedeemSelectedNetworkBadge networkSlug={selectedNetworkSlug} />
-              ) : null}
-              <RedeemFulfillmentPicker
-                value={fulfillmentType}
-                onChange={selectFulfillmentType}
-                disabled={loading !== null}
-                ultraEsimOnly={ultraEsimOnly}
-              />
-
-              <button
-                type="button"
-                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
-                disabled={loading !== null}
-                onClick={() => continueFromFulfillment()}
-              >
-                {t("continueSimDetails")}
-              </button>
-            </div>
-          </>
-        ) : null}
-
-        {wizardStep === stepMap.fulfillmentDetails ? (
-          <>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className={backArrowButtonClass}
-                aria-label={t("backSimType")}
-                disabled={loading !== null}
-                onClick={() => setWizardStep(stepMap.fulfillment)}
-              >
-                <BackChevronIcon />
-              </button>
-              <h2 id="redeem-step3-details-heading" className="text-lg font-semibold text-white md:text-xl">
-                {t("step3DetailsTitle")}
-              </h2>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step3DetailsBody")}</p>
-
-            <div className="mt-5 space-y-4">
-              <RedeemFulfillmentContextHeader
-                networkSlug={selectedNetworkSlug}
-                fulfillmentType={fulfillmentType}
-              />
-
-              {fulfillmentType === "ESIM" ? (
-                <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-relaxed text-slate-300">
-                  {t("esimDetailsNote")}
-                </p>
-              ) : null}
-
-              {fulfillmentType === "EXISTING_SIM" ? (
-                <div className="space-y-2.5">
-                  <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-iccid-input">
-                    {t("iccidLabel")}
-                  </label>
-                  <input
-                    id="redeem-iccid-input"
-                    value={iccid}
-                    onChange={(e) => setIccid(e.target.value)}
-                    disabled={loading !== null}
-                    className={redeepPanelInputClass}
-                    placeholder={t("iccidPlaceholder")}
-                  />
-                  <p className="text-xs text-slate-400">{t("iccidHint")}</p>
-                  <p className="text-xs text-slate-500">{t("iccidCount", { count: iccidDigitCount })}</p>
-                </div>
-              ) : null}
-
-              {fulfillmentType === "NEW_SIM_SHIPPING" ? (
-                <>
-                  <RedeemShippingWizardSubnav activeStep={1} />
-                  <RedeemShippingAddressForm
-                    value={shippingForm}
-                    onChange={setShippingForm}
-                    disabled={loading !== null}
-                  />
-                </>
-              ) : null}
-
-              <button
-                type="button"
-                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
-                disabled={loading !== null || !fulfillmentDetailsReady}
-                onClick={() => void continueFromFulfillmentDetails()}
-              >
-                {fulfillmentType === "NEW_SIM_SHIPPING" ? t("continueShippingMethod") : t("continuePlans")}
-              </button>
-            </div>
-          </>
-        ) : null}
-
-        {wizardStep === stepMap.shippingMethod ? (
-          <RedeemShippingMethodStep
-            shippingForm={shippingForm}
-            contactPhone={redeemPhone}
-            shippingMethodId={shippingMethodId}
-            disabled={loading !== null}
-            backLabel={t("backSimDetails")}
-            onBack={() => setWizardStep(stepMap.fulfillmentDetails)}
-            onChangeMethod={handleShippingMethodChange}
-            onChangeContact={() => setWizardStep(stepMap.fulfillmentDetails)}
-            onChangeAddress={() => setWizardStep(stepMap.fulfillmentDetails)}
-            onContinue={() => void continueFromShippingMethod()}
-          />
-        ) : null}
-
-        {wizardStep === stepMap.plans && plans.length > 0 ? (
-          <RedeemPlanPaymentStep
-            creditCents={creditCents}
+            selectedNetworkSlug={selectedNetworkSlug}
             fulfillmentType={fulfillmentType}
+            ultraEsimOnly={ultraEsimOnly}
+            iccid={iccid}
+            iccidDigitCount={iccidDigitCount}
+            shippingForm={shippingForm}
+            shippingMethodId={shippingMethodId}
             plans={plans}
-            baselinePlans={baselinePlans}
-            upgradePlans={upgradePlans}
+            creditCents={creditCents}
             selectedPlanId={selectedPlanId}
-            selectedPlan={selectedPlan}
-            totals={totals}
             showTmobileAddons={showTmobileAddons}
             tmobileAddonOptions={tmobileAddonOptions}
             selectedAddonSkus={selectedAddonSkus}
+            plansLoading={loading === "unlock"}
             loading={loading !== null}
-            voucherFromPurchase={voucherFromPurchase}
-            voucherCode={voucherCode}
-            onBack={() => {
-              if (skipFulfillmentStep) {
-                setWizardStep(stepMap.phone);
-                return;
-              }
-              if (fulfillmentType === "NEW_SIM_SHIPPING") {
-                setWizardStep(stepMap.shippingMethod);
-                return;
-              }
-              setWizardStep(stepMap.fulfillmentDetails);
-            }}
-            shippingMethodId={shippingMethodId}
+            setupReady={setupReady}
+            highlight={setupHighlight}
+            planOnlyMode={!showConfigColumn}
+            panelInputClass={redeepPanelInputClass}
+            onBack={() => setWizardStep(stepMap.showTier ? stepMap.tier : stepMap.phone)}
+            onContinue={continueFromSetup}
+            onNetworkSelect={handleNetworkSelect}
+            onFulfillmentChange={selectFulfillmentType}
+            onIccidChange={setIccid}
+            onShippingFormChange={setShippingForm}
+            onShippingMethodChange={handleShippingMethodChange}
             onSelectPlan={(planId) => {
               setSelectedPlanId(planId);
+              setSetupHighlight(null);
               const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];
               void unlockAndQuote(planId, fulfillmentType, addons);
             }}
@@ -978,6 +817,19 @@ export function RedeepPhase2Client({
               setSelectedAddonSkus(skus);
               if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, skus);
             }}
+          />
+        ) : null}
+
+        {wizardStep === stepMap.payment ? (
+          <RedeemPaymentStep
+            fulfillmentType={fulfillmentType}
+            selectedPlan={selectedPlan}
+            totals={totals}
+            loading={loading !== null}
+            voucherFromPurchase={voucherFromPurchase}
+            voucherCode={voucherCode}
+            shippingMethodId={shippingMethodId}
+            onBack={() => setWizardStep(stepMap.setup)}
             onCheckout={() => void checkoutBalance()}
           />
         ) : null}
@@ -991,7 +843,7 @@ export function RedeepPhase2Client({
                   className={backArrowButtonClass}
                   aria-label={t("backPlan")}
                   disabled={loading !== null}
-                  onClick={() => setWizardStep(stepMap.plans)}
+                  onClick={() => setWizardStep(stepMap.payment)}
                 >
                   <BackChevronIcon />
                 </button>

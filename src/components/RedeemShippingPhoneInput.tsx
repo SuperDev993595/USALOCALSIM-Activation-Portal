@@ -14,7 +14,7 @@ import {
   shippingCountryLabel,
 } from "@/lib/shipping-country-catalog";
 
-const inputClass =
+const phoneInnerClass =
   "min-w-0 flex-1 border-0 bg-transparent py-2.5 pl-2 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0";
 
 export function RedeemShippingPhoneInput({
@@ -24,6 +24,7 @@ export function RedeemShippingPhoneInput({
   onChange,
   disabled = false,
   label,
+  lightPanel = false,
 }: {
   country: string;
   value: string;
@@ -31,6 +32,7 @@ export function RedeemShippingPhoneInput({
   onChange: (national: string) => void;
   disabled?: boolean;
   label: string;
+  lightPanel?: boolean;
 }) {
   const t = useTranslations("redeemWizard");
   const locale = useLocale();
@@ -73,12 +75,15 @@ export function RedeemShippingPhoneInput({
 
   return (
     <div className="min-w-0 space-y-1.5">
-      <label className="block text-sm font-medium text-slate-800" htmlFor={`${listId}-phone`}>
+      <label
+        className={`block text-sm font-medium ${lightPanel ? "text-slate-700" : "text-slate-200"}`}
+        htmlFor={`${listId}-phone`}
+      >
         {label}
       </label>
       <div ref={rootRef} className="relative">
         <div
-          className={`flex overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm focus-within:border-[#00104E] focus-within:ring-1 focus-within:ring-[#00104E]/35 ${
+          className={`flex w-full overflow-hidden rounded-lg border border-slate-300 bg-white shadow-none focus-within:border-[#00104E] focus-within:ring-1 focus-within:ring-[#00104E]/40 [color-scheme:light] ${
             disabled ? "opacity-60" : ""
           }`}
         >
@@ -115,7 +120,7 @@ export function RedeemShippingPhoneInput({
               value={value}
               disabled={disabled}
               placeholder={placeholder}
-              className={inputClass}
+              className={phoneInnerClass}
               onChange={(e) => onChange(e.target.value)}
             />
           </div>
@@ -166,7 +171,7 @@ export function RedeemShippingPhoneInput({
           </div>
         ) : null}
       </div>
-      <p className="text-xs text-slate-500">
+      <p className={`text-xs ${lightPanel ? "text-slate-500" : "text-slate-400"}`}>
         {t("shippingPhoneHint", { country: shippingCountryLabel(phoneCountry, locale) })}
       </p>
     </div>

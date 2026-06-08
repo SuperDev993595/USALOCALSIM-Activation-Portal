@@ -31,7 +31,7 @@ export function NetworkMark({ slug, className = "" }: MarkProps) {
   if (slug === "three_uk") {
     return (
       <span
-        className={`inline-flex items-center justify-center gap-1.5 ${className}`.trim()}
+        className={`inline-flex items-center justify-center ${className}`.trim()}
         aria-hidden
       >
         <Image
@@ -42,7 +42,7 @@ export function NetworkMark({ slug, className = "" }: MarkProps) {
           className="h-auto max-h-[3.75rem] w-[3.5rem] shrink-0 object-contain object-center"
           unoptimized
         />
-        <span className="text-[2.75rem] font-extrabold leading-none tracking-tight text-slate-900">
+        <span className="text-[1.375rem] font-extrabold leading-none tracking-tight text-slate-900 sm:text-[1.5rem]">
           pro
         </span>
       </span>

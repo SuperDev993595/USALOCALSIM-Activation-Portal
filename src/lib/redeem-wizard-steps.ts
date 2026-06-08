@@ -1,16 +1,12 @@
-/** 1-based wizard step numbers for Phase 2 redeem (tier + network steps optional). */
+/** 1-based wizard step numbers for Phase 2 redeem (tier optional). */
 export type RedeemWizardStepMap = {
   pin: number;
   phone: number;
   tier: number;
-  network: number;
-  /** SIM type picker only — "How you'll connect". */
-  fulfillment: number;
-  /** Network + SIM icon + type-specific fields (ICCID, address, eSIM note). */
-  fulfillmentDetails: number;
-  /** Shipping carrier selection after address (physical SIM mail only). */
-  shippingMethod: number;
-  plans: number;
+  /** Network + SIM + details/shipping (wide configure step). */
+  setup: number;
+  /** Order summary + checkout (plan chosen on setup). */
+  payment: number;
   date: number;
   total: number;
   showTier: boolean;
@@ -27,21 +23,15 @@ export function buildRedeemWizardStepMap(opts: {
   const pin = opts.skipPin ? 0 : ++n;
   const phone = ++n;
   const tier = opts.showTier ? ++n : 0;
-  const network = opts.showNetwork ? ++n : 0;
-  const fulfillment = ++n;
-  const fulfillmentDetails = ++n;
-  const shippingMethod = ++n;
-  const plans = ++n;
+  const setup = ++n;
+  const payment = ++n;
   const date = ++n;
   return {
     pin,
     phone,
     tier,
-    network,
-    fulfillment,
-    fulfillmentDetails,
-    shippingMethod,
-    plans,
+    setup,
+    payment,
     date,
     total: n,
     showTier: opts.showTier,

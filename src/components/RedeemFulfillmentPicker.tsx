@@ -77,6 +77,8 @@ export function RedeemFulfillmentPicker({
 }) {
   const t = useTranslations("redeemWizard");
   const visibleOptions = ultraEsimOnly ? OPTIONS.filter((o) => o.value === "ESIM") : OPTIONS;
+  const effectiveValue = ultraEsimOnly ? "ESIM" : value;
+  const canShowSelection = !disabled;
 
   return (
     <div className="space-y-3">
@@ -93,7 +95,7 @@ export function RedeemFulfillmentPicker({
         }
       >
         {visibleOptions.map((opt) => {
-          const isSelected = value === opt.value;
+          const isSelected = canShowSelection && effectiveValue === opt.value;
           const label = t(opt.labelKey);
           return (
             <button
@@ -102,7 +104,7 @@ export function RedeemFulfillmentPicker({
               role="radio"
               aria-checked={isSelected}
               aria-label={`${label}. ${t(opt.hintKey)}`}
-              disabled={disabled || ultraEsimOnly}
+              disabled={disabled}
               onClick={() => onChange(opt.value)}
               style={{ minHeight: "8.5rem" }}
               className={`group relative flex w-full min-h-[8.5rem] flex-col items-center rounded-xl border px-1.5 pb-2.5 pt-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[9.25rem] sm:px-2 sm:pb-3 sm:pt-2.5 ${
