@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
+import { RedeemFulfillmentPicker } from "@/components/RedeemFulfillmentPicker";
 import { RedeemPlanPaymentStep } from "@/components/RedeemPlanPaymentStep";
 import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
@@ -475,6 +476,19 @@ export function RedeepPhase2Client({
       (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
       (fulfillmentType === "NEW_SIM_SHIPPING" && shippingAddress.trim().length > 5);
 
+  function selectFulfillmentType(next: FulfillmentType) {
+    const prevPlan = plans.find((p) => p.id === selectedPlanId);
+    const incompatible =
+      Boolean(prevPlan) &&
+      (next === "ESIM" ? prevPlan!.planType !== "esim" : prevPlan!.planType !== "physical_sim");
+    if (incompatible) {
+      setSelectedPlanId("");
+      setTotals(null);
+    }
+    setFulfillmentType(next);
+    if (!incompatible && selectedPlanId) void unlockAndQuote(selectedPlanId, next);
+  }
+
   if (done) {
     return (
       <div className={REDEEM_SHELL_CLASS}>
@@ -712,42 +726,12 @@ export function RedeepPhase2Client({
             ) : null}
 
             <div className="mt-5 space-y-4">
-              <div className="space-y-2.5">
-                <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-fulfillment-select">
-                  {t("fulfillmentLabel")}
-                </label>
-                {ultraEsimOnly ? (
-                  <p className="rounded border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-200">
-                    {t("optEsim")} — {t("tierUltraEsimNote")}
-                  </p>
-                ) : (
-                  <select
-                    id="redeem-fulfillment-select"
-                    value={fulfillmentType}
-                    onChange={(e) => {
-                      const next = e.target.value as FulfillmentType;
-                      const prevPlan = plans.find((p) => p.id === selectedPlanId);
-                      const incompatible =
-                        Boolean(prevPlan) &&
-                        (next === "ESIM"
-                          ? prevPlan!.planType !== "esim"
-                          : prevPlan!.planType !== "physical_sim");
-                      if (incompatible) {
-                        setSelectedPlanId("");
-                        setTotals(null);
-                      }
-                      setFulfillmentType(next);
-                      if (!incompatible && selectedPlanId) void unlockAndQuote(selectedPlanId, next);
-                    }}
-                    disabled={loading !== null}
-                    className={redeepPanelInputClass}
-                  >
-                    <option value="EXISTING_SIM">{t("optExistingSim")}</option>
-                    <option value="NEW_SIM_SHIPPING">{t("optShipping")}</option>
-                    <option value="ESIM">{t("optEsim")}</option>
-                  </select>
-                )}
-              </div>
+              <RedeemFulfillmentPicker
+                value={fulfillmentType}
+                onChange={selectFulfillmentType}
+                disabled={loading !== null}
+                ultraEsimOnly={ultraEsimOnly}
+              />
 
               {!ultraEsimOnly && fulfillmentType === "EXISTING_SIM" ? (
                 <div className="space-y-2.5">
