@@ -91,8 +91,8 @@
     background-size: cover, cover;
   }
 
-  /* Faint map — all public pages except step-1 redeem (home banner replaces this layer) */
-  .public-site:not(.public-site--home-banner)::after {
+  /* Faint map — light public pages only (not redeem cockpit or legacy home banner) */
+  .public-site:not(.public-site--home-banner):not(.public-site--redeem)::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -103,6 +103,68 @@
     background-repeat: no-repeat;
     background-position: center 140px;
     background-size: min(980px, 92vw) auto;
+  }
+
+  /* Redeem flow: brighter navy sky + map-02 + soft aurora */
+  .public-site.public-site--redeem {
+    background-color: #1f4f8f;
+    background-image: linear-gradient(rgba(219, 234, 254, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(219, 234, 254, 0.12) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    color: #f1f5f9;
+  }
+
+  .public-site.public-site--redeem::before {
+    background-image:
+      radial-gradient(ellipse 110% 75% at 50% -6%, rgba(219, 234, 254, 0.38), transparent 58%),
+      radial-gradient(ellipse 72% 58% at 50% 40%, rgba(125, 211, 252, 0.2), transparent 66%),
+      radial-gradient(circle at 10% 16%, rgba(0, 16, 78, 0.16), transparent 40%),
+      radial-gradient(circle at 94% 18%, rgba(225, 29, 46, 0.07), transparent 34%),
+      radial-gradient(ellipse 48% 38% at 14% 92%, rgba(52, 211, 153, 0.08), transparent 52%),
+      radial-gradient(ellipse 130% 95% at 50% 50%, transparent 62%, rgba(20, 55, 110, 0.28) 100%),
+      linear-gradient(155deg, #1a4f94 0%, #2a6cb5 36%, #3b82c4 58%, #2563a8 100%);
+  }
+
+  .public-site.public-site--redeem .redeem-bg-aurora {
+    background-image:
+      radial-gradient(ellipse 90% 55% at 50% 0%, rgba(191, 219, 254, 0.42), transparent 60%),
+      radial-gradient(ellipse 42% 34% at 88% 72%, rgba(125, 211, 252, 0.18), transparent 56%),
+      radial-gradient(ellipse 38% 30% at 8% 78%, rgba(165, 180, 252, 0.14), transparent 52%);
+    opacity: 0.92;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .public-site.public-site--redeem .redeem-bg-aurora {
+      animation: redeem-bg-breathe 16s ease-in-out infinite alternate;
+    }
+  }
+
+  @keyframes redeem-bg-breathe {
+    from {
+      opacity: 0.82;
+      transform: scale(1);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1.015);
+    }
+  }
+
+  .public-site.public-site--redeem::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.14;
+    background-image:
+      url("/images/map-02.webp"),
+      radial-gradient(circle, rgba(186, 230, 253, 0.16) 0.55px, transparent 0.6px);
+    background-repeat: no-repeat, repeat;
+    background-position: center 48%, 0 0;
+    background-size: min(1080px, 104vw) auto, 14px 14px;
+    -webkit-mask-image: radial-gradient(ellipse 72% 60% at 50% 46%, #000 14%, transparent 78%);
+    mask-image: radial-gradient(ellipse 72% 60% at 50% 46%, #000 14%, transparent 78%);
   }
 
   .public-main {
