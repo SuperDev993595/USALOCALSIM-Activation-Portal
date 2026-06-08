@@ -6,7 +6,7 @@ export const REDEEM_SETUP_SHELL_CLASS = "mx-auto w-full max-w-6xl xl:max-w-7xl";
 
 /** Glass panel for /redeem/enter and Phase 2 wizard. */
 export const REDEEM_PANEL_CLASS =
-  "h-auto w-full rounded-xl border border-white/[0.12] bg-slate-950/65 p-5 text-slate-100 shadow-[0_16px_40px_-14px_rgba(0,0,0,0.5)] backdrop-blur-sm sm:p-7 md:p-8 lg:p-9";
+  "h-auto w-full rounded-xl border border-white/[0.14] bg-slate-900/55 p-5 text-slate-100 shadow-[0_16px_40px_-14px_rgba(0,0,0,0.44)] backdrop-blur-sm sm:p-7 md:p-8 lg:p-9";
 
 export const REDEEM_PRIMARY_BUTTON_CLASS =
   "btn-primary min-h-11 w-full py-2.5 text-sm disabled:opacity-60 md:min-h-12 md:text-base";
