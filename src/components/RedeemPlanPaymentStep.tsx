@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
+import { resolveShippingMethod, type ShippingMethodId } from "@/lib/shipping-methods";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
 
 export type RedeemPlanRow = {
@@ -21,6 +22,8 @@ export type RedeemPlanRow = {
 };
 
 type Totals = {
+  physicalSimCents?: number;
+  shippingMethodCents?: number;
   shippingCents: number;
   addonCents?: number;
   finalTotalCents: number;
@@ -47,6 +50,7 @@ export function RedeemPlanPaymentStep({
   onSelectPlan,
   onAddonChange,
   onCheckout,
+  shippingMethodId,
 }: {
   creditCents: number;
   fulfillmentType: string;
@@ -66,8 +70,11 @@ export function RedeemPlanPaymentStep({
   onSelectPlan: (planId: string) => void;
   onAddonChange: (skus: TmobileAddonSku[]) => void;
   onCheckout: () => void;
+  shippingMethodId?: ShippingMethodId;
 }) {
   const t = useTranslations("redeemWizard");
+  const shippingMethod =
+    fulfillmentType === "NEW_SIM_SHIPPING" ? resolveShippingMethod(shippingMethodId) : null;
 
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
@@ -258,7 +265,26 @@ export function RedeemPlanPaymentStep({
                   −${(totals.creditAppliedCents / 100).toFixed(2)}
                 </dd>
               </div>
-              {totals.shippingCents > 0 ? (
+              {fulfillmentType === "NEW_SIM_SHIPPING" && (totals.physicalSimCents ?? 0) > 0 ? (
+                <div className="flex items-center justify-between gap-4">
+                  <dt>{t("physicalSimLine")}</dt>
+                  <dd className="tabular-nums text-slate-200">
+                    ${((totals.physicalSimCents ?? 0) / 100).toFixed(2)}
+                  </dd>
+                </div>
+              ) : null}
+              {fulfillmentType === "NEW_SIM_SHIPPING" ? (
+                <div className="flex items-center justify-between gap-4">
+                  <dt>
+                    {shippingMethod ? t(shippingMethod.labelKey) : t("shippingLine")}
+                  </dt>
+                  <dd className="tabular-nums text-slate-200">
+                    {(totals.shippingMethodCents ?? 0) > 0
+                      ? `$${((totals.shippingMethodCents ?? 0) / 100).toFixed(2)}`
+                      : t("shippingMethodFree")}
+                  </dd>
+                </div>
+              ) : totals.shippingCents > 0 ? (
                 <div className="flex items-center justify-between gap-4">
                   <dt>{t("shippingLine")}</dt>
                   <dd className="tabular-nums text-slate-200">${(totals.shippingCents / 100).toFixed(2)}</dd>

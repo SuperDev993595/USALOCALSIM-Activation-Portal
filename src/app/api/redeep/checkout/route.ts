@@ -35,6 +35,7 @@ const bodySchema = z.object({
   ]),
   iccid: z.string().optional(),
   shippingAddress: z.string().optional(),
+  shippingMethodId: z.string().optional(),
   accessToken: z.string().optional(),
 });
 
@@ -118,6 +119,7 @@ export async function POST(req: Request) {
     planPriceCents: plan.priceCents,
     creditAmountCents,
     fulfillmentType: body.fulfillmentType,
+    shippingMethodId: body.shippingMethodId,
     addonCents,
   });
   const addonLines = addonLinesForSkus(selectedAddonSkus);

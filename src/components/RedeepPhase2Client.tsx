@@ -7,7 +7,13 @@ import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
 import { RedeemFulfillmentPicker } from "@/components/RedeemFulfillmentPicker";
+import {
+  RedeemFulfillmentContextHeader,
+  RedeemSelectedNetworkBadge,
+} from "@/components/RedeemFulfillmentContextHeader";
 import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressForm";
+import { RedeemShippingMethodStep } from "@/components/RedeemShippingMethodStep";
+import { RedeemShippingWizardSubnav } from "@/components/RedeemShippingWizardSubnav";
 import {
   EMPTY_REDEEM_SHIPPING,
   formatRedeemShippingAddress,
@@ -20,6 +26,11 @@ import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
+import {
+  DEFAULT_SHIPPING_METHOD_ID,
+  resolveShippingMethod,
+  type ShippingMethodId,
+} from "@/lib/shipping-methods";
 import { PaymentMethodsNote } from "@/components/PaymentMethodsNote";
 import {
   REDEEM_PANEL_CLASS,
@@ -60,6 +71,7 @@ function initialWizardStep(
 function navSteps(
   stepMap: ReturnType<typeof buildRedeemWizardStepMap>,
   skipFulfillmentStep: boolean,
+  includeShippingMethodNav: boolean,
 ): { key: string; step: number }[] {
   if (skipFulfillmentStep && !stepMap.showNetwork && !stepMap.showTier) {
     return [
@@ -74,7 +86,13 @@ function navSteps(
       { key: "navBriefingNetwork", step: stepMap.network },
     ];
     if (!skipFulfillmentStep) {
-      items.push({ key: "navBriefingSim", step: stepMap.fulfillment });
+      items.push(
+        { key: "navBriefingSim", step: stepMap.fulfillment },
+        { key: "navBriefingDetails", step: stepMap.fulfillmentDetails },
+      );
+      if (includeShippingMethodNav) {
+        items.push({ key: "navBriefingShip", step: stepMap.shippingMethod });
+      }
     }
     items.push(
       { key: "navBriefingPlan", step: stepMap.plans },
@@ -87,7 +105,15 @@ function navSteps(
   items.push({ key: "navStep2", step: stepMap.phone });
   if (stepMap.showTier) items.push({ key: "navStepTier", step: stepMap.tier });
   if (stepMap.showNetwork) items.push({ key: "navStepNetwork", step: stepMap.network });
-  if (!skipFulfillmentStep) items.push({ key: "navStep3", step: stepMap.fulfillment });
+  if (!skipFulfillmentStep) {
+    items.push(
+      { key: "navStep3", step: stepMap.fulfillment },
+      { key: "navStep3Details", step: stepMap.fulfillmentDetails },
+    );
+    if (includeShippingMethodNav) {
+      items.push({ key: "navStep3Ship", step: stepMap.shippingMethod });
+    }
+  }
   items.push(
     { key: "navStep4", step: stepMap.plans },
     { key: "navStep5", step: stepMap.date },
@@ -142,7 +168,6 @@ export function RedeepPhase2Client({
       }),
     [showTierStep, showNetworkStep, skipPinStep],
   );
-  const navStepsList = useMemo(() => navSteps(stepMap, skipFulfillmentStep), [stepMap, skipFulfillmentStep]);
   const [purchaseId, setPurchaseId] = useState(purchaseIdProp?.trim() || "");
   const [accessToken, setAccessToken] = useState(accessTokenProp?.trim() || "");
   const [selectedCoverageTier, setSelectedCoverageTier] = useState(initialCoverageTier ?? "");
@@ -159,9 +184,12 @@ export function RedeepPhase2Client({
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>("EXISTING_SIM");
   const [iccid, setIccid] = useState("");
   const [shippingForm, setShippingForm] = useState<RedeemShippingForm>(EMPTY_REDEEM_SHIPPING);
+  const [shippingMethodId, setShippingMethodId] = useState<ShippingMethodId>(DEFAULT_SHIPPING_METHOD_ID);
   const [activationDate, setActivationDate] = useState("");
   const [creditCents, setCreditCents] = useState(0);
   const [totals, setTotals] = useState<{
+    physicalSimCents?: number;
+    shippingMethodCents?: number;
     shippingCents: number;
     addonCents?: number;
     finalTotalCents: number;
@@ -190,6 +218,14 @@ export function RedeepPhase2Client({
   const [redeemPhone, setRedeemPhone] = useState("");
   const [redeemOtpCode, setRedeemOtpCode] = useState("");
   const [redeemOtpUiStep, setRedeemOtpUiStep] = useState<"phone" | "code">("phone");
+
+  const includeShippingMethodNav =
+    !skipFulfillmentStep &&
+    (fulfillmentType === "NEW_SIM_SHIPPING" || wizardStep >= stepMap.shippingMethod);
+  const navStepsList = useMemo(
+    () => navSteps(stepMap, skipFulfillmentStep, includeShippingMethodNav),
+    [stepMap, skipFulfillmentStep, includeShippingMethodNav],
+  );
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
   const baselinePlans = useMemo(() => plans.filter((p) => p.matchesVoucherCredit), [plans]);
@@ -256,6 +292,7 @@ export function RedeepPhase2Client({
     planId?: string,
     fType?: FulfillmentType,
     addonSkus?: TmobileAddonSku[],
+    methodId?: ShippingMethodId,
   ): Promise<{ ok: boolean; plans: PlanRow[] }> {
     if (!purchaseId.trim()) {
       setError(t("errors.unlockFirst"));
@@ -273,6 +310,9 @@ export function RedeepPhase2Client({
           ...(voucherFromPurchase ? {} : { voucherCode }),
           ...(planId ? { planId } : {}),
           ...(fType ? { fulfillmentType: fType } : {}),
+          ...((fType ?? fulfillmentType) === "NEW_SIM_SHIPPING"
+            ? { shippingMethodId: methodId ?? shippingMethodId }
+            : {}),
           ...(addonSkus && addonSkus.length > 0 ? { addonSkus } : {}),
           ...(at ? { accessToken: at } : {}),
         }),
@@ -286,6 +326,8 @@ export function RedeepPhase2Client({
         tmobileAddons?: TmobileAddonOption[];
         selectedAddonSkus?: string[];
         totals?: {
+          physicalSimCents?: number;
+          shippingMethodCents?: number;
           shippingCents: number;
           addonCents?: number;
           finalTotalCents: number;
@@ -341,8 +383,40 @@ export function RedeepPhase2Client({
     setWizardStep(stepMap.plans);
   }
 
-  async function continueFromFulfillment() {
+  function continueFromFulfillment() {
+    setWizardStep(stepMap.fulfillmentDetails);
+  }
+
+  async function continueFromFulfillmentDetails() {
+    if (fulfillmentType === "NEW_SIM_SHIPPING") {
+      setWizardStep(stepMap.shippingMethod);
+      return;
+    }
     await continueToPlans({ preserveSelectedPlan: skipFulfillmentStep });
+  }
+
+  async function continueFromShippingMethod() {
+    await continueToPlans({ preserveSelectedPlan: skipFulfillmentStep });
+  }
+
+  function redirectToIncompleteFulfillment() {
+    if (ultraEsimOnly || fulfillmentType === "ESIM") {
+      setWizardStep(stepMap.fulfillmentDetails);
+      return;
+    }
+    if (fulfillmentType === "EXISTING_SIM" && iccid.trim().length < 15) {
+      setWizardStep(stepMap.fulfillmentDetails);
+      return;
+    }
+    if (fulfillmentType === "NEW_SIM_SHIPPING") {
+      if (!isRedeemShippingComplete(shippingForm)) {
+        setWizardStep(stepMap.fulfillmentDetails);
+        return;
+      }
+      setWizardStep(stepMap.shippingMethod);
+      return;
+    }
+    setWizardStep(stepMap.fulfillment);
   }
 
   async function sendRedeemSms() {
@@ -408,8 +482,8 @@ export function RedeepPhase2Client({
 
   async function checkoutBalance() {
     if (!selectedPlanId) return;
-    if (skipFulfillmentStep && !fulfillmentReady) {
-      setWizardStep(stepMap.fulfillment);
+    if (!fulfillmentReady) {
+      redirectToIncompleteFulfillment();
       return;
     }
     setError(null);
@@ -425,7 +499,10 @@ export function RedeepPhase2Client({
           fulfillmentType,
           iccid,
           shippingAddress:
-            fulfillmentType === "NEW_SIM_SHIPPING" ? formatRedeemShippingAddress(shippingForm) : undefined,
+            fulfillmentType === "NEW_SIM_SHIPPING"
+              ? `${formatRedeemShippingAddress(shippingForm)}\nShipping service: ${resolveShippingMethod(shippingMethodId).id}`
+              : undefined,
+          ...(fulfillmentType === "NEW_SIM_SHIPPING" ? { shippingMethodId } : {}),
           ...(selectedAddonSkus.length > 0 ? { addonSkus: selectedAddonSkus } : {}),
           ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
@@ -478,11 +555,23 @@ export function RedeepPhase2Client({
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
 
-  const fulfillmentReady = ultraEsimOnly
-    ? true
-    : fulfillmentType === "ESIM" ||
-      (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
-      (fulfillmentType === "NEW_SIM_SHIPPING" && isRedeemShippingComplete(shippingForm));
+  const fulfillmentDetailsReady =
+    ultraEsimOnly || fulfillmentType === "ESIM"
+      ? true
+      : fulfillmentType === "EXISTING_SIM"
+        ? iccid.trim().length >= 15
+        : fulfillmentType === "NEW_SIM_SHIPPING"
+          ? isRedeemShippingComplete(shippingForm)
+          : false;
+
+  const fulfillmentReady =
+    ultraEsimOnly || fulfillmentType === "ESIM"
+      ? true
+      : fulfillmentType === "EXISTING_SIM"
+        ? iccid.trim().length >= 15
+        : fulfillmentType === "NEW_SIM_SHIPPING"
+          ? isRedeemShippingComplete(shippingForm) && Boolean(shippingMethodId)
+          : false;
 
   function selectFulfillmentType(next: FulfillmentType) {
     const prevPlan = plans.find((p) => p.id === selectedPlanId);
@@ -494,7 +583,17 @@ export function RedeepPhase2Client({
       setTotals(null);
     }
     setFulfillmentType(next);
-    if (!incompatible && selectedPlanId) void unlockAndQuote(selectedPlanId, next);
+    if (next !== "NEW_SIM_SHIPPING") {
+      setShippingMethodId(DEFAULT_SHIPPING_METHOD_ID);
+    }
+    if (!incompatible && selectedPlanId) {
+      void unlockAndQuote(selectedPlanId, next, undefined, DEFAULT_SHIPPING_METHOD_ID);
+    }
+  }
+
+  function handleShippingMethodChange(next: ShippingMethodId) {
+    setShippingMethodId(next);
+    if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, undefined, next);
   }
 
   if (done) {
@@ -734,6 +833,9 @@ export function RedeepPhase2Client({
             ) : null}
 
             <div className="mt-5 space-y-4">
+              {selectedNetworkSlug ? (
+                <RedeemSelectedNetworkBadge networkSlug={selectedNetworkSlug} />
+              ) : null}
               <RedeemFulfillmentPicker
                 value={fulfillmentType}
                 onChange={selectFulfillmentType}
@@ -741,7 +843,49 @@ export function RedeepPhase2Client({
                 ultraEsimOnly={ultraEsimOnly}
               />
 
-              {!ultraEsimOnly && fulfillmentType === "EXISTING_SIM" ? (
+              <button
+                type="button"
+                className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
+                disabled={loading !== null}
+                onClick={() => continueFromFulfillment()}
+              >
+                {t("continueSimDetails")}
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {wizardStep === stepMap.fulfillmentDetails ? (
+          <>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className={backArrowButtonClass}
+                aria-label={t("backSimType")}
+                disabled={loading !== null}
+                onClick={() => setWizardStep(stepMap.fulfillment)}
+              >
+                <BackChevronIcon />
+              </button>
+              <h2 id="redeem-step3-details-heading" className="text-lg font-semibold text-white md:text-xl">
+                {t("step3DetailsTitle")}
+              </h2>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">{t("step3DetailsBody")}</p>
+
+            <div className="mt-5 space-y-4">
+              <RedeemFulfillmentContextHeader
+                networkSlug={selectedNetworkSlug}
+                fulfillmentType={fulfillmentType}
+              />
+
+              {fulfillmentType === "ESIM" ? (
+                <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-relaxed text-slate-300">
+                  {t("esimDetailsNote")}
+                </p>
+              ) : null}
+
+              {fulfillmentType === "EXISTING_SIM" ? (
                 <div className="space-y-2.5">
                   <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-iccid-input">
                     {t("iccidLabel")}
@@ -758,24 +902,43 @@ export function RedeepPhase2Client({
                   <p className="text-xs text-slate-500">{t("iccidCount", { count: iccidDigitCount })}</p>
                 </div>
               ) : null}
-              {!ultraEsimOnly && fulfillmentType === "NEW_SIM_SHIPPING" ? (
-                <RedeemShippingAddressForm
-                  value={shippingForm}
-                  onChange={setShippingForm}
-                  disabled={loading !== null}
-                />
+
+              {fulfillmentType === "NEW_SIM_SHIPPING" ? (
+                <>
+                  <RedeemShippingWizardSubnav activeStep={1} />
+                  <RedeemShippingAddressForm
+                    value={shippingForm}
+                    onChange={setShippingForm}
+                    disabled={loading !== null}
+                  />
+                </>
               ) : null}
 
               <button
                 type="button"
                 className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
-                disabled={loading !== null || !fulfillmentReady}
-                onClick={() => void continueFromFulfillment()}
+                disabled={loading !== null || !fulfillmentDetailsReady}
+                onClick={() => void continueFromFulfillmentDetails()}
               >
-                {loading === "unlock" ? t("processingCheckout") : t("continuePlans")}
+                {fulfillmentType === "NEW_SIM_SHIPPING" ? t("continueShippingMethod") : t("continuePlans")}
               </button>
             </div>
           </>
+        ) : null}
+
+        {wizardStep === stepMap.shippingMethod ? (
+          <RedeemShippingMethodStep
+            shippingForm={shippingForm}
+            contactPhone={redeemPhone}
+            shippingMethodId={shippingMethodId}
+            disabled={loading !== null}
+            backLabel={t("backSimDetails")}
+            onBack={() => setWizardStep(stepMap.fulfillmentDetails)}
+            onChangeMethod={handleShippingMethodChange}
+            onChangeContact={() => setWizardStep(stepMap.fulfillmentDetails)}
+            onChangeAddress={() => setWizardStep(stepMap.fulfillmentDetails)}
+            onContinue={() => void continueFromShippingMethod()}
+          />
         ) : null}
 
         {wizardStep === stepMap.plans && plans.length > 0 ? (
@@ -794,7 +957,18 @@ export function RedeepPhase2Client({
             loading={loading !== null}
             voucherFromPurchase={voucherFromPurchase}
             voucherCode={voucherCode}
-            onBack={() => setWizardStep(skipFulfillmentStep ? stepMap.phone : stepMap.fulfillment)}
+            onBack={() => {
+              if (skipFulfillmentStep) {
+                setWizardStep(stepMap.phone);
+                return;
+              }
+              if (fulfillmentType === "NEW_SIM_SHIPPING") {
+                setWizardStep(stepMap.shippingMethod);
+                return;
+              }
+              setWizardStep(stepMap.fulfillmentDetails);
+            }}
+            shippingMethodId={shippingMethodId}
             onSelectPlan={(planId) => {
               setSelectedPlanId(planId);
               const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];

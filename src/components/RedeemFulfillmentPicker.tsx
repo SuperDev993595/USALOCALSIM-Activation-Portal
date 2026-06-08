@@ -34,18 +34,30 @@ const OPTIONS: {
   },
 ];
 
-function FulfillmentOptionIcon({ src }: { src: string }) {
+function FulfillmentOptionIcon({ src, selected }: { src: string; selected: boolean }) {
   return (
     <span className="flex flex-1 items-center justify-center py-1">
-      <img
-        src={src}
-        alt=""
-        width={96}
-        height={96}
-        className="h-[4.5rem] w-[4.5rem] shrink-0 object-contain opacity-95 brightness-0 invert sm:h-[5rem] sm:w-[5rem]"
-        draggable={false}
-        aria-hidden
-      />
+      <span
+        className={`flex items-center justify-center rounded-lg border px-2 py-1.5 ${
+          selected
+            ? "border-emerald-400/35 bg-emerald-500/10"
+            : "border-white/10 bg-black/25"
+        }`}
+      >
+        <img
+          src={src}
+          alt=""
+          width={96}
+          height={96}
+          className={`h-[4rem] w-[4rem] shrink-0 object-contain sm:h-[4.5rem] sm:w-[4.5rem] ${
+            selected
+              ? "opacity-85 [filter:brightness(0)_invert(1)_sepia(0.12)_saturate(0.4)_hue-rotate(185deg)]"
+              : "opacity-60 [filter:brightness(0)_invert(1)_sepia(0.18)_saturate(0.35)_hue-rotate(185deg)]"
+          }`}
+          draggable={false}
+          aria-hidden
+        />
+      </span>
     </span>
   );
 }
@@ -107,7 +119,7 @@ export function RedeemFulfillmentPicker({
                   ✓
                 </span>
               ) : null}
-              <FulfillmentOptionIcon src={opt.iconSrc} />
+              <FulfillmentOptionIcon src={opt.iconSrc} selected={isSelected} />
               <span className="flex w-full shrink-0 flex-wrap items-center justify-center gap-0.5 leading-tight">
                 <span className="text-[10px] font-semibold text-white sm:text-[11px]">{label}</span>
                 {opt.badgeKey ? (

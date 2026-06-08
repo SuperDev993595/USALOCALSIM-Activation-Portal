@@ -4,7 +4,12 @@ export type RedeemWizardStepMap = {
   phone: number;
   tier: number;
   network: number;
+  /** SIM type picker only — "How you'll connect". */
   fulfillment: number;
+  /** Network + SIM icon + type-specific fields (ICCID, address, eSIM note). */
+  fulfillmentDetails: number;
+  /** Shipping carrier selection after address (physical SIM mail only). */
+  shippingMethod: number;
   plans: number;
   date: number;
   total: number;
@@ -24,6 +29,8 @@ export function buildRedeemWizardStepMap(opts: {
   const tier = opts.showTier ? ++n : 0;
   const network = opts.showNetwork ? ++n : 0;
   const fulfillment = ++n;
+  const fulfillmentDetails = ++n;
+  const shippingMethod = ++n;
   const plans = ++n;
   const date = ++n;
   return {
@@ -32,6 +39,8 @@ export function buildRedeemWizardStepMap(opts: {
     tier,
     network,
     fulfillment,
+    fulfillmentDetails,
+    shippingMethod,
     plans,
     date,
     total: n,

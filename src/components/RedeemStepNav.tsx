@@ -46,7 +46,7 @@ function StepSegment({
       aria-hidden
     >
       <span
-        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400/85 to-white/35 transition-[width,opacity] duration-[800ms] ease-in-out"
+        className="absolute inset-y-0 left-0 rounded-full bg-emerald-400/80 transition-[width,opacity] duration-[800ms] ease-in-out"
         style={{
           width: pulseOn ? "100%" : "72%",
           opacity: pulseOn ? 1 : 0.75,
@@ -131,6 +131,9 @@ export function RedeemStepNav({
   const bannerKey = flowVariant === "briefing" ? "briefingBanner" : "phase2Banner";
   const hasActiveStep = steps.some((s) => s.step === currentStep);
   const pulseOn = useActiveStepPulse(hasActiveStep);
+  const displayTotal = steps.length;
+  const currentIndex = steps.findIndex((s) => s.step === currentStep);
+  const currentDisplay = currentIndex >= 0 ? currentIndex + 1 : Math.min(currentStep, displayTotal);
 
   return (
     <nav aria-label={t("navAria")} className="mb-6 border-b border-white/10 pb-5">
@@ -138,11 +141,12 @@ export function RedeemStepNav({
         {t(bannerKey)}
       </p>
       <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-        {t("stepProgress", { current: currentStep, total: totalSteps })}
+        {t("stepProgress", { current: currentDisplay, total: displayTotal })}
       </p>
 
       <ol className="flex w-full items-start">
         {steps.map(({ key, step: stepNum }, idx) => {
+          const displayNum = idx + 1;
           const isCurrent = stepNum === currentStep;
           const isPast = stepNum < currentStep;
           const prevStep = steps[idx - 1]?.step;
@@ -169,7 +173,7 @@ export function RedeemStepNav({
               <li className="flex shrink-0 flex-col items-center gap-1.5 md:gap-2">
                 <div className={BADGE_ROW}>
                   <StepBadge
-                    stepNum={stepNum}
+                    stepNum={displayNum}
                     isCurrent={isCurrent}
                     isPast={isPast}
                     pulseOn={pulseOn}

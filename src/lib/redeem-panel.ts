@@ -7,3 +7,7 @@ export const REDEEM_PANEL_CLASS =
 
 export const REDEEM_PRIMARY_BUTTON_CLASS =
   "btn-primary min-h-11 w-full py-2.5 text-sm disabled:opacity-60 md:min-h-12 md:text-base";
+
+/** Flat icon tile on dark redeem panels (no gradients). */
+export const REDEEM_ICON_TILE_CLASS =
+  "flex items-center justify-center rounded-lg border border-white/10 bg-black/30";

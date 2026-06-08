@@ -65,14 +65,14 @@ export function RedeemShippingAddressForm({
 
   return (
     <section
-      className="overflow-visible rounded-xl border border-white/15 bg-white p-4 text-slate-900 shadow-sm sm:p-5"
+      className="overflow-visible rounded-xl border border-slate-700/55 bg-black/30 p-4 sm:p-5"
       aria-labelledby="redeem-shipping-heading"
     >
-      <h3 id="redeem-shipping-heading" className="text-base font-bold text-slate-900 sm:text-lg">
+      <h3 id="redeem-shipping-heading" className="text-base font-semibold text-white sm:text-lg">
         {t("shippingHeading")}
       </h3>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-4 rounded-lg border border-white/10 bg-white/95 p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="redeem-ship-first" label={t("shippingFirstName")}>
             <input

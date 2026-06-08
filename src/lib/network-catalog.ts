@@ -9,3 +9,10 @@ export const NETWORK_DISPLAY: Record<GlobalNetworkSlug, string> = {
   t_mobile: "T-MOBILE",
   orange: "ORANGE",
 };
+
+export function networkDisplayLabel(slug: string): string {
+  if ((GLOBAL_NETWORK_SLUGS as readonly string[]).includes(slug)) {
+    return NETWORK_DISPLAY[slug as GlobalNetworkSlug];
+  }
+  return slug.replace(/_/g, " ").toUpperCase();
+}

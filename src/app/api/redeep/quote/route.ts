@@ -33,6 +33,7 @@ const bodySchema = z.object({
       REDEMPTION_FULFILLMENT_TYPES.ESIM,
     ])
     .optional(),
+  shippingMethodId: z.string().optional(),
   accessToken: z.string().optional(),
 });
 
@@ -139,6 +140,7 @@ export async function POST(req: Request) {
         planPriceCents: p.priceCents,
         creditAmountCents,
         fulfillmentType: quoteFulfillment,
+        shippingMethodId: body.shippingMethodId,
       });
       const matchesVoucherCredit = isPerfectMatchPlanPrice(p.priceCents, creditAmountCents);
       return {
@@ -179,6 +181,7 @@ export async function POST(req: Request) {
           planPriceCents: quotePlan.priceCents,
           creditAmountCents,
           fulfillmentType: selectedFulfillment,
+          shippingMethodId: body.shippingMethodId,
           addonCents,
         })
       : null;
