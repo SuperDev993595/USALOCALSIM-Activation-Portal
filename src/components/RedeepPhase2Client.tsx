@@ -541,7 +541,7 @@ export function RedeepPhase2Client({
     }
   }
 
-  const onWideStep = wizardStep === stepMap.setup || wizardStep === stepMap.payment;
+  const onWideStep = wizardStep === stepMap.setup;
   const shellClass = onWideStep ? REDEEM_SETUP_SHELL_CLASS : REDEEM_SHELL_CLASS;
 
   const setupReady =
@@ -827,7 +827,9 @@ export function RedeepPhase2Client({
 
         {wizardStep === stepMap.payment ? (
           <RedeemPaymentStep
+            networkSlug={selectedNetworkSlug}
             fulfillmentType={fulfillmentType}
+            iccid={iccid}
             selectedPlan={selectedPlan}
             addonLines={addonLines}
             totals={totals}
@@ -835,7 +837,17 @@ export function RedeepPhase2Client({
             voucherFromPurchase={voucherFromPurchase}
             voucherCode={voucherCode}
             shippingMethodId={shippingMethodId}
+            showNetworkChange={showConfigColumn && showNetworkStep}
+            showSimChange={showConfigColumn}
             onBack={() => setWizardStep(stepMap.setup)}
+            onChangeNetwork={() => {
+              setWizardStep(stepMap.setup);
+              setSetupHighlight("network");
+            }}
+            onChangeSimType={() => {
+              setWizardStep(stepMap.setup);
+              setSetupHighlight("sim");
+            }}
             onCheckout={() => void checkoutBalance()}
           />
         ) : null}

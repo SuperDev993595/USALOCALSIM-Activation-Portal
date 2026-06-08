@@ -1,10 +1,15 @@
 "use client";
 
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
+import { NetworkCompactMark } from "@/components/NetworkMark";
+import type { RedeemFulfillmentType } from "@/components/RedeemFulfillmentPicker";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
+import { fulfillmentOptionMeta } from "@/lib/redeem-fulfillment-meta";
+import { networkDisplayLabel } from "@/lib/network-catalog";
 import { planListDisplayName } from "@/lib/plan-sku";
-import { REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
+import { REDEEM_ICON_TILE_CLASS, REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
 import { resolveShippingMethod, type ShippingMethodId } from "@/lib/shipping-methods";
 
 type Totals = {
@@ -19,8 +24,83 @@ type Totals = {
 
 type AddonLine = { sku: string; label: string; priceCents: number };
 
+const SUMMARY_CHANGE_LINK_CLASS =
+  "shrink-0 text-xs font-medium text-sky-300/95 transition hover:text-sky-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 disabled:pointer-events-none disabled:opacity-40";
+
+const ORDER_SUMMARY_GRID_CLASS =
+  "grid grid-cols-[auto_minmax(0,1fr)_3.75rem] items-start gap-x-3 gap-y-4 sm:grid-cols-[auto_minmax(0,1fr)_4.5rem]";
+
+function OrderSummaryContent({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{eyebrow}</p>
+      <p className="mt-0.5 text-[15px] font-semibold leading-snug text-white">{title}</p>
+      {subtitle ? <p className="mt-1 text-xs text-slate-400">{subtitle}</p> : null}
+    </div>
+  );
+}
+
+function SummaryChangeButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className={SUMMARY_CHANGE_LINK_CLASS} disabled={disabled} onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+
+function SimSummaryIcon({ src }: { src: string }) {
+  return (
+    <span className={`${REDEEM_ICON_TILE_CLASS} h-14 w-[4.5rem] px-1.5`}>
+      <img
+        src={src}
+        alt=""
+        width={80}
+        height={80}
+        className="h-11 w-11 object-contain opacity-85 [filter:brightness(0)_invert(1)_sepia(0.12)_saturate(0.4)_hue-rotate(185deg)]"
+        draggable={false}
+        aria-hidden
+      />
+    </span>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  valueClass = "text-slate-200",
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-0.5 text-sm">
+      <dt className="text-slate-400">{label}</dt>
+      <dd className={`shrink-0 tabular-nums ${valueClass}`}>{value}</dd>
+    </div>
+  );
+}
+
 export function RedeemPaymentStep({
+  networkSlug,
   fulfillmentType,
+  iccid,
   selectedPlan,
   addonLines,
   totals,
@@ -28,10 +108,16 @@ export function RedeemPaymentStep({
   voucherFromPurchase,
   voucherCode,
   shippingMethodId,
+  showNetworkChange,
+  showSimChange,
   onBack,
+  onChangeNetwork,
+  onChangeSimType,
   onCheckout,
 }: {
-  fulfillmentType: string;
+  networkSlug: string;
+  fulfillmentType: RedeemFulfillmentType;
+  iccid: string;
   selectedPlan: RedeemPlanRow | null;
   addonLines: AddonLine[];
   totals: Totals | null;
@@ -39,18 +125,37 @@ export function RedeemPaymentStep({
   voucherFromPurchase: boolean;
   voucherCode: string;
   shippingMethodId?: ShippingMethodId;
+  showNetworkChange: boolean;
+  showSimChange: boolean;
   onBack: () => void;
+  onChangeNetwork?: () => void;
+  onChangeSimType?: () => void;
   onCheckout: () => void;
 }) {
   const t = useTranslations("redeemWizard");
+  const simMeta = fulfillmentOptionMeta(fulfillmentType);
   const shippingMethod =
     fulfillmentType === "NEW_SIM_SHIPPING" ? resolveShippingMethod(shippingMethodId) : null;
+  const shippingMethodLabel = shippingMethod ? t(shippingMethod.labelKey) : undefined;
+
+  const simDetail = useMemo(() => {
+    if (fulfillmentType === "EXISTING_SIM") {
+      const digits = iccid.replace(/\D/g, "");
+      if (digits.length >= 4) return t("paymentIccidDetail", { last4: digits.slice(-4) });
+      return undefined;
+    }
+    if (fulfillmentType === "NEW_SIM_SHIPPING" && shippingMethodLabel) {
+      return t("paymentShippingDetail", { method: shippingMethodLabel });
+    }
+    if (fulfillmentType === "ESIM") return t("paymentEsimDeliveryDetail");
+    return undefined;
+  }, [fulfillmentType, iccid, shippingMethodLabel, t]);
 
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-lg">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -61,99 +166,118 @@ export function RedeemPaymentStep({
         >
           <BackChevronIcon />
         </button>
-        <h2 id="redeem-payment-heading" className="text-lg font-semibold text-white md:text-xl">
-          {t("stepPaymentTitle")}
-        </h2>
+        <div className="min-w-0">
+          <h2 id="redeem-payment-heading" className="text-lg font-semibold text-white">
+            {t("stepPaymentTitle")}
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-slate-400">{t("stepPaymentBody")}</p>
+        </div>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-slate-300 md:text-[15px]">{t("stepPaymentBody")}</p>
 
-      <section
-        className="mt-6 rounded-xl border border-white/15 bg-black/35 p-4 md:p-5"
-        aria-labelledby="redeem-order-summary-heading"
-      >
+      <div className="mt-6 space-y-5" aria-labelledby="redeem-order-summary-heading">
         <h3
           id="redeem-order-summary-heading"
-          className="text-sm font-semibold uppercase tracking-wide text-slate-300"
+          className="text-xs font-semibold uppercase tracking-wider text-slate-500"
         >
           {t("orderSummaryHeading")}
         </h3>
 
-        {selectedPlan ? (
-          <p className="mt-2 text-sm text-slate-300">
-            <span className="text-slate-500">{t("selectedPlanLabel")}: </span>
-            <span className="font-medium text-white">{planListDisplayName(selectedPlan.name)}</span>
-          </p>
+        {selectedPlan && networkSlug ? (
+          <div className={ORDER_SUMMARY_GRID_CLASS}>
+            <div className="mt-0.5">
+              <NetworkCompactMark slug={networkSlug} size="lg" />
+            </div>
+            <OrderSummaryContent
+              eyebrow={networkDisplayLabel(networkSlug)}
+              title={planListDisplayName(selectedPlan.name)}
+              subtitle={`${selectedPlan.dataAllowance} · ${selectedPlan.durationDays} ${t("daysSuffix")}`}
+            />
+            <div className="flex flex-col items-end gap-1 pt-0.5">
+              {showNetworkChange && onChangeNetwork ? (
+                <SummaryChangeButton
+                  label={t("shippingSummaryChange")}
+                  disabled={loading}
+                  onClick={onChangeNetwork}
+                />
+              ) : null}
+              <p className="text-base font-bold tabular-nums text-white sm:text-lg">
+                ${(selectedPlan.priceCents / 100).toFixed(2)}
+              </p>
+            </div>
+
+            <div className="mt-0.5">
+              <SimSummaryIcon src={simMeta.iconSrc} />
+            </div>
+            <OrderSummaryContent
+              eyebrow={t("selectedSimTypeLabel")}
+              title={t(simMeta.labelKey)}
+              subtitle={simDetail}
+            />
+            <div className="flex items-start justify-end pt-0.5">
+              {showSimChange && onChangeSimType ? (
+                <SummaryChangeButton
+                  label={t("shippingSummaryChange")}
+                  disabled={loading}
+                  onClick={onChangeSimType}
+                />
+              ) : null}
+            </div>
+          </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-500">{t("selectPlanForTotals")}</p>
+          <p className="text-sm text-slate-500">{t("selectPlanForTotals")}</p>
         )}
 
         {totals && selectedPlan ? (
-          <dl className="mt-4 space-y-2.5 border-t border-white/10 pt-4 text-sm text-slate-300">
-            <div className="flex items-center justify-between gap-4">
-              <dt>{t("planTotal")}</dt>
-              <dd className="tabular-nums text-slate-200">${(totals.finalTotalCents / 100).toFixed(2)}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <dt>{t("creditApplied")}</dt>
-              <dd className="tabular-nums text-emerald-200">
-                −${(totals.creditAppliedCents / 100).toFixed(2)}
-              </dd>
-            </div>
+          <dl className="space-y-1 border-t border-white/10 pt-4">
+            <SummaryRow label={t("planTotal")} value={`$${(totals.finalTotalCents / 100).toFixed(2)}`} />
+            <SummaryRow
+              label={t("creditApplied")}
+              value={`−$${(totals.creditAppliedCents / 100).toFixed(2)}`}
+              valueClass="text-emerald-300"
+            />
             {fulfillmentType === "NEW_SIM_SHIPPING" && (totals.physicalSimCents ?? 0) > 0 ? (
-              <div className="flex items-center justify-between gap-4">
-                <dt>{t("physicalSimLine")}</dt>
-                <dd className="tabular-nums text-slate-200">
-                  ${((totals.physicalSimCents ?? 0) / 100).toFixed(2)}
-                </dd>
-              </div>
+              <SummaryRow
+                label={t("physicalSimLine")}
+                value={`$${((totals.physicalSimCents ?? 0) / 100).toFixed(2)}`}
+              />
             ) : null}
             {fulfillmentType === "NEW_SIM_SHIPPING" ? (
-              <div className="flex items-center justify-between gap-4">
-                <dt>{shippingMethod ? t(shippingMethod.labelKey) : t("shippingLine")}</dt>
-                <dd className="tabular-nums text-slate-200">
-                  {(totals.shippingMethodCents ?? 0) > 0
+              <SummaryRow
+                label={shippingMethodLabel ?? t("shippingLine")}
+                value={
+                  (totals.shippingMethodCents ?? 0) > 0
                     ? `$${((totals.shippingMethodCents ?? 0) / 100).toFixed(2)}`
-                    : t("shippingMethodFree")}
-                </dd>
-              </div>
+                    : t("shippingMethodFree")
+                }
+              />
             ) : totals.shippingCents > 0 ? (
-              <div className="flex items-center justify-between gap-4">
-                <dt>{t("shippingLine")}</dt>
-                <dd className="tabular-nums text-slate-200">${(totals.shippingCents / 100).toFixed(2)}</dd>
-              </div>
+              <SummaryRow label={t("shippingLine")} value={`$${(totals.shippingCents / 100).toFixed(2)}`} />
             ) : null}
-            {addonLines.length > 0
-              ? addonLines.map((line) => (
-                  <div key={line.sku} className="flex items-center justify-between gap-4">
-                    <dt className="min-w-0 pr-2">{line.label}</dt>
-                    <dd className="shrink-0 tabular-nums text-slate-200">
-                      +${(line.priceCents / 100).toFixed(2)}
-                    </dd>
-                  </div>
-                ))
-              : null}
-            {(totals.addonCents ?? 0) > 0 && addonLines.length > 1 ? (
-              <div className="flex items-center justify-between gap-4 text-slate-400">
-                <dt>{t("addonsLine")}</dt>
-                <dd className="tabular-nums">${((totals.addonCents ?? 0) / 100).toFixed(2)}</dd>
-              </div>
-            ) : null}
-            <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-base font-semibold text-white">
-              <dt>{t("balanceDue")}</dt>
-              <dd className="tabular-nums text-lg">${(totals.balanceDueCents / 100).toFixed(2)}</dd>
+            {addonLines.map((line) => (
+              <SummaryRow
+                key={line.sku}
+                label={line.label}
+                value={`+$${(line.priceCents / 100).toFixed(2)}`}
+              />
+            ))}
+            <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3.5">
+              <dt className="text-sm font-semibold text-white">{t("balanceDue")}</dt>
+              <dd className="text-xl font-bold tabular-nums text-white">
+                ${(totals.balanceDueCents / 100).toFixed(2)}
+              </dd>
             </div>
           </dl>
         ) : null}
 
         <button
           type="button"
-          className={`${REDEEM_PRIMARY_BUTTON_CLASS} mt-5 font-semibold`}
+          className={`${REDEEM_PRIMARY_BUTTON_CLASS} font-semibold`}
           disabled={loading || !selectedPlan || (!voucherFromPurchase && !voucherCode.trim())}
           onClick={onCheckout}
         >
           {loading ? t("processingCheckout") : t("applyCredit")}
         </button>
-      </section>
-    </>
+      </div>
+    </div>
   );
 }
