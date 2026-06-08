@@ -170,16 +170,17 @@
   }
 
   .public-site.public-site--redeem .redeem-bg-map {
-    top: 120px;
-    width: 1080px;
-    height: 882px;
-    opacity: 0.14;
-    background-image: url("/images/map-02.webp");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 1080px 882px;
-    -webkit-mask-image: radial-gradient(ellipse 520px 380px at 50% 50%, #000 14%, transparent 78%);
-    mask-image: radial-gradient(ellipse 520px 380px at 50% 50%, #000 14%, transparent 78%);
+    top: calc(50svh - 485px);
+    left: 50%;
+    width: 1188px;
+    height: 970px;
+    max-width: none;
+    flex-shrink: 0;
+    transform: translateX(-50%);
+    object-fit: fill;
+    object-position: center;
+    opacity: 0.2;
+    mix-blend-mode: screen;
   }
 
   .public-site.public-site--redeem::after {
