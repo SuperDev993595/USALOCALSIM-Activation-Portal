@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 
 export type RedeemFulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
@@ -34,7 +35,13 @@ const OPTIONS: {
   },
 ];
 
-function FulfillmentOptionIcon({ src, selected }: { src: string; selected: boolean }) {
+const FulfillmentOptionIcon = memo(function FulfillmentOptionIcon({
+  src,
+  selected,
+}: {
+  src: string;
+  selected: boolean;
+}) {
   return (
     <span className="flex flex-1 items-center justify-center py-1">
       <span
@@ -60,9 +67,66 @@ function FulfillmentOptionIcon({ src, selected }: { src: string; selected: boole
       </span>
     </span>
   );
-}
+});
 
-export function RedeemFulfillmentPicker({
+const FulfillmentOption = memo(function FulfillmentOption({
+  opt,
+  isSelected,
+  disabled,
+  label,
+  hint,
+  onChange,
+}: {
+  opt: (typeof OPTIONS)[number];
+  isSelected: boolean;
+  disabled: boolean;
+  label: string;
+  hint: string;
+  onChange: (next: RedeemFulfillmentType) => void;
+}) {
+  const t = useTranslations("redeemWizard");
+  const handleClick = useCallback(() => onChange(opt.value), [onChange, opt.value]);
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isSelected}
+      aria-label={`${label}. ${hint}`}
+      disabled={disabled}
+      onClick={handleClick}
+      style={{ minHeight: "8.5rem" }}
+      className={`group relative flex w-full min-h-[8.5rem] flex-col items-center rounded-xl border px-1.5 pb-2.5 pt-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[9.25rem] sm:px-2 sm:pb-3 sm:pt-2.5 ${
+        isSelected
+          ? "border-emerald-400/50 bg-emerald-500/[0.08] shadow-[inset_0_3px_0_0_rgba(52,211,153,0.85)]"
+          : "border-white/10 bg-black/20 hover:border-white/18 hover:bg-black/28"
+      }`}
+    >
+      {isSelected ? (
+        <span
+          className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow sm:h-5 sm:w-5 sm:text-[10px]"
+          aria-hidden
+        >
+          ✓
+        </span>
+      ) : null}
+      <FulfillmentOptionIcon src={opt.iconSrc} selected={isSelected} />
+      <span className="flex w-full shrink-0 flex-wrap items-center justify-center gap-0.5 leading-tight">
+        <span className="text-[10px] font-semibold text-white sm:text-[11px]">{label}</span>
+        {opt.badgeKey ? (
+          <span
+            className="rounded px-1 py-px text-[7px] font-bold uppercase tracking-wide text-white sm:text-[8px]"
+            style={{ backgroundColor: BRAND_NAVY }}
+          >
+            {t(opt.badgeKey)}
+          </span>
+        ) : null}
+      </span>
+    </button>
+  );
+});
+
+export const RedeemFulfillmentPicker = memo(function RedeemFulfillmentPicker({
   value,
   onChange,
   disabled = false,
@@ -96,44 +160,16 @@ export function RedeemFulfillmentPicker({
       >
         {visibleOptions.map((opt) => {
           const isSelected = canShowSelection && effectiveValue === opt.value;
-          const label = t(opt.labelKey);
           return (
-            <button
+            <FulfillmentOption
               key={opt.value}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              aria-label={`${label}. ${t(opt.hintKey)}`}
+              opt={opt}
+              isSelected={isSelected}
               disabled={disabled}
-              onClick={() => onChange(opt.value)}
-              style={{ minHeight: "8.5rem" }}
-              className={`group relative flex w-full min-h-[8.5rem] flex-col items-center rounded-xl border px-1.5 pb-2.5 pt-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[9.25rem] sm:px-2 sm:pb-3 sm:pt-2.5 ${
-                isSelected
-                  ? "border-emerald-400/50 bg-emerald-500/[0.08] shadow-[inset_0_3px_0_0_rgba(52,211,153,0.85)]"
-                  : "border-white/10 bg-black/20 hover:border-white/18 hover:bg-black/28"
-              }`}
-            >
-              {isSelected ? (
-                <span
-                  className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white shadow sm:h-5 sm:w-5 sm:text-[10px]"
-                  aria-hidden
-                >
-                  ✓
-                </span>
-              ) : null}
-              <FulfillmentOptionIcon src={opt.iconSrc} selected={isSelected} />
-              <span className="flex w-full shrink-0 flex-wrap items-center justify-center gap-0.5 leading-tight">
-                <span className="text-[10px] font-semibold text-white sm:text-[11px]">{label}</span>
-                {opt.badgeKey ? (
-                  <span
-                    className="rounded px-1 py-px text-[7px] font-bold uppercase tracking-wide text-white sm:text-[8px]"
-                    style={{ backgroundColor: BRAND_NAVY }}
-                  >
-                    {t(opt.badgeKey)}
-                  </span>
-                ) : null}
-              </span>
-            </button>
+              label={t(opt.labelKey)}
+              hint={t(opt.hintKey)}
+              onChange={onChange}
+            />
           );
         })}
       </div>
@@ -142,4 +178,4 @@ export function RedeemFulfillmentPicker({
       ) : null}
     </div>
   );
-}
+});

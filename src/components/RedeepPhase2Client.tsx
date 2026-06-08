@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
@@ -167,6 +167,8 @@ export function RedeepPhase2Client({
     balanceDueCents: number;
   } | null>(null);
   const [loading, setLoading] = useState<"unlock" | "checkout" | "activate" | "sms" | "verifyPhone" | null>(null);
+  const [quoteBusy, setQuoteBusy] = useState(false);
+  const quoteSeqRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [wizardStep, setWizardStep] = useState<number>(() => {
@@ -260,18 +262,25 @@ export function RedeepPhase2Client({
     }
   }
 
-  async function unlockAndQuote(
+  const unlockAndQuote = useCallback(async (
     planId?: string,
     fType?: FulfillmentType,
     addonSkus?: TmobileAddonSku[],
     methodId?: ShippingMethodId,
-  ): Promise<{ ok: boolean; plans: PlanRow[] }> {
+    opts?: { blocking?: boolean },
+  ): Promise<{ ok: boolean; plans: PlanRow[] }> => {
     if (!purchaseId.trim()) {
       setError(t("errors.unlockFirst"));
       return { ok: false, plans: [] };
     }
+    const seq = ++quoteSeqRef.current;
+    const blocking = opts?.blocking ?? false;
     setError(null);
-    setLoading("unlock");
+    if (blocking) {
+      setLoading("unlock");
+    } else {
+      setQuoteBusy(true);
+    }
     try {
       const at = accessToken.trim();
       const res = await fetch("/api/redeem/quote", {
@@ -308,6 +317,9 @@ export function RedeepPhase2Client({
         } | null;
         addonLines?: { sku: string; label: string; priceCents: number }[];
       };
+      if (seq !== quoteSeqRef.current) {
+        return { ok: false, plans: [] };
+      }
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : t("errors.quote"));
         return { ok: false, plans: [] };
@@ -335,17 +347,34 @@ export function RedeepPhase2Client({
       );
       return { ok: true, plans: nextPlans };
     } catch {
-      setError(t("errors.quote"));
+      if (seq === quoteSeqRef.current) {
+        setError(t("errors.quote"));
+      }
       return { ok: false, plans: [] };
     } finally {
-      setLoading(null);
+      if (seq === quoteSeqRef.current) {
+        if (blocking) {
+          setLoading(null);
+        } else {
+          setQuoteBusy(false);
+        }
+      }
     }
-  }
+  }, [
+    accessToken,
+    fulfillmentType,
+    purchaseId,
+    shippingMethodId,
+    t,
+    voucherCode,
+    voucherFromPurchase,
+  ]);
 
-  async function loadPlansQuote(opts?: {
+  const loadPlansQuote = useCallback(async (opts?: {
     preserveSelectedPlan?: boolean;
     fulfillmentType?: FulfillmentType;
-  }) {
+    blocking?: boolean;
+  }) => {
     const quoteFulfillment = opts?.fulfillmentType ?? fulfillmentType;
     const preservePlan = Boolean(opts?.preserveSelectedPlan && selectedPlanId);
     if (!preservePlan) {
@@ -355,6 +384,9 @@ export function RedeepPhase2Client({
     const { ok, plans: quotedPlans } = await unlockAndQuote(
       preservePlan ? selectedPlanId : undefined,
       quoteFulfillment,
+      undefined,
+      undefined,
+      { blocking: opts?.blocking },
     );
     if (!ok) return false;
     if (quotedPlans.length === 0) {
@@ -362,7 +394,7 @@ export function RedeepPhase2Client({
       return false;
     }
     return true;
-  }
+  }, [fulfillmentType, selectedPlanId, t, unlockAndQuote]);
 
   function redirectToIncompleteFulfillment() {
     setSetupHighlight(null);
@@ -400,16 +432,15 @@ export function RedeepPhase2Client({
     setWizardStep(stepMap.payment);
   }
 
-  function handleNetworkSelect(slug: string) {
+  const handleNetworkSelect = useCallback((slug: string) => {
     setSelectedNetworkSlug(slug);
     setSelectedAddonSkus([]);
     setAddonLines([]);
     setSelectedPlanId("");
     setTotals(null);
-    setPlans([]);
     setSetupHighlight(null);
     void loadPlansQuote();
-  }
+  }, [loadPlansQuote]);
 
   async function sendRedeemSms() {
     if (!purchaseId.trim()) return;
@@ -571,7 +602,7 @@ export function RedeepPhase2Client({
             ? isRedeemShippingComplete(shippingForm) && Boolean(shippingMethodId)
             : false;
 
-  function selectFulfillmentType(next: FulfillmentType) {
+  const selectFulfillmentType = useCallback((next: FulfillmentType) => {
     const prevPlan = plans.find((p) => p.id === selectedPlanId);
     const incompatible =
       Boolean(prevPlan) &&
@@ -587,12 +618,32 @@ export function RedeepPhase2Client({
     if (wizardStep === stepMap.setup && (selectedNetworkSlug || !showNetworkStep)) {
       void loadPlansQuote({ preserveSelectedPlan: !incompatible, fulfillmentType: next });
     }
-  }
+  }, [
+    loadPlansQuote,
+    plans,
+    selectedNetworkSlug,
+    selectedPlanId,
+    showNetworkStep,
+    stepMap.setup,
+    wizardStep,
+  ]);
 
-  function handleShippingMethodChange(next: ShippingMethodId) {
+  const handleSelectPlan = useCallback((planId: string) => {
+    setSelectedPlanId(planId);
+    setSetupHighlight(null);
+    const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];
+    void unlockAndQuote(planId, fulfillmentType, addons);
+  }, [fulfillmentType, selectedAddonSkus, selectedNetworkSlug, unlockAndQuote]);
+
+  const handleAddonChange = useCallback((skus: TmobileAddonSku[]) => {
+    setSelectedAddonSkus(skus);
+    if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, skus);
+  }, [fulfillmentType, selectedPlanId, unlockAndQuote]);
+
+  const handleShippingMethodChange = useCallback((next: ShippingMethodId) => {
     setShippingMethodId(next);
     if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, undefined, next);
-  }
+  }, [fulfillmentType, selectedPlanId, unlockAndQuote]);
 
   if (done) {
     return (
@@ -799,8 +850,10 @@ export function RedeepPhase2Client({
             showTmobileAddons={showTmobileAddons}
             tmobileAddonOptions={tmobileAddonOptions}
             selectedAddonSkus={selectedAddonSkus}
-            plansLoading={loading === "unlock"}
+            plansLoading={quoteBusy && plans.length === 0}
+            plansRefreshing={quoteBusy && plans.length > 0}
             loading={loading !== null}
+            quoteBusy={quoteBusy}
             setupReady={setupReady}
             highlight={setupHighlight}
             planOnlyMode={!showConfigColumn}
@@ -812,16 +865,8 @@ export function RedeepPhase2Client({
             onIccidChange={setIccid}
             onShippingFormChange={setShippingForm}
             onShippingMethodChange={handleShippingMethodChange}
-            onSelectPlan={(planId) => {
-              setSelectedPlanId(planId);
-              setSetupHighlight(null);
-              const addons = addonsAllowedForNetwork(selectedNetworkSlug) ? selectedAddonSkus : [];
-              void unlockAndQuote(planId, fulfillmentType, addons);
-            }}
-            onAddonChange={(skus) => {
-              setSelectedAddonSkus(skus);
-              if (selectedPlanId) void unlockAndQuote(selectedPlanId, fulfillmentType, skus);
-            }}
+            onSelectPlan={handleSelectPlan}
+            onAddonChange={handleAddonChange}
           />
         ) : null}
 

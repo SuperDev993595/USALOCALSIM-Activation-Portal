@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
@@ -11,7 +12,85 @@ const PLAN_OPTION_SELECTED =
 const PLAN_OPTION_IDLE =
   "border-white/10 bg-black/20 hover:border-white/18 hover:bg-black/28";
 
-export function RedeemPlanPicker({
+const PlanOption = memo(function PlanOption({
+  plan,
+  isSelected,
+  disabled,
+  daysSuffix,
+  perfectMatchLabel,
+  coveredByWalletLabel,
+  onSelect,
+}: {
+  plan: RedeemPlanRow;
+  isSelected: boolean;
+  disabled: boolean;
+  daysSuffix: string;
+  perfectMatchLabel: string;
+  coveredByWalletLabel: string;
+  onSelect: (planId: string) => void;
+}) {
+  const due = plan.balanceDueCents ?? 0;
+  const handleClick = useCallback(() => onSelect(plan.id), [onSelect, plan.id]);
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={isSelected}
+      aria-label={planListDisplayName(plan.name)}
+      disabled={disabled}
+      onClick={handleClick}
+      className={`group relative flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-3.5 ${
+        isSelected ? PLAN_OPTION_SELECTED : PLAN_OPTION_IDLE
+      }`}
+    >
+      {isSelected ? (
+        <span
+          className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white shadow"
+          aria-hidden
+        >
+          ✓
+        </span>
+      ) : null}
+      <div className={`min-w-0 flex-1 ${isSelected ? "pr-2" : ""}`}>
+        <p className="text-sm font-semibold leading-snug text-white sm:text-[15px]">
+          {planListDisplayName(plan.name)}
+        </p>
+        <p className="mt-0.5 text-xs text-slate-400">
+          {plan.dataAllowance} · {plan.durationDays} {daysSuffix}
+        </p>
+      </div>
+      <div className={`shrink-0 text-right ${isSelected ? "pr-7" : ""}`}>
+        <p className="text-sm font-semibold tabular-nums text-white sm:text-[15px]">
+          ${(plan.priceCents / 100).toFixed(2)}
+        </p>
+        {due > 0 ? (
+          <p className="mt-0.5 text-[11px] font-medium tabular-nums text-amber-200">
+            +${(due / 100).toFixed(2)}
+          </p>
+        ) : plan.matchesVoucherCredit ? (
+          <p
+            className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+              isSelected ? "text-emerald-200" : "text-emerald-300/90"
+            }`}
+          >
+            {perfectMatchLabel}
+          </p>
+        ) : plan.fullyCoveredByWallet ? (
+          <p
+            className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+              isSelected ? "text-emerald-200" : "text-emerald-300/90"
+            }`}
+          >
+            {coveredByWalletLabel}
+          </p>
+        ) : null}
+      </div>
+    </button>
+  );
+});
+
+export const RedeemPlanPicker = memo(function RedeemPlanPicker({
   creditCents,
   plans,
   selectedPlanId,
@@ -19,6 +98,7 @@ export function RedeemPlanPicker({
   tmobileAddonOptions,
   selectedAddonSkus,
   loading,
+  refreshing = false,
   onSelectPlan,
   onAddonChange,
 }: {
@@ -29,42 +109,14 @@ export function RedeemPlanPicker({
   tmobileAddonOptions: TmobileAddonOption[];
   selectedAddonSkus: TmobileAddonSku[];
   loading: boolean;
+  refreshing?: boolean;
   onSelectPlan: (planId: string) => void;
   onAddonChange: (skus: TmobileAddonSku[]) => void;
 }) {
   const t = useTranslations("redeemWizard");
-
-  function planPriceBlock(p: RedeemPlanRow, isSelected: boolean) {
-    const due = p.balanceDueCents ?? 0;
-    return (
-      <div className={`shrink-0 text-right ${isSelected ? "pr-7" : ""}`}>
-        <p className="text-sm font-semibold tabular-nums text-white sm:text-[15px]">
-          ${(p.priceCents / 100).toFixed(2)}
-        </p>
-        {due > 0 ? (
-          <p className="mt-0.5 text-[11px] font-medium tabular-nums text-amber-200">
-            +${(due / 100).toFixed(2)}
-          </p>
-        ) : p.matchesVoucherCredit ? (
-          <p
-            className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              isSelected ? "text-emerald-200" : "text-emerald-300/90"
-            }`}
-          >
-            {t("planPerfectMatch")}
-          </p>
-        ) : p.fullyCoveredByWallet ? (
-          <p
-            className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              isSelected ? "text-emerald-200" : "text-emerald-300/90"
-            }`}
-          >
-            {t("planCoveredByWallet")}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
+  const daysSuffix = t("daysSuffix");
+  const perfectMatchLabel = t("planPerfectMatch");
+  const coveredByWalletLabel = t("planCoveredByWallet");
 
   return (
     <div className="space-y-4">
@@ -76,42 +128,24 @@ export function RedeemPlanPicker({
       {plans.length === 0 ? (
         <p className="text-sm text-slate-400">{t("noPlansForNetwork")}</p>
       ) : (
-        <div className="space-y-2.5" role="radiogroup" aria-label={t("step4Title")}>
-          {plans.map((p) => {
-            const isSelected = selectedPlanId === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                aria-label={planListDisplayName(p.name)}
-                disabled={loading}
-                onClick={() => onSelectPlan(p.id)}
-                className={`group relative flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-3.5 ${
-                  isSelected ? PLAN_OPTION_SELECTED : PLAN_OPTION_IDLE
-                }`}
-              >
-                {isSelected ? (
-                  <span
-                    className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white shadow"
-                    aria-hidden
-                  >
-                    ✓
-                  </span>
-                ) : null}
-                <div className={`min-w-0 flex-1 ${isSelected ? "pr-2" : ""}`}>
-                  <p className="text-sm font-semibold leading-snug text-white sm:text-[15px]">
-                    {planListDisplayName(p.name)}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-400">
-                    {p.dataAllowance} · {p.durationDays} {t("daysSuffix")}
-                  </p>
-                </div>
-                {planPriceBlock(p, isSelected)}
-              </button>
-            );
-          })}
+        <div
+          className={`space-y-2.5 ${refreshing ? "transition-opacity duration-150" : ""}`}
+          role="radiogroup"
+          aria-label={t("step4Title")}
+          aria-busy={refreshing}
+        >
+          {plans.map((p) => (
+            <PlanOption
+              key={p.id}
+              plan={p}
+              isSelected={selectedPlanId === p.id}
+              disabled={loading}
+              daysSuffix={daysSuffix}
+              perfectMatchLabel={perfectMatchLabel}
+              coveredByWalletLabel={coveredByWalletLabel}
+              onSelect={onSelectPlan}
+            />
+          ))}
         </div>
       )}
 
@@ -127,4 +161,4 @@ export function RedeemPlanPicker({
       ) : null}
     </div>
   );
-}
+});

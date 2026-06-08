@@ -81,7 +81,9 @@ export function RedeemCombinedSetupStep({
   tmobileAddonOptions,
   selectedAddonSkus,
   plansLoading,
+  plansRefreshing,
   loading,
+  quoteBusy,
   setupReady,
   highlight,
   planOnlyMode,
@@ -115,7 +117,9 @@ export function RedeemCombinedSetupStep({
   tmobileAddonOptions: TmobileAddonOption[];
   selectedAddonSkus: TmobileAddonSku[];
   plansLoading: boolean;
+  plansRefreshing?: boolean;
   loading: boolean;
+  quoteBusy?: boolean;
   setupReady: boolean;
   highlight: SetupHighlight;
   planOnlyMode: boolean;
@@ -155,6 +159,7 @@ export function RedeemCombinedSetupStep({
         tmobileAddonOptions={tmobileAddonOptions}
         selectedAddonSkus={selectedAddonSkus}
         loading={loading}
+        refreshing={plansRefreshing}
         onSelectPlan={onSelectPlan}
         onAddonChange={onAddonChange}
       />
@@ -205,6 +210,7 @@ export function RedeemCombinedSetupStep({
                   coverageTier={coverageTier}
                   selectedSlug={selectedNetworkSlug}
                   disabled={loading}
+                  quoteBusy={quoteBusy}
                   onSelect={onNetworkSelect}
                 />
               </SetupSection>
@@ -239,9 +245,11 @@ export function RedeemCombinedSetupStep({
                   title={t("step4Title")}
                   hint={t("step4BodySimple")}
                   highlight={highlight === "plan"}
-                  dimmed={plansLoading || !networkReady}
+                  dimmed={!networkReady}
                 >
-                  {planContent}
+                  <div className={plansRefreshing ? "opacity-80 transition-opacity duration-150" : undefined}>
+                    {planContent}
+                  </div>
                 </SetupSection>
               ) : (
                 <div className="min-w-0" aria-hidden />

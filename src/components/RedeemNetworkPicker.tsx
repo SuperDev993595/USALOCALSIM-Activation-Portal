@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { NETWORK_DISPLAY, type GlobalNetworkSlug } from "@/lib/network-catalog";
 import { NetworkMark } from "@/components/NetworkMark";
@@ -8,20 +8,23 @@ import { NETWORK_BRAND, isGlobalNetworkSlug } from "@/lib/network-brand";
 
 type NetworkRow = { slug: string; name: string };
 
-function NetworkPickerCard({
+const NetworkPickerCard = memo(function NetworkPickerCard({
   network,
   isSelected,
+  isSaving,
   disabled,
   onPick,
 }: {
   network: NetworkRow;
   isSelected: boolean;
+  isSaving: boolean;
   disabled: boolean;
   onPick: (slug: string) => void;
 }) {
   const label =
     network.name || NETWORK_DISPLAY[network.slug as GlobalNetworkSlug] || network.slug.toUpperCase();
   const brandHex = isGlobalNetworkSlug(network.slug) ? NETWORK_BRAND[network.slug].hex : "#64748b";
+  const handleClick = useCallback(() => onPick(network.slug), [network.slug, onPick]);
 
   return (
     <button
@@ -32,8 +35,8 @@ function NetworkPickerCard({
         isSelected ? "network-picker-card--selected border-2" : "border border-white/20"
       }`}
       style={{ ["--network-brand" as string]: brandHex }}
-      disabled={disabled}
-      onClick={() => onPick(network.slug)}
+      disabled={disabled || isSaving}
+      onClick={handleClick}
     >
       <span className="network-picker-card__fx-border" aria-hidden />
       <span className="network-picker-card__fx" aria-hidden>
@@ -50,19 +53,20 @@ function NetworkPickerCard({
           style={{ backgroundColor: brandHex }}
           aria-hidden
         >
-          ✓
+          {isSaving ? "…" : "✓"}
         </span>
       ) : null}
     </button>
   );
-}
+});
 
-export function RedeemNetworkPicker({
+export const RedeemNetworkPicker = memo(function RedeemNetworkPicker({
   purchaseId,
   accessToken,
   coverageTier,
   selectedSlug,
   disabled = false,
+  quoteBusy = false,
   onSelect,
 }: {
   purchaseId: string;
@@ -70,11 +74,14 @@ export function RedeemNetworkPicker({
   coverageTier: string | null;
   selectedSlug: string;
   disabled?: boolean;
+  quoteBusy?: boolean;
   onSelect: (slug: string) => void;
 }) {
   const t = useTranslations("redeemWizard");
   const [networks, setNetworks] = useState<NetworkRow[]>([]);
-  const [loading, setLoading] = useState<"load" | "save" | null>("load");
+  const [loading, setLoading] = useState<"load" | null>("load");
+  const [savingSlug, setSavingSlug] = useState<string | null>(null);
+  const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,32 +103,43 @@ export function RedeemNetworkPicker({
     };
   }, [coverageTier]);
 
-  async function pickNetwork(slug: string) {
-    if (disabled || loading !== null || slug === selectedSlug) return;
-    setError(null);
-    setLoading("save");
-    try {
-      const res = await fetch("/api/redeem/network/select", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          purchaseId,
-          networkSlug: slug,
-          ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
-        }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        setError(typeof data.error === "string" ? data.error : t("errors.network"));
-        return;
-      }
-      onSelect(slug);
-    } finally {
-      setLoading(null);
+  useEffect(() => {
+    if (!pendingSlug || pendingSlug === selectedSlug) {
+      setPendingSlug(null);
     }
-  }
+  }, [pendingSlug, selectedSlug]);
 
-  const cardsDisabled = disabled || loading === "save";
+  const pickNetwork = useCallback(
+    async (slug: string) => {
+      if (disabled || savingSlug !== null || slug === selectedSlug) return;
+      setError(null);
+      setPendingSlug(slug);
+      setSavingSlug(slug);
+      try {
+        const res = await fetch("/api/redeem/network/select", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            purchaseId,
+            networkSlug: slug,
+            ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          setPendingSlug(null);
+          setError(typeof data.error === "string" ? data.error : t("errors.network"));
+          return;
+        }
+        onSelect(slug);
+      } finally {
+        setSavingSlug(null);
+      }
+    },
+    [accessToken, disabled, onSelect, purchaseId, savingSlug, selectedSlug, t],
+  );
+
+  const displaySlug = pendingSlug ?? selectedSlug;
 
   return (
     <div className="space-y-3">
@@ -135,23 +153,27 @@ export function RedeemNetworkPicker({
           {t("networksUnavailable")}
         </p>
       ) : (
-        <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+        <div
+          className={`grid grid-cols-4 gap-2 sm:gap-2.5 ${quoteBusy ? "opacity-95" : ""}`}
+          aria-busy={quoteBusy || savingSlug !== null}
+        >
           {networks.map((n) => (
             <NetworkPickerCard
               key={n.slug}
               network={n}
-              isSelected={selectedSlug === n.slug}
-              disabled={cardsDisabled}
+              isSelected={displaySlug === n.slug}
+              isSaving={savingSlug === n.slug}
+              disabled={disabled || (savingSlug !== null && savingSlug !== n.slug)}
               onPick={(slug) => void pickNetwork(slug)}
             />
           ))}
         </div>
       )}
-      {loading === "save" ? (
+      {savingSlug ? (
         <p className="text-xs text-slate-400" role="status">
           {t("savingNetwork")}
         </p>
       ) : null}
     </div>
   );
-}
+});
