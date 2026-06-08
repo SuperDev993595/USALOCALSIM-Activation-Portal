@@ -5,12 +5,7 @@ import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { NETWORK_DISPLAY, type GlobalNetworkSlug } from "@/lib/network-catalog";
 import { NetworkMark } from "@/components/NetworkMark";
-import {
-  NETWORK_BRAND,
-  isGlobalNetworkSlug,
-  networkBrandShimmerBackground,
-  networkBrandShimmerWash,
-} from "@/lib/network-brand";
+import { NETWORK_BRAND, isGlobalNetworkSlug } from "@/lib/network-brand";
 
 type NetworkRow = { slug: string; name: string };
 
@@ -122,12 +117,7 @@ export function RedeemNetworkStep({
             const isSelected = selected === n.slug;
             const brandHex = isGlobalNetworkSlug(n.slug) ? NETWORK_BRAND[n.slug].hex : "#64748b";
             const cardStyle = {
-              ...(isSelected
-                ? {
-                    borderColor: brandHex,
-                    boxShadow: `0 0 0 1px ${brandHex}66`,
-                  }
-                : {}),
+              ["--network-brand" as string]: brandHex,
             };
 
             return (
@@ -136,22 +126,18 @@ export function RedeemNetworkStep({
                 type="button"
                 aria-label={label}
                 aria-pressed={isSelected}
-                className={`network-picker-card flex h-[5rem] rounded-lg border bg-slate-100/95 px-2.5 py-2 shadow-sm transition-[border-color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 ${
-                  isSelected ? "border-2" : "border border-white/20 hover:border-white/35"
+                className={`network-picker-card flex h-[5rem] rounded-xl border bg-slate-100/95 px-2.5 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 ${
+                  isSelected ? "network-picker-card--selected border-2" : "border border-white/20"
                 }`}
                 style={cardStyle}
                 disabled={loading === "save"}
                 onClick={() => setSelected(n.slug)}
               >
-                <span className="network-picker-card__shimmer" aria-hidden>
-                  <span
-                    className="network-picker-card__shimmer-wash"
-                    style={{ background: networkBrandShimmerWash(brandHex) }}
-                  />
-                  <span
-                    className="network-picker-card__shimmer-bar"
-                    style={{ background: networkBrandShimmerBackground(brandHex) }}
-                  />
+                <span className="network-picker-card__fx-border" aria-hidden />
+                <span className="network-picker-card__fx" aria-hidden>
+                  <span className="network-picker-card__fx-flow" />
+                  <span className="network-picker-card__fx-glow" />
+                  <span className="network-picker-card__fx-shine" />
                 </span>
                 <span className="network-picker-card__content">
                   <NetworkMark slug={n.slug} />

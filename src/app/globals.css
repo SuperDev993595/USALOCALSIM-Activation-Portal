@@ -1288,13 +1288,71 @@
   }
 }
 
-/* Redeem network picker — brand shimmer on hover (transform-based for reliability) */
-@keyframes network-picker-shimmer-slide {
+/* Redeem network picker — color flow hover (no card transform) */
+@keyframes network-picker-border-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes network-picker-color-flow-slide {
   0% {
-    transform: translateX(-140%) skewX(-14deg);
+    background-position: 140% 50%;
   }
   100% {
-    transform: translateX(340%) skewX(-14deg);
+    background-position: -140% 50%;
+  }
+}
+
+@keyframes network-picker-accent-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 220% 50%;
+  }
+}
+
+@keyframes network-picker-glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 14px rgba(15, 23, 42, 0.1),
+      0 0 0 1px color-mix(in srgb, var(--network-brand) 22%, transparent),
+      0 0 14px 0 color-mix(in srgb, var(--network-brand) 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 6px 18px rgba(15, 23, 42, 0.14),
+      0 0 0 1px color-mix(in srgb, var(--network-brand) 38%, transparent),
+      0 0 26px 3px color-mix(in srgb, var(--network-brand) 34%, transparent);
+  }
+}
+
+@keyframes network-picker-shine-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-10deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(260%) skewX(-10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes network-picker-brand-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
   }
 }
 
@@ -1302,48 +1360,188 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  --network-brand: #64748b;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
-.network-picker-card__shimmer {
+.network-picker-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 4;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--network-brand),
+    color-mix(in srgb, var(--network-brand) 35%, #fff),
+    color-mix(in srgb, var(--network-brand) 80%, #fff),
+    var(--network-brand)
+  );
+  background-size: 220% 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  opacity: 0;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+}
+
+.network-picker-card__fx-border {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  border-radius: inherit;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.25s ease;
 }
 
-.network-picker-card__shimmer-wash {
+.network-picker-card__fx-border::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170%;
+  height: 170%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  background: conic-gradient(
+    from 0deg,
+    var(--network-brand) 0deg,
+    color-mix(in srgb, var(--network-brand) 50%, #fff) 50deg,
+    color-mix(in srgb, var(--network-brand) 20%, transparent) 110deg,
+    color-mix(in srgb, var(--network-brand) 65%, #fff) 190deg,
+    color-mix(in srgb, var(--network-brand) 30%, transparent) 260deg,
+    var(--network-brand) 360deg
+  );
+}
+
+.network-picker-card__fx-border::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(0.75rem - 2px);
+  background: rgb(241 245 249 / 0.98);
+}
+
+.network-picker-card__fx {
   position: absolute;
   inset: 0;
-  opacity: 0.85;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
-.network-picker-card__shimmer-bar {
+.network-picker-card__fx-flow {
   position: absolute;
-  top: -12%;
-  bottom: -12%;
-  left: 0;
-  width: 72%;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.45));
-  will-change: transform;
-  transform: translateX(-140%) skewX(-14deg);
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    color-mix(in srgb, var(--network-brand) 18%, transparent) 30%,
+    color-mix(in srgb, var(--network-brand) 48%, transparent) 48%,
+    color-mix(in srgb, var(--network-brand) 22%, transparent) 64%,
+    transparent 90%
+  );
+  background-size: 300% 100%;
 }
 
-.network-picker-card:hover .network-picker-card__shimmer,
-.network-picker-card:focus-visible .network-picker-card__shimmer {
+.network-picker-card__fx-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 50% 120%,
+    color-mix(in srgb, var(--network-brand) 50%, transparent) 0%,
+    transparent 72%
+  );
+}
+
+.network-picker-card__fx-shine {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    color-mix(in srgb, var(--network-brand) 20%, transparent) 36%,
+    rgba(255, 255, 255, 0.78) 50%,
+    color-mix(in srgb, var(--network-brand) 20%, transparent) 64%,
+    transparent 100%
+  );
+  transform: translateX(-140%) skewX(-10deg);
+}
+
+.network-picker-card--selected {
+  border-width: 2px;
+  border-color: var(--network-brand);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--network-brand) 40%, transparent);
+}
+
+.network-picker-card:hover:not(:disabled),
+.network-picker-card:focus-visible:not(:disabled) {
+  border-color: transparent;
+  background-color: #fff;
+  animation: network-picker-glow-pulse 2.4s ease-in-out infinite;
+}
+
+.network-picker-card--selected:hover:not(:disabled),
+.network-picker-card--selected:focus-visible:not(:disabled) {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.network-picker-card:hover:not(:disabled)::before,
+.network-picker-card:focus-visible:not(:disabled)::before {
+  opacity: 1;
+  transform: scaleX(1);
+  animation: network-picker-accent-flow 2.4s linear infinite;
+}
+
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx-border,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-border {
   opacity: 1;
 }
 
-.network-picker-card:hover .network-picker-card__shimmer-bar,
-.network-picker-card:focus-visible .network-picker-card__shimmer-bar {
-  animation: network-picker-shimmer-slide 1.35s linear infinite;
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx-border::before,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-border::before {
+  animation: network-picker-border-spin 2.6s linear infinite;
+}
+
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx {
+  opacity: 1;
+}
+
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx-flow,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-flow {
+  animation: network-picker-color-flow-slide 2.8s ease-in-out infinite;
+}
+
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx-glow,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-glow {
+  animation: network-picker-brand-glow 2.2s ease-in-out infinite;
+}
+
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx-shine,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-shine {
+  animation: network-picker-shine-sweep 2s ease-in-out infinite;
 }
 
 .network-picker-card__content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   height: 100%;
   width: 100%;
@@ -1351,17 +1549,60 @@
   justify-content: center;
 }
 
-/* Dark redeem panel: keep cards light; shimmer reads on slate card surface */
+/* Dark redeem panel: keep cards light */
 @media (prefers-color-scheme: dark) {
   .network-picker-card {
     background-color: rgba(241, 245, 249, 0.96);
   }
+
+  .network-picker-card:hover:not(:disabled),
+  .network-picker-card:focus-visible:not(:disabled) {
+    background-color: #fff;
+  }
+
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx-border::after,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-border::after {
+    background: #fff;
+  }
+}
+
+.network-picker-card:hover:not(:disabled) .network-picker-card__fx-border::after,
+.network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-border::after {
+  background: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .network-picker-card:hover .network-picker-card__shimmer-bar,
-  .network-picker-card:focus-visible .network-picker-card__shimmer-bar {
+  .network-picker-card:hover:not(:disabled),
+  .network-picker-card:focus-visible:not(:disabled) {
     animation: none;
-    transform: translateX(40%) skewX(-12deg);
+    box-shadow:
+      0 6px 16px rgba(15, 23, 42, 0.12),
+      0 0 0 1px color-mix(in srgb, var(--network-brand) 28%, transparent);
+  }
+
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx-border::before,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-border::before,
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx-flow,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-flow,
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx-glow,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-glow,
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx-shine,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-shine,
+  .network-picker-card:hover:not(:disabled)::before,
+  .network-picker-card:focus-visible:not(:disabled)::before {
+    animation: none;
+  }
+
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx-border,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx-border,
+  .network-picker-card:hover:not(:disabled) .network-picker-card__fx,
+  .network-picker-card:focus-visible:not(:disabled) .network-picker-card__fx {
+    opacity: 1;
+  }
+
+  .network-picker-card:hover:not(:disabled)::before,
+  .network-picker-card:focus-visible:not(:disabled)::before {
+    transform: scaleX(1);
+    opacity: 1;
   }
 }

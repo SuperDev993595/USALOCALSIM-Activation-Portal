@@ -16,33 +16,6 @@ export function isGlobalNetworkSlug(slug: string): slug is GlobalNetworkSlug {
   return slug in NETWORK_BRAND;
 }
 
-/** Flowing hover shimmer gradient for network picker cards. */
-export function networkBrandShimmerBackground(hex: string): string {
-  return `linear-gradient(
-    100deg,
-    transparent 0%,
-    ${hex}00 8%,
-    ${hex}55 28%,
-    ${hex}cc 44%,
-    rgba(255, 255, 255, 0.95) 50%,
-    ${hex}cc 56%,
-    ${hex}55 72%,
-    ${hex}00 92%,
-    transparent 100%
-  )`;
-}
-
-/** Soft brand wash behind the moving shine. */
-export function networkBrandShimmerWash(hex: string): string {
-  return `linear-gradient(
-    135deg,
-    ${hex}18 0%,
-    transparent 45%,
-    transparent 55%,
-    ${hex}22 100%
-  )`;
-}
-
 /** Inline styles for network picker cards (glass panel on dark banner). */
 export function networkBrandCardStyle(
   slug: string,
