@@ -94,7 +94,7 @@ function mapCreateFailure(
   return "Could not send verification code. Try again later.";
 }
 
-const SHOP_PRELUDE_SKIP = false;
+const SHOP_PRELUDE_SKIP = true;
 /** Start SMS verification via Prelude (sends OTP). */
 export async function preludeStartPhoneVerification(
   phoneE164: string,
