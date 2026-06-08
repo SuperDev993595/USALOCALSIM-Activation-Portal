@@ -7,6 +7,13 @@ import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemNetworkStep } from "@/components/RedeemNetworkStep";
 import { RedeemTierStep } from "@/components/RedeemTierStep";
 import { RedeemFulfillmentPicker } from "@/components/RedeemFulfillmentPicker";
+import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressForm";
+import {
+  EMPTY_REDEEM_SHIPPING,
+  formatRedeemShippingAddress,
+  isRedeemShippingComplete,
+  type RedeemShippingForm,
+} from "@/lib/redeem-shipping-address";
 import { RedeemPlanPaymentStep } from "@/components/RedeemPlanPaymentStep";
 import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
@@ -151,7 +158,7 @@ export function RedeepPhase2Client({
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>("EXISTING_SIM");
   const [iccid, setIccid] = useState("");
-  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingForm, setShippingForm] = useState<RedeemShippingForm>(EMPTY_REDEEM_SHIPPING);
   const [activationDate, setActivationDate] = useState("");
   const [creditCents, setCreditCents] = useState(0);
   const [totals, setTotals] = useState<{
@@ -417,7 +424,8 @@ export function RedeepPhase2Client({
           planId: selectedPlanId,
           fulfillmentType,
           iccid,
-          shippingAddress,
+          shippingAddress:
+            fulfillmentType === "NEW_SIM_SHIPPING" ? formatRedeemShippingAddress(shippingForm) : undefined,
           ...(selectedAddonSkus.length > 0 ? { addonSkus: selectedAddonSkus } : {}),
           ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
@@ -474,7 +482,7 @@ export function RedeepPhase2Client({
     ? true
     : fulfillmentType === "ESIM" ||
       (fulfillmentType === "EXISTING_SIM" && iccid.trim().length >= 15) ||
-      (fulfillmentType === "NEW_SIM_SHIPPING" && shippingAddress.trim().length > 5);
+      (fulfillmentType === "NEW_SIM_SHIPPING" && isRedeemShippingComplete(shippingForm));
 
   function selectFulfillmentType(next: FulfillmentType) {
     const prevPlan = plans.find((p) => p.id === selectedPlanId);
@@ -751,19 +759,11 @@ export function RedeepPhase2Client({
                 </div>
               ) : null}
               {!ultraEsimOnly && fulfillmentType === "NEW_SIM_SHIPPING" ? (
-                <div className="space-y-2.5">
-                  <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-shipping-textarea">
-                    {t("shippingLabel")}
-                  </label>
-                  <textarea
-                    id="redeem-shipping-textarea"
-                    value={shippingAddress}
-                    onChange={(e) => setShippingAddress(e.target.value)}
-                    disabled={loading !== null}
-                    className={redeepPanelInputClass}
-                    rows={3}
-                  />
-                </div>
+                <RedeemShippingAddressForm
+                  value={shippingForm}
+                  onChange={setShippingForm}
+                  disabled={loading !== null}
+                />
               ) : null}
 
               <button
