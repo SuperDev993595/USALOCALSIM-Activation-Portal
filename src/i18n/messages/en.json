@@ -488,7 +488,7 @@
     "tierSelected": "Selected",
     "ultraEsimOnlyBanner": "ULTRA tier uses digital eSIM only. Physical SIM options are not available.",
     "stepNetworkTitle": "Choose your network",
-    "stepNetworkBody": "Your global voucher works on any of these carriers. Pick one — the next steps show plans priced for your voucher credit.",
+    "stepNetworkBody": "USA networks (BASIC): T-Mobile and LINKUP & AT&T. Three UK — 72 countries (PRO). Orange — 200+ countries (ULTRA). Pick one carrier to continue.",
     "loadingNetworks": "Loading networks…",
     "networksUnavailable": "Networks are temporarily unavailable. Please try again in a moment.",
     "savingNetwork": "Saving…",

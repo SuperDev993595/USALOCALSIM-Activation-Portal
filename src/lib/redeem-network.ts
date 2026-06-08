@@ -37,8 +37,7 @@ export async function resolveNetworkForRedeem(input: {
   return network;
 }
 
+/** Quote/checkout: only catalog plans tied to the selected carrier (exclude legacy rows with no networkId). */
 export function planFilterForNetwork(networkId: string): Prisma.PlanWhereInput {
-  return {
-    OR: [{ networkId }, { networkId: null }],
-  };
+  return { networkId };
 }

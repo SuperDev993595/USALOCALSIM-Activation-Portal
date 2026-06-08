@@ -132,6 +132,20 @@ describe("validateRedeemPlanForSelections", () => {
     expect(err).toBeNull();
   });
 
+  it("rejects legacy plan with no network when a network is selected", () => {
+    const err = validateRedeemPlanForSelections({
+      plan: {
+        market: "us",
+        coverageTier: null,
+        networkId: null,
+        network: null,
+        planType: "physical_sim",
+      },
+      selections: selections(),
+    });
+    expect(err?.code).toBe("NETWORK_PLAN_MISMATCH");
+  });
+
   it("rejects tier mismatch", () => {
     process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({

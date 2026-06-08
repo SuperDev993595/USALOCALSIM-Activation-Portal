@@ -7,7 +7,7 @@ import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/red
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
 import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
-import { tierRequiresEsimOnly, isCoverageTier } from "@/lib/coverage-tier";
+import { isCoverageTier, redeemQuoteCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { planFilterForNetwork } from "@/lib/redeem-network";
 import { threeUkExclusivePlanWhere } from "@/lib/three-uk-redeem";
 import { validateRedeemWizardSelections } from "@/lib/redeem-selection-guards";
@@ -84,6 +84,7 @@ export async function POST(req: Request) {
     );
   }
   const { tier, network, ultraEsimOnly, threeUkExclusive, planMarkets } = wizardSel;
+  const quoteCoverageTier = redeemQuoteCoverageTier(tier, network?.slug ?? purchase.redemptionNetworkSlug);
   const marketWhere =
     planMarkets.length === 1
       ? { market: planMarkets[0]! }
@@ -113,7 +114,7 @@ export async function POST(req: Request) {
         : {
             ...marketWhere,
             ...(network ? planFilterForNetwork(network.id) : {}),
-            ...(isCoverageTier(tier) ? { coverageTier: tier } : {}),
+            ...(quoteCoverageTier ? { coverageTier: quoteCoverageTier } : {}),
           }),
     },
     select: {

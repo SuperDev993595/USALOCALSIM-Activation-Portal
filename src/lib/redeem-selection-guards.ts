@@ -112,7 +112,7 @@ export function validateRedeemPlanForSelections(input: {
   }
 
   if (network) {
-    if (plan.networkId && plan.networkId !== network.id) {
+    if (!plan.networkId || plan.networkId !== network.id) {
       return {
         error: "This plan is not available on your selected network.",
         code: "NETWORK_PLAN_MISMATCH",

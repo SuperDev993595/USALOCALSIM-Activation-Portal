@@ -18,10 +18,11 @@ export function isCoverageTier(value: string): value is CoverageTier {
 }
 
 /** Networks offered in the picker when REDEEM_USE_TIER_STEP=true (card-design flow). Briefing flow shows all four carriers. */
+/** One carrier per PRO/ULTRA; BASIC is USA (T-Mobile + Linkup). */
 export const NETWORK_SLUGS_BY_TIER: Record<CoverageTier, readonly string[]> = {
   [COVERAGE_TIER.BASIC]: ["t_mobile", "linkup_att"],
-  [COVERAGE_TIER.PRO]: ["three_uk", "orange"],
-  [COVERAGE_TIER.ULTRA]: ["three_uk", "orange", "t_mobile", "linkup_att"],
+  [COVERAGE_TIER.PRO]: ["three_uk"],
+  [COVERAGE_TIER.ULTRA]: ["orange"],
 };
 
 type TierAccent = {
@@ -108,4 +109,26 @@ export function coverageTierCardClasses(tier: CoverageTier, selected: boolean) {
 
 export function tierRequiresEsimOnly(tier: CoverageTier): boolean {
   return tier === COVERAGE_TIER.ULTRA;
+}
+
+export function isBasicTierNetwork(slug: string | null | undefined): boolean {
+  const s = slug?.trim().toLowerCase() ?? "";
+  return (NETWORK_SLUGS_BY_TIER[COVERAGE_TIER.BASIC] as readonly string[]).includes(s);
+}
+
+export function defaultCoverageTierForNetwork(slug: string | null | undefined): CoverageTier | null {
+  const s = slug?.trim().toLowerCase() ?? "";
+  for (const tier of COVERAGE_TIER_ORDER) {
+    if ((NETWORK_SLUGS_BY_TIER[tier] as readonly string[]).includes(s)) return tier;
+  }
+  return null;
+}
+
+/** Plan quote tier when purchase has no explicit coverage tier (briefing flow). */
+export function redeemQuoteCoverageTier(
+  selectedTier: string,
+  networkSlug: string | null | undefined,
+): CoverageTier | null {
+  if (isCoverageTier(selectedTier)) return selectedTier;
+  return defaultCoverageTierForNetwork(networkSlug);
 }

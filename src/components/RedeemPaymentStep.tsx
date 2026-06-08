@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
+import { planListDisplayName } from "@/lib/plan-sku";
 import { REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
 import { resolveShippingMethod, type ShippingMethodId } from "@/lib/shipping-methods";
 
@@ -16,9 +17,12 @@ type Totals = {
   balanceDueCents: number;
 };
 
+type AddonLine = { sku: string; label: string; priceCents: number };
+
 export function RedeemPaymentStep({
   fulfillmentType,
   selectedPlan,
+  addonLines,
   totals,
   loading,
   voucherFromPurchase,
@@ -29,6 +33,7 @@ export function RedeemPaymentStep({
 }: {
   fulfillmentType: string;
   selectedPlan: RedeemPlanRow | null;
+  addonLines: AddonLine[];
   totals: Totals | null;
   loading: boolean;
   voucherFromPurchase: boolean;
@@ -76,7 +81,7 @@ export function RedeemPaymentStep({
         {selectedPlan ? (
           <p className="mt-2 text-sm text-slate-300">
             <span className="text-slate-500">{t("selectedPlanLabel")}: </span>
-            <span className="font-medium text-white">{selectedPlan.name}</span>
+            <span className="font-medium text-white">{planListDisplayName(selectedPlan.name)}</span>
           </p>
         ) : (
           <p className="mt-3 text-sm text-slate-500">{t("selectPlanForTotals")}</p>
@@ -117,12 +122,20 @@ export function RedeemPaymentStep({
                 <dd className="tabular-nums text-slate-200">${(totals.shippingCents / 100).toFixed(2)}</dd>
               </div>
             ) : null}
-            {(totals.addonCents ?? 0) > 0 ? (
-              <div className="flex items-center justify-between gap-4">
+            {addonLines.length > 0
+              ? addonLines.map((line) => (
+                  <div key={line.sku} className="flex items-center justify-between gap-4">
+                    <dt className="min-w-0 pr-2">{line.label}</dt>
+                    <dd className="shrink-0 tabular-nums text-slate-200">
+                      +${(line.priceCents / 100).toFixed(2)}
+                    </dd>
+                  </div>
+                ))
+              : null}
+            {(totals.addonCents ?? 0) > 0 && addonLines.length > 1 ? (
+              <div className="flex items-center justify-between gap-4 text-slate-400">
                 <dt>{t("addonsLine")}</dt>
-                <dd className="tabular-nums text-slate-200">
-                  ${((totals.addonCents ?? 0) / 100).toFixed(2)}
-                </dd>
+                <dd className="tabular-nums">${((totals.addonCents ?? 0) / 100).toFixed(2)}</dd>
               </div>
             ) : null}
             <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-base font-semibold text-white">

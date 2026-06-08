@@ -101,7 +101,7 @@ export function RedeemNetworkStep({
         <p className="mt-4 rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
       ) : null}
 
-      <div className="mt-5 grid grid-cols-2 gap-2.5">
+      <div className="mt-5 grid grid-cols-4 gap-2 sm:gap-2.5">
         {loading === "load" ? (
           <p className="col-span-full text-sm text-slate-400">{t("loadingNetworks")}</p>
         ) : networks.length === 0 ? (
@@ -126,7 +126,7 @@ export function RedeemNetworkStep({
                 type="button"
                 aria-label={label}
                 aria-pressed={isSelected}
-                className={`network-picker-card flex h-[5rem] rounded-xl border bg-slate-100/95 px-2.5 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 ${
+                className={`network-picker-card relative flex h-[4.25rem] min-w-0 rounded-xl border bg-slate-100/95 px-1.5 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 sm:h-[4.75rem] sm:px-2 md:h-[5rem] ${
                   isSelected ? "network-picker-card--selected border-2" : "border border-white/20"
                 }`}
                 style={cardStyle}

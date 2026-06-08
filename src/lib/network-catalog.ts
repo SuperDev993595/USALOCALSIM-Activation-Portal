@@ -1,5 +1,5 @@
 /** Carrier options for Global vouchers (feedback 2026-05-28). */
-export const GLOBAL_NETWORK_SLUGS = ["three_uk", "linkup_att", "t_mobile", "orange"] as const;
+export const GLOBAL_NETWORK_SLUGS = ["t_mobile", "linkup_att", "three_uk", "orange"] as const;
 
 export type GlobalNetworkSlug = (typeof GLOBAL_NETWORK_SLUGS)[number];
 

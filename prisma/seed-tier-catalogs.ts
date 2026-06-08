@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { BASIC_TIER_NETWORKS, BASIC_TIER_PLANS } from "../src/lib/basic-tier-catalog";
+import { BASIC_TIER_NETWORKS, BASIC_TIER_PLANS, RETIRED_LINKUP_BASIC_SKUS } from "../src/lib/basic-tier-catalog";
 import { PRO_TIER_MOCK_PLANS } from "../src/lib/pro-tier-catalog-mock";
 import { parseSkuFromPlanName } from "../src/lib/plan-sku";
 import { tierPlanSeedRow, type TierPlanSeed } from "../src/lib/tier-plan-seed";
@@ -8,9 +8,9 @@ import { THREE_UK_EXCLUSIVE_MOCK_PLANS } from "../src/lib/three-uk-exclusive-cat
 import { ULTRA_TIER_MOCK_PLANS } from "../src/lib/ultra-tier-catalog-mock";
 
 const ALL_NETWORKS = [
-  { id: "net_three_uk", slug: "three_uk", name: "THREE UK", displayOrder: 1 },
+  { id: "net_t_mobile", slug: "t_mobile", name: "T-MOBILE", displayOrder: 1 },
   { id: "net_linkup_att", slug: "linkup_att", name: "LINKUP & AT&T MOBILE", displayOrder: 2 },
-  { id: "net_t_mobile", slug: "t_mobile", name: "T-MOBILE", displayOrder: 3 },
+  { id: "net_three_uk", slug: "three_uk", name: "THREE UK", displayOrder: 3 },
   { id: "net_orange", slug: "orange", name: "ORANGE", displayOrder: 4 },
 ] as const;
 
@@ -54,6 +54,7 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
             durationDays: p.durationDays,
             priceCents: p.priceCents,
             coverageTier: p.tier,
+            active: true,
           },
         });
         updated++;
@@ -76,6 +77,19 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
     }
   }
   return { created, updated };
+}
+
+async function deactivateRetiredLinkupBasicPlans(
+  prisma: PrismaClient,
+  networkIdBySlug: Map<string, string>,
+): Promise<number> {
+  const networkId = networkIdBySlug.get("linkup_att");
+  if (!networkId) return 0;
+  const result = await prisma.plan.updateMany({
+    where: { networkId, sku: { in: [...RETIRED_LINKUP_BASIC_SKUS] } },
+    data: { active: false },
+  });
+  return result.count;
 }
 
 /** Backfill `sku` from legacy `[SKU] …` plan names. */
@@ -108,6 +122,11 @@ export async function seedTierCatalogs(prisma: PrismaClient): Promise<void> {
   console.log(
     `Seeded BASIC tier: ${basic.created} created, ${basic.updated} updated (${BASIC_TIER_PLANS.length} SKUs).`,
   );
+
+  const retired = await deactivateRetiredLinkupBasicPlans(prisma, networkIdBySlug);
+  if (retired > 0) {
+    console.log(`Deactivated ${retired} retired LINKUP limited plan row(s).`);
+  }
 
   const briefing = await seedPlanRows(prisma, GLOBAL_BRIEFING_PLANS, networkIdBySlug);
   console.log(

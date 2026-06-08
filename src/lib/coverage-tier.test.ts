@@ -3,8 +3,10 @@ import {
   COVERAGE_TIER,
   COVERAGE_TIER_ORDER,
   coverageTierCardClasses,
+  isBasicTierNetwork,
   isCoverageTier,
   NETWORK_SLUGS_BY_TIER,
+  redeemQuoteCoverageTier,
   tierRequiresEsimOnly,
 } from "@/lib/coverage-tier";
 
@@ -30,8 +32,31 @@ describe("tierRequiresEsimOnly", () => {
 });
 
 describe("NETWORK_SLUGS_BY_TIER", () => {
-  it("limits BASIC to Americas carriers", () => {
+  it("maps carriers to client tiers", () => {
     expect(NETWORK_SLUGS_BY_TIER.basic).toEqual(["t_mobile", "linkup_att"]);
+    expect(NETWORK_SLUGS_BY_TIER.pro).toEqual(["three_uk"]);
+    expect(NETWORK_SLUGS_BY_TIER.ultra).toEqual(["orange"]);
+  });
+});
+
+describe("isBasicTierNetwork", () => {
+  it("includes t_mobile and linkup_att only", () => {
+    expect(isBasicTierNetwork("t_mobile")).toBe(true);
+    expect(isBasicTierNetwork("linkup_att")).toBe(true);
+    expect(isBasicTierNetwork("three_uk")).toBe(false);
+  });
+});
+
+describe("redeemQuoteCoverageTier", () => {
+  it("defaults tier from network in briefing flow", () => {
+    expect(redeemQuoteCoverageTier("", "t_mobile")).toBe(COVERAGE_TIER.BASIC);
+    expect(redeemQuoteCoverageTier("", "linkup_att")).toBe(COVERAGE_TIER.BASIC);
+    expect(redeemQuoteCoverageTier("", "three_uk")).toBe(COVERAGE_TIER.PRO);
+    expect(redeemQuoteCoverageTier("", "orange")).toBe(COVERAGE_TIER.ULTRA);
+  });
+
+  it("respects explicit tier selection", () => {
+    expect(redeemQuoteCoverageTier("ultra", "orange")).toBe(COVERAGE_TIER.ULTRA);
   });
 });
 

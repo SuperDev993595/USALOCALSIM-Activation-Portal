@@ -143,6 +143,7 @@ export function RedeepPhase2Client({
   const [selectedNetworkSlug, setSelectedNetworkSlug] = useState(initialNetworkSlug ?? "");
   const [tmobileAddonOptions, setTmobileAddonOptions] = useState<TmobileAddonOption[]>([]);
   const [selectedAddonSkus, setSelectedAddonSkus] = useState<TmobileAddonSku[]>([]);
+  const [addonLines, setAddonLines] = useState<{ sku: string; label: string; priceCents: number }[]>([]);
   const ultraEsimOnly =
     showTierStep &&
     isCoverageTier(selectedCoverageTier) &&
@@ -323,6 +324,9 @@ export function RedeepPhase2Client({
       if (Array.isArray(data.selectedAddonSkus)) {
         setSelectedAddonSkus(data.selectedAddonSkus as TmobileAddonSku[]);
       }
+      if (Array.isArray(data.addonLines)) {
+        setAddonLines(data.addonLines);
+      }
       if (!planId && typeof data.suggestedPlanId === "string" && data.suggestedPlanId) {
         setSelectedPlanId(data.suggestedPlanId);
       }
@@ -399,6 +403,7 @@ export function RedeepPhase2Client({
   function handleNetworkSelect(slug: string) {
     setSelectedNetworkSlug(slug);
     setSelectedAddonSkus([]);
+    setAddonLines([]);
     setSelectedPlanId("");
     setTotals(null);
     setPlans([]);
@@ -824,6 +829,7 @@ export function RedeepPhase2Client({
           <RedeemPaymentStep
             fulfillmentType={fulfillmentType}
             selectedPlan={selectedPlan}
+            addonLines={addonLines}
             totals={totals}
             loading={loading !== null}
             voucherFromPurchase={voucherFromPurchase}

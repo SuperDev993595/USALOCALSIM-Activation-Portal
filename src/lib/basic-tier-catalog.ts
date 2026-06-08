@@ -1,12 +1,16 @@
 /**
  * BASIC tier (USA · Canada · Mexico) — client catalog block 1.
+ * T-Mobile and Linkup share the same durations, prices, and SIM formats.
  * @see doc/basic-tier-catalog.md
  */
 
 export const BASIC_TIER_NETWORKS = [
-  { id: "net_t_mobile", slug: "t_mobile", name: "T-MOBILE", displayOrder: 3 },
+  { id: "net_t_mobile", slug: "t_mobile", name: "T-MOBILE", displayOrder: 1 },
   { id: "net_linkup_att", slug: "linkup_att", name: "LINKUP & AT&T MOBILE", displayOrder: 2 },
 ] as const;
+
+/** Retired limited-data Linkup SKUs (replaced by ATT-UNL-* matching T-Mobile). */
+export const RETIRED_LINKUP_BASIC_SKUS = ["ATT-LIM-12GB", "ATT-LIM-30GB", "ATT-LIM-50GB"] as const;
 
 export type BasicTierPlanSeed = {
   sku: string;
@@ -20,71 +24,32 @@ export type BasicTierPlanSeed = {
   tier: "basic";
 };
 
-export const BASIC_TIER_PLANS: BasicTierPlanSeed[] = [
-  {
-    sku: "TM-UNL-10D",
-    name: "T-Mobile Unlimited — 10 days",
-    dataAllowance: "Unlimited USA",
-    durationDays: 10,
-    priceCents: 3900,
-    networkSlug: "t_mobile",
-    planTypes: ["physical_sim", "esim"],
-    tier: "basic",
-  },
-  {
-    sku: "TM-UNL-20D",
-    name: "T-Mobile Unlimited — 20 days",
-    dataAllowance: "Unlimited USA",
-    durationDays: 20,
-    priceCents: 4400,
-    networkSlug: "t_mobile",
-    planTypes: ["physical_sim", "esim"],
-    tier: "basic",
-  },
-  {
-    sku: "TM-UNL-30D",
-    name: "T-Mobile Unlimited — 30 days",
-    dataAllowance: "Unlimited USA",
-    durationDays: 30,
-    /** Matches common $50 prepaid face value for zero-balance redeem. */
-    priceCents: 5000,
-    networkSlug: "t_mobile",
-    planTypes: ["physical_sim", "esim"],
-    tier: "basic",
-  },
-  {
-    sku: "ATT-LIM-12GB",
-    name: "LINKUP & AT&T — 12 GB / 30 days",
-    dataAllowance: "12 GB",
-    durationDays: 30,
-    priceCents: 3000,
-    networkSlug: "linkup_att",
-    planTypes: ["physical_sim", "esim"],
-    tier: "basic",
-  },
-  {
-    sku: "ATT-LIM-30GB",
-    name: "LINKUP & AT&T — 30 GB / 30 days",
-    dataAllowance: "30 GB",
-    durationDays: 30,
-    priceCents: 3500,
-    networkSlug: "linkup_att",
-    planTypes: ["physical_sim", "esim"],
-    tier: "basic",
-  },
-  {
-    sku: "ATT-LIM-50GB",
-    name: "LINKUP & AT&T — 50 GB / 30 days",
-    dataAllowance: "50 GB",
-    durationDays: 30,
-    priceCents: 5000,
-    networkSlug: "linkup_att",
-    planTypes: ["physical_sim", "esim"],
-    tier: "basic",
-  },
+/** Shared BASIC USA unlimited matrix — both BASIC carriers use identical terms. */
+export const BASIC_USA_UNLIMITED_MATRIX = [
+  { durationDays: 10, priceCents: 3900, skuSuffix: "10D" },
+  { durationDays: 20, priceCents: 4400, skuSuffix: "20D" },
+  { durationDays: 30, priceCents: 4900, skuSuffix: "30D" },
+] as const;
+
+const BASIC_USA_CARRIER_CATALOG = [
+  { networkSlug: "t_mobile" as const, skuPrefix: "TM-UNL", nameLabel: "T-Mobile" },
+  { networkSlug: "linkup_att" as const, skuPrefix: "ATT-UNL", nameLabel: "LINKUP & AT&T" },
 ];
 
-/** T-Mobile add-ons — UI/catalog extension pending */
+export const BASIC_TIER_PLANS: BasicTierPlanSeed[] = BASIC_USA_CARRIER_CATALOG.flatMap((carrier) =>
+  BASIC_USA_UNLIMITED_MATRIX.map((row) => ({
+    sku: `${carrier.skuPrefix}-${row.skuSuffix}`,
+    name: `${carrier.nameLabel} Unlimited — ${row.durationDays} days`,
+    dataAllowance: "Unlimited USA",
+    durationDays: row.durationDays,
+    priceCents: row.priceCents,
+    networkSlug: carrier.networkSlug,
+    planTypes: ["physical_sim", "esim"],
+    tier: "basic" as const,
+  })),
+);
+
+/** T-Mobile-only optional add-ons (redeem configure step). */
 export const BASIC_TMOBILE_ADDONS = [
   {
     sku: "ADD-TM-MXCA",

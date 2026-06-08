@@ -44,9 +44,9 @@ $35 voucher (example)
 
 **Portal:** `Plan.market = us`, `Plan.networkId` → T-Mobile, `planType` = `physical_sim` or `esim` (seed creates both).
 
-### T-Mobile-only add-ons (UI not built yet)
+### T-Mobile-only add-ons
 
-Show **only** after user selects a T-Mobile core plan (checkboxes / toggles).
+Show **only** after user selects a T-Mobile core plan (checkboxes on configure step).
 
 | SKU | +USD | Label | Description |
 |-----|------|-------|-------------|

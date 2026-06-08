@@ -5,6 +5,7 @@ import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import { REDEEM_PRIMARY_BUTTON_CLASS } from "@/lib/redeem-panel";
 import { resolveShippingMethod, type ShippingMethodId } from "@/lib/shipping-methods";
+import { planListDisplayName } from "@/lib/plan-sku";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
 
 export type RedeemPlanRow = {
@@ -130,7 +131,7 @@ export function RedeemPlanPaymentStep({
             {p.sku ? (
               <p className="font-mono text-[10px] uppercase tracking-wide text-slate-500">{p.sku}</p>
             ) : null}
-            <p className="font-semibold leading-snug text-white">{p.name}</p>
+            <p className="font-semibold leading-snug text-white">{planListDisplayName(p.name)}</p>
             <p className="text-xs text-slate-400">
               {p.dataAllowance} · {p.durationDays} days · {p.market.toUpperCase()}
             </p>
@@ -253,7 +254,7 @@ export function RedeemPlanPaymentStep({
           {selectedPlan ? (
             <p className="mt-2 text-sm text-slate-300">
               <span className="text-slate-500">{t("selectedPlanLabel")}: </span>
-              <span className="font-medium text-white">{selectedPlan.name}</span>
+              <span className="font-medium text-white">{planListDisplayName(selectedPlan.name)}</span>
             </p>
           ) : (
             <p className="mt-3 text-sm text-slate-500">{t("selectPlanForTotals")}</p>
