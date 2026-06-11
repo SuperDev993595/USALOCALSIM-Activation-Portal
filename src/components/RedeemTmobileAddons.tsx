@@ -5,6 +5,7 @@ import {
   normalizeTmobileAddonSkus,
   type TmobileAddonSku,
 } from "@/lib/tmobile-addons";
+import { REDEEM_CHOICE_CARD_IDLE } from "@/lib/redeem-panel";
 
 export type TmobileAddonOption = {
   sku: string;
@@ -59,7 +60,7 @@ export function RedeemTmobileAddons({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-[#E20074]/30 bg-[#E20074]/[0.07] p-4">
+    <div className="space-y-3 rounded-lg border border-[#E20074]/25 bg-[#E20074]/[0.05] p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-pink-200/95">
         {t("tmobileAddonsHeading")}
       </p>
@@ -76,7 +77,7 @@ export function RedeemTmobileAddons({
                 } ${
                   checked
                     ? "border-[#E20074]/55 bg-[#E20074]/15 shadow-[inset_0_0_0_1px_rgba(226,0,116,0.12)]"
-                    : "border-white/10 bg-black/25"
+                    : REDEEM_CHOICE_CARD_IDLE
                 }`}
               >
                 <span className="relative mt-0.5 h-5 w-5 shrink-0">

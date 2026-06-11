@@ -7,6 +7,11 @@ import {
   formatEstimatedDeliveryDate,
   type ShippingMethodId,
 } from "@/lib/shipping-methods";
+import {
+  REDEEM_CHOICE_CARD_IDLE,
+  REDEEM_CHOICE_CARD_SELECTED,
+  REDEEM_INFO_STRIP_CLASS,
+} from "@/lib/redeem-panel";
 
 export function RedeemShippingMethodPicker({
   shippingMethodId,
@@ -35,9 +40,7 @@ export function RedeemShippingMethodPicker({
             <label
               key={method.id}
               className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition ${
-                isSelected
-                  ? "border-emerald-400/40 bg-emerald-500/10"
-                  : "border-slate-700/55 bg-black/25 hover:border-slate-600/55"
+                isSelected ? REDEEM_CHOICE_CARD_SELECTED : REDEEM_CHOICE_CARD_IDLE
               } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
             >
               <input
@@ -62,7 +65,7 @@ export function RedeemShippingMethodPicker({
           );
         })}
       </div>
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-700/55 bg-black/30 px-4 py-3.5 text-sm">
+      <div className={`${REDEEM_INFO_STRIP_CLASS} flex items-center justify-between gap-4 py-3.5`}>
         <span className="text-slate-400">{t("shippingEstimatedDelivery")}</span>
         <span className="font-medium text-white">{eta}</span>
       </div>

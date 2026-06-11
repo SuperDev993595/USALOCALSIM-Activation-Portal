@@ -14,10 +14,11 @@ import {
 } from "@/lib/coverage-tier";
 import { networkDisplayLabel } from "@/lib/network-catalog";
 import { NETWORK_BRAND, isGlobalNetworkSlug } from "@/lib/network-brand";
+import { REDEEM_INSET_PANEL_CLASS, REDEEM_INSET_PANEL_EMPTY_CLASS } from "@/lib/redeem-panel";
 
 /** Fixed shell height so BASIC (2 networks) and PRO/ULTRA (1 network) do not resize the panel. */
 const PANEL_CLASS =
-  "tier-network-display flex h-full min-h-[14rem] flex-col rounded-xl border sm:min-h-[14.5rem]";
+  "tier-network-display flex h-full min-h-[14rem] flex-col sm:min-h-[14.5rem]";
 
 function NetworkDisplayItem({ slug }: { slug: string }) {
   const t = useTranslations("redeemWizard");
@@ -63,7 +64,7 @@ export const RedeemTierNetworkDisplay = memo(function RedeemTierNetworkDisplay({
   if (!tier) {
     return (
       <div
-        className={`${PANEL_CLASS} tier-network-display--empty flex-col items-center justify-center border-dashed border-white/15 bg-black/20 px-3 py-6 text-center`}
+        className={`${PANEL_CLASS} ${REDEEM_INSET_PANEL_EMPTY_CLASS} tier-network-display--empty flex-col items-center justify-center px-3 py-6 text-center`}
         aria-live="polite"
       >
         <p className="text-sm font-medium text-slate-300">{t("tierNetworkDisplayTitle")}</p>
@@ -79,7 +80,7 @@ export const RedeemTierNetworkDisplay = memo(function RedeemTierNetworkDisplay({
   const isMulti = slugs.length > 1;
 
   return (
-    <div className={`${PANEL_CLASS} border-white/10 bg-black/30 p-3 sm:p-4`} aria-live="polite">
+    <div className={`${PANEL_CLASS} ${REDEEM_INSET_PANEL_CLASS} p-3 sm:p-4`} aria-live="polite">
       <div className="tier-network-display__header min-h-[2.25rem] shrink-0">
         <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
           {t("tierNetworkDisplayTitle")}
@@ -103,7 +104,7 @@ export const RedeemTierNetworkDisplay = memo(function RedeemTierNetworkDisplay({
         </div>
       </div>
 
-      <p className="tier-network-display__hint mt-3 min-h-[3.25rem] shrink-0 border-t border-white/10 pt-2.5 text-[0.7rem] leading-snug text-slate-400 line-clamp-3 sm:text-xs">
+      <p className="tier-network-display__hint mt-3 min-h-[3.25rem] shrink-0 border-t border-slate-500/50 pt-2.5 text-[0.7rem] leading-snug text-slate-400 line-clamp-3 sm:text-xs">
         {t(hintKey)}
       </p>
     </div>

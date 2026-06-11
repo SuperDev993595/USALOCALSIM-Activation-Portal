@@ -2,6 +2,11 @@
 
 import { memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import {
+  REDEEM_CHOICE_CARD_IDLE,
+  REDEEM_CHOICE_CARD_SELECTED,
+  REDEEM_ICON_TILE_CLASS,
+} from "@/lib/redeem-panel";
 
 export type RedeemFulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
 
@@ -45,10 +50,8 @@ const FulfillmentOptionIcon = memo(function FulfillmentOptionIcon({
   return (
     <span className="flex flex-1 items-center justify-center py-1">
       <span
-        className={`flex items-center justify-center rounded-lg border px-2 py-1.5 ${
-          selected
-            ? "border-emerald-400/35 bg-emerald-500/10"
-            : "border-white/10 bg-black/25"
+        className={`${REDEEM_ICON_TILE_CLASS} px-2 py-1.5 ${
+          selected ? "border-emerald-400/35 bg-emerald-500/10" : ""
         }`}
       >
         <img
@@ -98,8 +101,8 @@ const FulfillmentOption = memo(function FulfillmentOption({
       style={{ minHeight: "8.5rem" }}
       className={`group relative flex w-full min-h-[8.5rem] flex-col items-center rounded-xl border px-1.5 pb-2.5 pt-2 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[9.25rem] sm:px-2 sm:pb-3 sm:pt-2.5 ${
         isSelected
-          ? "border-emerald-400/50 bg-emerald-500/[0.08] shadow-[inset_0_3px_0_0_rgba(52,211,153,0.85)]"
-          : "border-white/10 bg-black/20 hover:border-white/18 hover:bg-black/28"
+          ? REDEEM_CHOICE_CARD_SELECTED
+          : REDEEM_CHOICE_CARD_IDLE
       }`}
     >
       {isSelected ? (

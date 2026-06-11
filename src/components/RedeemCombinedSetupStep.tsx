@@ -16,7 +16,12 @@ import type { RedeemShippingForm } from "@/lib/redeem-shipping-address";
 import {
   REDEEM_BRIGHT_PANEL_CLASS,
   REDEEM_BRIGHT_PANEL_HIGHLIGHT_CLASS,
+  REDEEM_INFO_STRIP_CLASS,
   REDEEM_PRIMARY_BUTTON_CLASS,
+  REDEEM_SECTION_CLASS,
+  REDEEM_SECTION_DIMMED_CLASS,
+  REDEEM_SECTION_HEADER_CLASS,
+  REDEEM_SECTION_HIGHLIGHT_CLASS,
 } from "@/lib/redeem-panel";
 import type { ShippingMethodId } from "@/lib/shipping-methods";
 import { RedeemTierPicker } from "@/components/RedeemTierPicker";
@@ -43,16 +48,18 @@ function SetupSection({
 }) {
   return (
     <section
-      className={`rounded-xl border p-4 transition sm:p-5 ${
-        highlight
-          ? "border-amber-400/50 bg-amber-950/20 ring-1 ring-amber-400/25"
-          : dimmed
-            ? "border-slate-800/80 bg-black/15 opacity-70"
-            : "border-slate-700/55 bg-black/25"
+      className={`${REDEEM_SECTION_CLASS}${highlight ? ` ${REDEEM_SECTION_HIGHLIGHT_CLASS}` : ""}${
+        dimmed ? ` ${REDEEM_SECTION_DIMMED_CLASS}` : ""
       }`}
     >
-      <div className="mb-4 flex items-start gap-3">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#00104E] text-xs font-bold text-white">
+      <div className={`${REDEEM_SECTION_HEADER_CLASS}${highlight ? " border-amber-500/30" : ""}`}>
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold text-white ${
+            highlight
+              ? "border-amber-500/45 bg-amber-500/20"
+              : "border-slate-500/55 bg-[#00104E]"
+          }`}
+        >
           {step}
         </span>
         <div className="min-w-0">
@@ -160,7 +167,7 @@ export function RedeemCombinedSetupStep({
   const nextStep = () => ++stepCounter;
 
   const backArrowButtonClass =
-    "inline-flex shrink-0 items-center justify-center rounded-lg border border-white/15 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/25 disabled:pointer-events-none disabled:opacity-40";
+    "inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-500/55 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-500/45 disabled:pointer-events-none disabled:opacity-40";
 
   const planContent =
     plansLoading && plans.length === 0 ? (
@@ -182,10 +189,7 @@ export function RedeemCombinedSetupStep({
       />
     );
 
-  const planPanelClass =
-    highlight === "plan"
-      ? "rounded-xl border border-amber-400/50 bg-amber-950/20 p-4 ring-1 ring-amber-400/25 sm:p-5"
-      : "rounded-xl border border-slate-700/55 bg-black/25 p-4 sm:p-5";
+  const planPanelClass = highlight === "plan" ? REDEEM_SECTION_HIGHLIGHT_CLASS : "";
 
   return (
     <>
@@ -211,11 +215,11 @@ export function RedeemCombinedSetupStep({
         </div>
       </div>
 
-      <div className="mt-6 w-full space-y-5">
+      <div className="mt-6 w-full space-y-6">
         {planOnlyMode ? (
-          <div className={`mx-auto max-w-2xl ${planPanelClass}`}>{planContent}</div>
+          <div className={`mx-auto max-w-2xl ${REDEEM_SECTION_CLASS} ${planPanelClass}`.trim()}>{planContent}</div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {showTierSection ? (
               <SetupSection
                 step={nextStep()}
@@ -273,7 +277,7 @@ export function RedeemCombinedSetupStep({
             ) : null}
 
             {showPlanSection ? (
-              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:gap-8">
+              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-8 xl:gap-10">
                 <SetupSection
                   step={nextStep()}
                   title={t("step4Title")}
@@ -291,7 +295,7 @@ export function RedeemCombinedSetupStep({
                 </SetupSection>
 
                 {showFulfillmentSection ? (
-                  <div className="min-w-0 space-y-5 lg:sticky lg:top-4">
+                  <div className="min-w-0 space-y-6 lg:sticky lg:top-4">
                     <SetupSection
                       step={nextStep()}
                       title={t("step3Title")}
@@ -300,7 +304,7 @@ export function RedeemCombinedSetupStep({
                       dimmed={!selectionReady}
                     >
                       {ultraEsimOnly ? (
-                        <p className="mb-3 rounded border border-red-500/30 bg-red-950/35 px-3 py-2 text-sm text-red-100">
+                        <p className="mb-3 rounded-lg border border-red-500/30 bg-red-500/[0.06] px-3 py-2 text-sm text-red-100">
                           {t("ultraEsimOnlyBanner")}
                         </p>
                       ) : null}
@@ -320,9 +324,7 @@ export function RedeemCombinedSetupStep({
                         highlight={highlight === "details"}
                       >
                         {fulfillmentType === "ESIM" || ultraEsimOnly ? (
-                          <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-relaxed text-slate-300">
-                            {t("esimDetailsNote")}
-                          </p>
+                          <p className={REDEEM_INFO_STRIP_CLASS}>{t("esimDetailsNote")}</p>
                         ) : null}
 
                         {fulfillmentType === "EXISTING_SIM" ? (
@@ -363,7 +365,7 @@ export function RedeemCombinedSetupStep({
                               disabled={loading}
                               fieldClass={panelInputClass}
                             />
-                            <div className="space-y-3 border-t border-white/10 pt-5">
+                            <div className="space-y-3 border-t border-slate-500/50 pt-5">
                               <h4 className="text-sm font-semibold text-white">{t("shippingMethodHeading")}</h4>
                               <RedeemShippingMethodPicker
                                 shippingMethodId={shippingMethodId}

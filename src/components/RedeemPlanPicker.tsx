@@ -6,11 +6,11 @@ import { RedeemTmobileAddons, type TmobileAddonOption } from "@/components/Redee
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
 import { planListDisplayName } from "@/lib/plan-sku";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
-
-const PLAN_OPTION_SELECTED =
-  "border-emerald-400/50 bg-emerald-500/[0.08] shadow-[inset_0_3px_0_0_rgba(52,211,153,0.85)]";
-const PLAN_OPTION_IDLE =
-  "border-white/10 bg-black/20 hover:border-white/18 hover:bg-black/28";
+import {
+  REDEEM_CHOICE_CARD_IDLE,
+  REDEEM_CHOICE_CARD_SELECTED,
+  REDEEM_CREDIT_STRIP_CLASS,
+} from "@/lib/redeem-panel";
 
 const PlanOption = memo(function PlanOption({
   plan,
@@ -41,7 +41,7 @@ const PlanOption = memo(function PlanOption({
       disabled={disabled}
       onClick={handleClick}
       className={`group relative flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white/35 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:py-3.5 ${
-        isSelected ? PLAN_OPTION_SELECTED : PLAN_OPTION_IDLE
+        isSelected ? REDEEM_CHOICE_CARD_SELECTED : REDEEM_CHOICE_CARD_IDLE
       }`}
     >
       {isSelected ? (
@@ -120,7 +120,7 @@ export const RedeemPlanPicker = memo(function RedeemPlanPicker({
 
   return (
     <div className="space-y-4">
-      <p className="rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-3 py-2 text-sm text-slate-300">
+      <p className={REDEEM_CREDIT_STRIP_CLASS}>
         <span className="font-medium text-emerald-100">{t("creditLabel")}</span>{" "}
         <span className="font-bold tabular-nums text-white">${(creditCents / 100).toFixed(2)}</span>
       </p>
@@ -150,7 +150,7 @@ export const RedeemPlanPicker = memo(function RedeemPlanPicker({
       )}
 
       {showTmobileAddons && tmobileAddonOptions.length > 0 ? (
-        <section className="border-t border-white/10 pt-4" aria-labelledby="redeem-tmobile-addons-heading">
+        <section className="border-t border-slate-500/50 pt-4" aria-labelledby="redeem-tmobile-addons-heading">
           <RedeemTmobileAddons
             options={tmobileAddonOptions}
             selected={selectedAddonSkus}
