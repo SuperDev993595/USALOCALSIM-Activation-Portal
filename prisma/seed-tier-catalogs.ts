@@ -102,7 +102,7 @@ async function deactivateMisalignedTierPlans(
   ] as const;
 
   let total = 0;
-  const allIds = [...networkIdBySlug.values()];
+  const allIds = Array.from(networkIdBySlug.values());
 
   for (const rule of rules) {
     const allowedIds = new Set(
