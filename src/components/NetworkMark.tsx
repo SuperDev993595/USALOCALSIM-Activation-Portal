@@ -6,15 +6,16 @@ import { isGlobalNetworkSlug } from "@/lib/network-brand";
 import { NETWORK_LOGOS } from "@/lib/network-logos";
 import { REDEEM_ICON_TILE_CLASS } from "@/lib/redeem-panel";
 
-type MarkProps = { className?: string; slug: string; size?: "default" | "md" | "lg" | "xl" };
-
-/** Logo tweaks on dark redeem summary tiles (compact marks). */
-const DARK_TILE_LOGO_CLASS: Partial<Record<GlobalNetworkSlug, string>> = {
-  three_uk: "brightness-0 invert opacity-90",
+type MarkProps = {
+  className?: string;
+  slug: string;
+  size?: "default" | "md" | "lg" | "xl";
+  /** Equal bounding box for all carriers (tier panel + picker). */
+  variant?: "default" | "uniform";
 };
 
 /** Carrier logo on network picker cards (real assets, object-contain). */
-export function NetworkMark({ slug, className = "" }: MarkProps) {
+export function NetworkMark({ slug, className = "", variant = "default" }: MarkProps) {
   if (!isGlobalNetworkSlug(slug)) {
     return (
       <span
@@ -27,6 +28,9 @@ export function NetworkMark({ slug, className = "" }: MarkProps) {
   }
 
   const logo = NETWORK_LOGOS[slug];
+  const uniformClass =
+    "h-full w-full max-h-full max-w-full object-contain object-center";
+  const defaultClass = `h-auto w-full object-contain object-center ${logo.maxHeightClass}`;
 
   return (
     <Image
@@ -34,12 +38,17 @@ export function NetworkMark({ slug, className = "" }: MarkProps) {
       alt=""
       width={logo.width}
       height={logo.height}
-      className={`h-auto w-full object-contain object-center ${logo.maxHeightClass} ${className}`.trim()}
+      className={`${variant === "uniform" ? uniformClass : defaultClass} ${className}`.trim()}
       aria-hidden
       unoptimized={logo.src.endsWith(".svg")}
     />
   );
 }
+
+/** Logo tweaks on dark redeem summary tiles (compact marks). */
+const DARK_TILE_LOGO_CLASS: Partial<Record<GlobalNetworkSlug, string>> = {
+  three_uk: "brightness-0 invert opacity-90",
+};
 
 const COMPACT_MARK_SIZES = {
   default: { tile: "h-10 w-12", logo: "max-h-7", fallback: "w-10" },

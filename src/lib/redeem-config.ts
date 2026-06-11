@@ -1,9 +1,12 @@
 /**
  * When true, global vouchers use card-design flow: SMS → BASIC/PRO/ULTRA → tier-filtered networks.
- * Default (unset env): briefing flow per feedback 2026-05-28 — SMS → four networks → plans.
+ * Default (unset env): tier flow — matches physical voucher card (BASIC / PRO / ULTRA first).
+ * Set REDEEM_USE_TIER_STEP=false for legacy briefing flow (SMS → four networks → plans).
  */
 export function redeemUsesTierStep(): boolean {
-  return process.env.REDEEM_USE_TIER_STEP === "true";
+  const v = process.env.REDEEM_USE_TIER_STEP?.trim().toLowerCase();
+  if (v === "false" || v === "0") return false;
+  return true;
 }
 
 /** Briefing-style global redeem (no coverage tier step). */

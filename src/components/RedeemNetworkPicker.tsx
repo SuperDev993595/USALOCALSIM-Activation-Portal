@@ -2,7 +2,10 @@
 
 import { memo, useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { NETWORK_DISPLAY, type GlobalNetworkSlug } from "@/lib/network-catalog";
+import {
+  NETWORK_DISPLAY,
+  type GlobalNetworkSlug,
+} from "@/lib/network-catalog";
 import { NetworkMark } from "@/components/NetworkMark";
 import { NETWORK_BRAND, isGlobalNetworkSlug } from "@/lib/network-brand";
 
@@ -45,7 +48,9 @@ const NetworkPickerCard = memo(function NetworkPickerCard({
         <span className="network-picker-card__fx-shine" />
       </span>
       <span className="network-picker-card__content">
-        <NetworkMark slug={network.slug} />
+        <span className="network-mark-frame network-mark-frame--picker">
+          <NetworkMark slug={network.slug} variant="uniform" />
+        </span>
       </span>
       {isSelected ? (
         <span
@@ -154,8 +159,12 @@ export const RedeemNetworkPicker = memo(function RedeemNetworkPicker({
         </p>
       ) : (
         <div
-          className={`grid gap-2 sm:gap-2.5 ${
-            networks.length <= 1 ? "grid-cols-1 max-w-sm" : networks.length === 2 ? "grid-cols-2" : "grid-cols-4"
+          className={`grid gap-2.5 sm:gap-3 ${
+            networks.length <= 1
+              ? "grid-cols-1 max-w-md"
+              : networks.length === 2
+                ? "grid-cols-1 sm:grid-cols-2"
+                : "grid-cols-2 lg:grid-cols-4"
           } ${quoteBusy ? "opacity-95" : ""}`}
           aria-busy={quoteBusy || savingSlug !== null}
         >

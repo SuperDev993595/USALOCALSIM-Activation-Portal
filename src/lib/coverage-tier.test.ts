@@ -6,7 +6,10 @@ import {
   isBasicTierNetwork,
   isCoverageTier,
   NETWORK_SLUGS_BY_TIER,
+  networkSlugForTier,
+  networkSlugsForTier,
   redeemQuoteCoverageTier,
+  tierHasMultipleNetworks,
   tierRequiresEsimOnly,
 } from "@/lib/coverage-tier";
 
@@ -36,6 +39,22 @@ describe("NETWORK_SLUGS_BY_TIER", () => {
     expect(NETWORK_SLUGS_BY_TIER.basic).toEqual(["t_mobile", "linkup_att"]);
     expect(NETWORK_SLUGS_BY_TIER.pro).toEqual(["three_uk"]);
     expect(NETWORK_SLUGS_BY_TIER.ultra).toEqual(["orange"]);
+  });
+});
+
+describe("networkSlugsForTier", () => {
+  it("returns both USA carriers for basic", () => {
+    expect(networkSlugsForTier(COVERAGE_TIER.BASIC)).toEqual(["t_mobile", "linkup_att"]);
+    expect(tierHasMultipleNetworks(COVERAGE_TIER.BASIC)).toBe(true);
+    expect(tierHasMultipleNetworks(COVERAGE_TIER.PRO)).toBe(false);
+  });
+});
+
+describe("networkSlugForTier", () => {
+  it("returns primary slug per tier", () => {
+    expect(networkSlugForTier("basic")).toBe("t_mobile");
+    expect(networkSlugForTier("pro")).toBe("three_uk");
+    expect(networkSlugForTier("ultra")).toBe("orange");
   });
 });
 

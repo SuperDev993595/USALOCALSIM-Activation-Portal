@@ -24,14 +24,14 @@ export const NETWORK_LOGOS: Record<GlobalNetworkSlug, NetworkLogoConfig> = {
   },
   three_uk: {
     src: "/networks/three-pro-wordmark.svg",
-    width: 100,
-    height: 44,
+    width: 220,
+    height: 64,
     maxHeightClass: "max-h-[3.25rem]",
   },
   orange: {
     src: "/networks/orange.svg",
-    width: 110,
-    height: 36,
-    maxHeightClass: "max-h-[2.75rem]",
+    width: 220,
+    height: 64,
+    maxHeightClass: "max-h-[3.25rem]",
   },
 };

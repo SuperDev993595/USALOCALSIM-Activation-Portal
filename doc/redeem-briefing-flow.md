@@ -1,6 +1,6 @@
-# Redeem flow (feedback 2026-05-28)
+# Redeem flow (card-design tier flow)
 
-Default production flow matches the client briefing (`doc/feedback/feedback-2026-05-28.md`).
+Default production flow: **BASIC / PRO / ULTRA first** — network is auto-assigned, no manual picker.
 
 ## Steps
 
@@ -8,34 +8,31 @@ Default production flow matches the client briefing (`doc/feedback/feedback-2026
 |------|------------|----------|
 | 1 | `/redeem/enter` | Scratch voucher code; reject if retailer has not activated (POS). |
 | 2 | `/redeem` or `/redeem/three-uk?purchaseId=…` | SMS verification on service phone. |
-| 3 | Global: network picker (4 carriers). Three UK batch: skip → `three_uk` auto-selected. |
-| 4 | Fulfillment + plan list; baseline plans match voucher credit (perfect match). |
-| 5 | Upgrade plans show balance due; Stripe checkout for the difference. |
+| 3 | **Configure your service** | **BASIC / PRO / ULTRA** (left) + **network display** (right) → auto-loaded data plans + SIM type. |
+| 4 | Payment + activation date | Upgrade balance via Stripe when applicable. |
 
-## Global networks (step 3)
+## Tier → auto network → plans
 
-All four active carriers: **THREE UK**, **LINKUP & AT&T MOBILE**, **T-MOBILE**, **ORANGE**.
+| Tier | Auto network | Plans shown |
+|------|--------------|-------------|
+| **BASIC** | T-Mobile | USA T-Mobile plans |
+| **PRO** | Three UK | Three UK PRO plans |
+| **ULTRA** | Orange | Orange eSIM plans |
 
-Plans are filtered by selected network and allowed markets (`src/lib/redeem-plan-markets.ts`).
+Implemented in `src/lib/coverage-tier.ts` (`NETWORK_SLUG_FOR_TIER`) and `POST /api/redeem/tier/select`.
 
-## Optional card-design flow
+## Legacy briefing flow (optional)
 
-Set `REDEEM_USE_TIER_STEP=true` to insert BASIC / PRO / ULTRA before network selection (tier-filtered carriers).
+Set `REDEEM_USE_TIER_STEP=false` to restore SMS → four network logos → plans (no tier step).
 
 ## Seed
 
-Run `npx prisma db seed` to load `GLOBAL_BRIEFING_PLANS` ($35 perfect-match SKUs for T-Mobile, Three UK, Orange) plus existing tier catalogs.
+Run `npx prisma db seed` to load BASIC, PRO (Three UK), ULTRA (Orange), and briefing SKUs.
 
-## Three UK marketing URL (inject on cards / external sites)
+## Three UK marketing URL
 
-**Public plans page (no voucher required):**
-
-`https://<your-domain>/redeem/three-uk`
-
-Shows Three UK branding, live plan list from the database, and **Activate your voucher** → `/redeem/enter`.
-
-After a Three UK exclusive voucher is entered, the same path continues as the redeem wizard (`?purchaseId=…&access=…`).
+`https://<your-domain>/redeem/three-uk` — Three UK exclusive vouchers skip tier/network and auto-select `three_uk`.
 
 ## Deploy note
 
-On Vercel, **do not** set `REDEEM_USE_TIER_STEP=true` unless you intentionally want the tier card flow. Unset = briefing flow.
+Tier flow is **on by default**. Set `REDEEM_USE_TIER_STEP=false` on Vercel only if you intentionally want the legacy four-logo flow.

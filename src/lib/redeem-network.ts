@@ -37,6 +37,11 @@ export async function resolveNetworkForRedeem(input: {
   return network;
 }
 
+/** Quote/checkout: BASIC tier plans on T-Mobile or Linkup (no manual network step). */
+export function planFilterForBasicTier(): Prisma.PlanWhereInput {
+  return { network: { slug: { in: ["t_mobile", "linkup_att"] } } };
+}
+
 /** Quote/checkout: only catalog plans tied to the selected carrier (exclude legacy rows with no networkId). */
 export function planFilterForNetwork(networkId: string): Prisma.PlanWhereInput {
   return { networkId };

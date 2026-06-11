@@ -17,13 +17,33 @@ export function isCoverageTier(value: string): value is CoverageTier {
   return (COVERAGE_TIER_ORDER as string[]).includes(value);
 }
 
-/** Networks offered in the picker when REDEEM_USE_TIER_STEP=true (card-design flow). Briefing flow shows all four carriers. */
-/** One carrier per PRO/ULTRA; BASIC is USA (T-Mobile + Linkup). */
+/** Legacy / briefing: networks associated with each tier. */
 export const NETWORK_SLUGS_BY_TIER: Record<CoverageTier, readonly string[]> = {
   [COVERAGE_TIER.BASIC]: ["t_mobile", "linkup_att"],
   [COVERAGE_TIER.PRO]: ["three_uk"],
   [COVERAGE_TIER.ULTRA]: ["orange"],
 };
+
+/** Auto-assigned carrier when user picks a tier (no manual network step). */
+export const NETWORK_SLUG_FOR_TIER: Record<CoverageTier, string> = {
+  [COVERAGE_TIER.BASIC]: "t_mobile",
+  [COVERAGE_TIER.PRO]: "three_uk",
+  [COVERAGE_TIER.ULTRA]: "orange",
+};
+
+export function networkSlugForTier(tier: string | null | undefined): string | null {
+  if (!tier || !isCoverageTier(tier)) return null;
+  return NETWORK_SLUG_FOR_TIER[tier];
+}
+
+/** Networks shown in the tier panel (BASIC = both USA carriers). */
+export function networkSlugsForTier(tier: CoverageTier): readonly string[] {
+  return NETWORK_SLUGS_BY_TIER[tier];
+}
+
+export function tierHasMultipleNetworks(tier: CoverageTier): boolean {
+  return NETWORK_SLUGS_BY_TIER[tier].length > 1;
+}
 
 type TierAccent = {
   stripe: string;

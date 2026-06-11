@@ -1,11 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { BASIC_TIER_NETWORKS, BASIC_TIER_PLANS, RETIRED_LINKUP_BASIC_SKUS } from "../src/lib/basic-tier-catalog";
-import { PRO_TIER_MOCK_PLANS } from "../src/lib/pro-tier-catalog-mock";
+import { PRO_TIER_MOCK_PLANS, RETIRED_PRO_TIER_SKUS } from "../src/lib/pro-tier-catalog-mock";
 import { parseSkuFromPlanName } from "../src/lib/plan-sku";
 import { tierPlanSeedRow, type TierPlanSeed } from "../src/lib/tier-plan-seed";
 import { GLOBAL_BRIEFING_PLANS } from "../src/lib/global-briefing-catalog";
 import { THREE_UK_EXCLUSIVE_MOCK_PLANS } from "../src/lib/three-uk-exclusive-catalog";
-import { ULTRA_TIER_MOCK_PLANS } from "../src/lib/ultra-tier-catalog-mock";
+import { ULTRA_TIER_MOCK_PLANS, RETIRED_ULTRA_TIER_SKUS } from "../src/lib/ultra-tier-catalog-mock";
 
 const ALL_NETWORKS = [
   { id: "net_t_mobile", slug: "t_mobile", name: "T-MOBILE", displayOrder: 1 },
@@ -79,6 +79,52 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
   return { created, updated };
 }
 
+async function deactivateRetiredSkus(
+  prisma: PrismaClient,
+  skus: readonly string[],
+): Promise<number> {
+  if (skus.length === 0) return 0;
+  const result = await prisma.plan.updateMany({
+    where: { sku: { in: [...skus] } },
+    data: { active: false },
+  });
+  return result.count;
+}
+
+async function deactivateMisalignedTierPlans(
+  prisma: PrismaClient,
+  networkIdBySlug: Map<string, string>,
+): Promise<number> {
+  const rules = [
+    { tier: "basic", allowedSlugs: ["t_mobile", "linkup_att"] as const },
+    { tier: "pro", allowedSlugs: ["three_uk"] as const },
+    { tier: "ultra", allowedSlugs: ["orange"] as const },
+  ] as const;
+
+  let total = 0;
+  const allIds = [...networkIdBySlug.values()];
+
+  for (const rule of rules) {
+    const allowedIds = new Set(
+      rule.allowedSlugs.map((slug) => networkIdBySlug.get(slug)).filter(Boolean) as string[],
+    );
+    const disallowedIds = allIds.filter((id) => !allowedIds.has(id));
+    if (disallowedIds.length === 0) continue;
+
+    const result = await prisma.plan.updateMany({
+      where: {
+        coverageTier: rule.tier,
+        networkId: { in: disallowedIds },
+        active: true,
+      },
+      data: { active: false },
+    });
+    total += result.count;
+  }
+
+  return total;
+}
+
 async function deactivateRetiredLinkupBasicPlans(
   prisma: PrismaClient,
   networkIdBySlug: Map<string, string>,
@@ -142,6 +188,21 @@ export async function seedTierCatalogs(prisma: PrismaClient): Promise<void> {
   console.log(
     `Seeded ULTRA tier (MOCK): ${ultra.created} created, ${ultra.updated} updated (${ULTRA_TIER_MOCK_PLANS.length} SKUs).`,
   );
+
+  const retiredPro = await deactivateRetiredSkus(prisma, RETIRED_PRO_TIER_SKUS);
+  if (retiredPro > 0) {
+    console.log(`Deactivated ${retiredPro} retired PRO tier plan row(s).`);
+  }
+
+  const retiredUltra = await deactivateRetiredSkus(prisma, RETIRED_ULTRA_TIER_SKUS);
+  if (retiredUltra > 0) {
+    console.log(`Deactivated ${retiredUltra} retired ULTRA tier plan row(s).`);
+  }
+
+  const misaligned = await deactivateMisalignedTierPlans(prisma, networkIdBySlug);
+  if (misaligned > 0) {
+    console.log(`Deactivated ${misaligned} tier/network misaligned plan row(s).`);
+  }
 
   const threeUkEx = await seedPlanRows(prisma, THREE_UK_EXCLUSIVE_MOCK_PLANS, networkIdBySlug);
   console.log(

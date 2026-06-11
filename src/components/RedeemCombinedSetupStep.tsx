@@ -20,6 +20,7 @@ import {
 } from "@/lib/redeem-panel";
 import type { ShippingMethodId } from "@/lib/shipping-methods";
 import { RedeemTierPicker } from "@/components/RedeemTierPicker";
+import { RedeemTierNetworkDisplay } from "@/components/RedeemTierNetworkDisplay";
 import type { CoverageTier } from "@/lib/coverage-tier";
 import { coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
 
@@ -69,6 +70,7 @@ export function RedeemCombinedSetupStep({
   accessToken,
   showNetworkSection,
   showTierSection,
+  showTierNetworkDisplay,
   showFulfillmentSection,
   coverageTier,
   selectedNetworkSlug,
@@ -96,6 +98,8 @@ export function RedeemCombinedSetupStep({
   onContinue,
   onNetworkSelect,
   onTierSelect,
+  tierPending,
+  tierError,
   onFulfillmentChange,
   onIccidChange,
   onShippingFormChange,
@@ -107,6 +111,8 @@ export function RedeemCombinedSetupStep({
   accessToken: string;
   showNetworkSection: boolean;
   showTierSection: boolean;
+  /** Read-only network panel beside tier picker (tier flow). */
+  showTierNetworkDisplay: boolean;
   showFulfillmentSection: boolean;
   coverageTier: string | null;
   selectedNetworkSlug: string;
@@ -134,6 +140,8 @@ export function RedeemCombinedSetupStep({
   onContinue: () => void;
   onNetworkSelect: (slug: string) => void;
   onTierSelect: (tier: CoverageTier) => void;
+  tierPending?: CoverageTier | null;
+  tierError?: string | null;
   onFulfillmentChange: (type: RedeemFulfillmentType) => void;
   onIccidChange: (value: string) => void;
   onShippingFormChange: (form: RedeemShippingForm) => void;
@@ -144,7 +152,8 @@ export function RedeemCombinedSetupStep({
   const t = useTranslations("redeemWizard");
 
   const tierReady = !showTierSection || isCoverageTier(coverageTier ?? "");
-  const networkReady = tierReady && (!showNetworkSection || Boolean(selectedNetworkSlug));
+  const selectionReady =
+    tierReady && (!showNetworkSection || Boolean(selectedNetworkSlug));
   const showPlanSection = planOnlyMode || !showTierSection || tierReady;
 
   let stepCounter = 0;
@@ -214,13 +223,24 @@ export function RedeemCombinedSetupStep({
                 hint={t("stepTierBody")}
                 highlight={highlight === "tier"}
               >
-                <RedeemTierPicker
-                  purchaseId={purchaseId}
-                  accessToken={accessToken}
-                  selectedTier={coverageTier}
-                  disabled={loading}
-                  onSelect={onTierSelect}
-                />
+                <div
+                  className={
+                    showTierNetworkDisplay
+                      ? "grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:gap-6 [&_.tier-network-display]:h-full"
+                      : undefined
+                  }
+                >
+                  <RedeemTierPicker
+                    selectedTier={coverageTier}
+                    pendingTier={tierPending ?? null}
+                    error={tierError ?? null}
+                    disabled={loading}
+                    onPickTier={onTierSelect}
+                  />
+                  {showTierNetworkDisplay ? (
+                    <RedeemTierNetworkDisplay coverageTier={coverageTier} />
+                  ) : null}
+                </div>
               </SetupSection>
             ) : null}
 
@@ -257,15 +277,15 @@ export function RedeemCombinedSetupStep({
                 <SetupSection
                   step={nextStep()}
                   title={t("step4Title")}
-                  hint={networkReady ? t("step4BodySimple") : t("stepPlansSelectNetworkFirst")}
+                  hint={selectionReady ? t("step4BodySimple") : t("stepPlansSelectTierFirst")}
                   highlight={highlight === "plan"}
-                  dimmed={!networkReady}
+                  dimmed={!selectionReady}
                 >
                   <div className={plansRefreshing ? "opacity-80 transition-opacity duration-150" : undefined}>
-                    {networkReady ? (
+                    {selectionReady ? (
                       planContent
                     ) : (
-                      <p className="text-sm leading-relaxed text-slate-500">{t("stepPlansSelectNetworkFirst")}</p>
+                      <p className="text-sm leading-relaxed text-slate-500">{t("stepPlansSelectTierFirst")}</p>
                     )}
                   </div>
                 </SetupSection>
@@ -277,7 +297,7 @@ export function RedeemCombinedSetupStep({
                       title={t("step3Title")}
                       hint={t("step3Body")}
                       highlight={highlight === "sim"}
-                      dimmed={!networkReady}
+                      dimmed={!selectionReady}
                     >
                       {ultraEsimOnly ? (
                         <p className="mb-3 rounded border border-red-500/30 bg-red-950/35 px-3 py-2 text-sm text-red-100">
@@ -287,12 +307,12 @@ export function RedeemCombinedSetupStep({
                       <RedeemFulfillmentPicker
                         value={fulfillmentType}
                         onChange={onFulfillmentChange}
-                        disabled={loading || !networkReady}
+                        disabled={loading || !selectionReady}
                         ultraEsimOnly={ultraEsimOnly}
                       />
                     </SetupSection>
 
-                    {networkReady ? (
+                    {selectionReady ? (
                       <SetupSection
                         step={nextStep()}
                         title={t("step3DetailsTitle")}

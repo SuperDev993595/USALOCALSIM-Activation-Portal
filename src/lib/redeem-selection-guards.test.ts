@@ -42,8 +42,7 @@ describe("validateRedeemWizardSelections", () => {
     delete process.env.REDEEM_USE_TIER_STEP;
   });
 
-  it("requires tier when tier step enabled", async () => {
-    process.env.REDEEM_USE_TIER_STEP = "true";
+  it("requires tier when tier step enabled (default)", async () => {
     const result = await validateRedeemWizardSelections(
       { redemptionCoverageTier: null, redemptionNetworkSlug: "t_mobile", prepaidCard: { retailMarket: "us" } },
       globalVoucher,
@@ -54,7 +53,8 @@ describe("validateRedeemWizardSelections", () => {
     }
   });
 
-  it("skips tier requirement in default briefing flow", async () => {
+  it("skips tier requirement when briefing flow is forced", async () => {
+    process.env.REDEEM_USE_TIER_STEP = "false";
     const result = await validateRedeemWizardSelections(
       { redemptionCoverageTier: null, redemptionNetworkSlug: "t_mobile", prepaidCard: { retailMarket: "us" } },
       globalVoucher,
@@ -67,6 +67,7 @@ describe("validateRedeemWizardSelections", () => {
   });
 
   it("uses global markets for three_uk in briefing flow", async () => {
+    process.env.REDEEM_USE_TIER_STEP = "false";
     resolveNetwork.mockResolvedValue({ slug: "three_uk", id: "net-3uk" });
     const result = await validateRedeemWizardSelections(
       { redemptionCoverageTier: null, redemptionNetworkSlug: "three_uk", prepaidCard: { retailMarket: "us" } },
@@ -78,12 +79,28 @@ describe("validateRedeemWizardSelections", () => {
     }
   });
 
-  it("requires network for global voucher", async () => {
-    process.env.REDEEM_USE_TIER_STEP = "true";
+  it("allows basic tier without network until plan is chosen", async () => {
     resolveNetwork.mockResolvedValue(null);
     const result = await validateRedeemWizardSelections(
       {
         redemptionCoverageTier: "basic",
+        redemptionNetworkSlug: null,
+        prepaidCard: { retailMarket: "us" },
+      },
+      globalVoucher,
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.network).toBeNull();
+      expect(result.planMarkets).toEqual(["us"]);
+    }
+  });
+
+  it("requires network for global voucher when not basic tier", async () => {
+    resolveNetwork.mockResolvedValue(null);
+    const result = await validateRedeemWizardSelections(
+      {
+        redemptionCoverageTier: "pro",
         redemptionNetworkSlug: null,
         prepaidCard: { retailMarket: "us" },
       },
@@ -96,11 +113,10 @@ describe("validateRedeemWizardSelections", () => {
   });
 
   it("sets ultraEsimOnly for ultra tier", async () => {
-    process.env.REDEEM_USE_TIER_STEP = "true";
     const result = await validateRedeemWizardSelections(
       {
         redemptionCoverageTier: "ultra",
-        redemptionNetworkSlug: "three_uk",
+        redemptionNetworkSlug: "orange",
         prepaidCard: { retailMarket: "us" },
       },
       globalVoucher,
@@ -146,8 +162,21 @@ describe("validateRedeemPlanForSelections", () => {
     expect(err?.code).toBe("NETWORK_PLAN_MISMATCH");
   });
 
+  it("accepts linkup plan for basic tier without purchase network", () => {
+    const err = validateRedeemPlanForSelections({
+      plan: {
+        market: "us",
+        coverageTier: "basic",
+        networkId: "net-att",
+        network: { slug: "linkup_att" },
+        planType: "physical_sim",
+      },
+      selections: selections({ tier: "basic", network: null }),
+    });
+    expect(err).toBeNull();
+  });
+
   it("rejects tier mismatch", () => {
-    process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "us",
@@ -162,7 +191,6 @@ describe("validateRedeemPlanForSelections", () => {
   });
 
   it("rejects physical plan for ultra", () => {
-    process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "global",
@@ -182,7 +210,6 @@ describe("validateRedeemPlanForSelections", () => {
   });
 
   it("rejects non-esim fulfillment for ultra", () => {
-    process.env.REDEEM_USE_TIER_STEP = "true";
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "global",

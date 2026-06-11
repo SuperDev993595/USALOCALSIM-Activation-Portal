@@ -47,11 +47,11 @@ export function DevTierBannersPreview() {
         </div>
 
         <p className="mt-4 text-xs leading-relaxed text-slate-400">
-          Live flow: set <code className="text-slate-200">REDEEM_USE_TIER_STEP=true</code>, then redeem at{" "}
+          Live flow: redeem at{" "}
           <Link href="/redeem/enter" className="text-sky-300 underline-offset-2 hover:underline">
             /redeem/enter
-          </Link>
-          .
+          </Link>{" "}
+          — tier banners appear on Configure your service after SMS verification.
         </p>
       </div>
     </div>

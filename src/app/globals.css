@@ -1889,6 +1889,36 @@
   justify-content: center;
 }
 
+/* Fixed logo bounding box — same width for every carrier (Three UK, Orange, T-Mobile, Linkup). */
+.network-mark-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.network-mark-frame--tier {
+  width: 7.5rem;
+  height: 2.75rem;
+}
+
+.network-mark-frame--picker {
+  width: 6.75rem;
+  height: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .network-mark-frame--tier {
+    width: 8rem;
+    height: 3rem;
+  }
+
+  .network-mark-frame--picker {
+    width: 7.25rem;
+    height: 2.75rem;
+  }
+}
+
 /* Dark redeem panel: keep cards light */
 @media (prefers-color-scheme: dark) {
   .network-picker-card {

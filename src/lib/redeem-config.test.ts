@@ -6,20 +6,21 @@ describe("redeemUsesTierStep", () => {
     delete process.env.REDEEM_USE_TIER_STEP;
   });
 
-  it("defaults to briefing flow (no tier step) when env unset", () => {
-    expect(redeemUsesTierStep()).toBe(false);
-    expect(redeemUsesBriefingFlow()).toBe(true);
+  it("defaults to tier flow (BASIC/PRO/ULTRA step) when env unset", () => {
+    expect(redeemUsesTierStep()).toBe(true);
+    expect(redeemUsesBriefingFlow()).toBe(false);
   });
 
-  it("enables tier step only when env is true", () => {
+  it("keeps tier flow when env is true", () => {
     process.env.REDEEM_USE_TIER_STEP = "true";
     expect(redeemUsesTierStep()).toBe(true);
     expect(redeemUsesBriefingFlow()).toBe(false);
   });
 
-  it("stays off for other values", () => {
+  it("disables tier step only when env is false or 0", () => {
     process.env.REDEEM_USE_TIER_STEP = "false";
     expect(redeemUsesTierStep()).toBe(false);
+    expect(redeemUsesBriefingFlow()).toBe(true);
     process.env.REDEEM_USE_TIER_STEP = "0";
     expect(redeemUsesTierStep()).toBe(false);
   });

@@ -112,7 +112,8 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
     accessToken: access,
     redemptionPhoneVerified: purchase.redemptionPhoneVerifiedAt != null,
     showTierStep: useTier,
-    showNetworkStep: showNetwork,
+    /** Manual network picker only in legacy briefing flow; tier flow auto-assigns carrier. */
+    showNetworkStep: showNetwork && !useTier,
     initialCoverageTier: purchase.redemptionCoverageTier,
     initialNetworkSlug: purchase.redemptionNetworkSlug,
     resumeAfterPaidUpgrade,

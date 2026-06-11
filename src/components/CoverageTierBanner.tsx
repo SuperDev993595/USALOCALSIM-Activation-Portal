@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { StatueOfLibertyIcon } from "@/components/icons/StatueOfLibertyIcon";
 import { TierGlobeIcon } from "@/components/icons/TierGlobeIcon";
 import {
@@ -16,7 +17,7 @@ function TierLeftIcon({ tier, className }: { tier: CoverageTier; className?: str
   return <TierGlobeIcon className={className} />;
 }
 
-export function CoverageTierBanner({
+export const CoverageTierBanner = memo(function CoverageTierBanner({
   tier,
   selected = false,
   showSelectedLabel,
@@ -64,4 +65,4 @@ export function CoverageTierBanner({
       </span>
     </span>
   );
-}
+});

@@ -1,5 +1,5 @@
 import { redeemUsesTierStep } from "@/lib/redeem-config";
-import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
+import { isCoverageTier, tierRequiresEsimOnly, COVERAGE_TIER, isBasicTierNetwork } from "@/lib/coverage-tier";
 import { planMarketsForRedeem, planMatchesRedeemMarkets } from "@/lib/redeem-plan-markets";
 import { networkRequiredForVoucher, resolveNetworkForRedeem } from "@/lib/redeem-network";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
@@ -35,8 +35,9 @@ export type RedeemWizardSelections = {
 export async function validateRedeemWizardSelections(
   purchase: PurchaseSlice,
   voucher: VoucherSlice,
+  opts?: { coverageTier?: string; networkSlug?: string | null },
 ): Promise<({ ok: true } & RedeemWizardSelections) | ({ ok: false } & RedeemSelectionError)> {
-  const tier = purchase.redemptionCoverageTier?.trim().toLowerCase() ?? "";
+  const tier = (opts?.coverageTier ?? purchase.redemptionCoverageTier)?.trim().toLowerCase() ?? "";
   const threeUkExclusive = isThreeUkExclusiveVoucher(voucher);
 
   if (networkRequiredForVoucher(voucher) && redeemUsesTierStep() && !isCoverageTier(tier)) {
@@ -48,12 +49,17 @@ export async function validateRedeemWizardSelections(
     };
   }
 
+  const basicTierMultiNetwork = redeemUsesTierStep() && tier === COVERAGE_TIER.BASIC;
+
+  const effectiveNetworkSlug =
+    opts?.networkSlug !== undefined ? opts.networkSlug : purchase.redemptionNetworkSlug;
+
   const network = await resolveNetworkForRedeem({
-    purchaseNetworkSlug: purchase.redemptionNetworkSlug,
+    purchaseNetworkSlug: effectiveNetworkSlug,
     voucher,
   });
 
-  if (networkRequiredForVoucher(voucher) && !network) {
+  if (networkRequiredForVoucher(voucher) && !network && !basicTierMultiNetwork) {
     return {
       ok: false,
       error: "Select a mobile network before choosing a plan.",
@@ -65,7 +71,7 @@ export async function validateRedeemWizardSelections(
   const cardMarket = purchase.prepaidCard?.retailMarket ?? "us";
   const planMarkets = planMarketsForRedeem({
     tier,
-    networkSlug: network?.slug ?? purchase.redemptionNetworkSlug,
+    networkSlug: network?.slug ?? effectiveNetworkSlug,
     cardMarket,
     threeUkExclusive,
   });
@@ -123,6 +129,15 @@ export function validateRedeemPlanForSelections(input: {
     if (slug && slug !== network.slug) {
       return {
         error: "This plan is not available on your selected network.",
+        code: "NETWORK_PLAN_MISMATCH",
+        status: 400,
+      };
+    }
+  } else if (redeemUsesTierStep() && tier === COVERAGE_TIER.BASIC) {
+    const planSlug = plan.network?.slug;
+    if (!planSlug || !isBasicTierNetwork(planSlug)) {
+      return {
+        error: "This plan is not available for BASIC coverage.",
         code: "NETWORK_PLAN_MISMATCH",
         status: 400,
       };

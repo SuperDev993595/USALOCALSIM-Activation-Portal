@@ -1,5 +1,5 @@
 /**
- * MOCK ULTRA tier plans (200+ countries, eSIM only) — replace when client sends final catalog.
+ * ULTRA tier plans (200+ countries, eSIM only) — Orange network only.
  * @see doc/mock-tier-catalogs.md
  */
 import type { TierPlanSeed } from "./tier-plan-seed";
@@ -7,28 +7,6 @@ import type { TierPlanSeed } from "./tier-plan-seed";
 const ULTRA_ESIM_ONLY = ["esim"] as const;
 
 export const ULTRA_TIER_MOCK_PLANS: TierPlanSeed[] = [
-  {
-    sku: "ULT-3UK-15GB-30D",
-    name: "Three UK Global eSIM — 15 GB / 30 days",
-    dataAllowance: "15 GB",
-    durationDays: 30,
-    priceCents: 3500,
-    networkSlug: "three_uk",
-    planTypes: [...ULTRA_ESIM_ONLY],
-    tier: "ultra",
-    market: "global",
-  },
-  {
-    sku: "ULT-3UK-UNL-30D",
-    name: "Three UK Global eSIM — Unlimited / 30 days",
-    dataAllowance: "Unlimited",
-    durationDays: 30,
-    priceCents: 4900,
-    networkSlug: "three_uk",
-    planTypes: [...ULTRA_ESIM_ONLY],
-    tier: "ultra",
-    market: "global",
-  },
   {
     sku: "ULT-ORG-15GB-30D",
     name: "Orange Global eSIM — 15 GB / 30 days",
@@ -51,48 +29,14 @@ export const ULTRA_TIER_MOCK_PLANS: TierPlanSeed[] = [
     tier: "ultra",
     market: "global",
   },
-  {
-    sku: "ULT-TM-20GB-30D",
-    name: "T-Mobile Global eSIM — 20 GB / 30 days",
-    dataAllowance: "20 GB",
-    durationDays: 30,
-    priceCents: 3500,
-    networkSlug: "t_mobile",
-    planTypes: [...ULTRA_ESIM_ONLY],
-    tier: "ultra",
-    market: "global",
-  },
-  {
-    sku: "ULT-TM-UNL-30D",
-    name: "T-Mobile Global eSIM — Unlimited / 30 days",
-    dataAllowance: "Unlimited",
-    durationDays: 30,
-    priceCents: 5000,
-    networkSlug: "t_mobile",
-    planTypes: [...ULTRA_ESIM_ONLY],
-    tier: "ultra",
-    market: "global",
-  },
-  {
-    sku: "ULT-ATT-12GB-30D",
-    name: "LINKUP & AT&T Global eSIM — 12 GB / 30 days",
-    dataAllowance: "12 GB",
-    durationDays: 30,
-    priceCents: 3500,
-    networkSlug: "linkup_att",
-    planTypes: [...ULTRA_ESIM_ONLY],
-    tier: "ultra",
-    market: "global",
-  },
-  {
-    sku: "ULT-ATT-30GB-30D",
-    name: "LINKUP & AT&T Global eSIM — 30 GB / 30 days",
-    dataAllowance: "30 GB",
-    durationDays: 30,
-    priceCents: 4500,
-    networkSlug: "linkup_att",
-    planTypes: [...ULTRA_ESIM_ONLY],
-    tier: "ultra",
-    market: "global",
-  },
 ];
+
+/** Retired ULTRA SKUs (non-Orange carriers removed from ULTRA tier per card design). */
+export const RETIRED_ULTRA_TIER_SKUS = [
+  "ULT-3UK-15GB-30D",
+  "ULT-3UK-UNL-30D",
+  "ULT-TM-20GB-30D",
+  "ULT-TM-UNL-30D",
+  "ULT-ATT-12GB-30D",
+  "ULT-ATT-30GB-30D",
+] as const;

@@ -1,5 +1,5 @@
 /**
- * MOCK PRO tier plans (72 countries) — replace when client sends final catalog.
+ * PRO tier plans (72 countries) — Three UK network only.
  * @see doc/mock-tier-catalogs.md
  */
 import type { TierPlanSeed } from "./tier-plan-seed";
@@ -38,37 +38,7 @@ export const PRO_TIER_MOCK_PLANS: TierPlanSeed[] = [
     tier: "pro",
     market: "global",
   },
-  {
-    sku: "PRO-ORG-12GB-30D",
-    name: "Orange — 12 GB / 30 days",
-    dataAllowance: "12 GB",
-    durationDays: 30,
-    priceCents: 3500,
-    networkSlug: "orange",
-    planTypes: ["physical_sim", "esim"],
-    tier: "pro",
-    market: "global",
-  },
-  {
-    sku: "PRO-ORG-20GB-30D",
-    name: "Orange — 20 GB / 30 days",
-    dataAllowance: "20 GB",
-    durationDays: 30,
-    priceCents: 4200,
-    networkSlug: "orange",
-    planTypes: ["physical_sim", "esim"],
-    tier: "pro",
-    market: "global",
-  },
-  {
-    sku: "PRO-ORG-UNL-30D",
-    name: "Orange — Unlimited / 30 days",
-    dataAllowance: "Unlimited",
-    durationDays: 30,
-    priceCents: 4900,
-    networkSlug: "orange",
-    planTypes: ["physical_sim", "esim"],
-    tier: "pro",
-    market: "global",
-  },
 ];
+
+/** Retired PRO SKUs (Orange was removed from PRO tier per card design). */
+export const RETIRED_PRO_TIER_SKUS = ["PRO-ORG-12GB-30D", "PRO-ORG-20GB-30D", "PRO-ORG-UNL-30D"] as const;
