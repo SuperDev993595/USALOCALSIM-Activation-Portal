@@ -154,7 +154,9 @@ export const RedeemNetworkPicker = memo(function RedeemNetworkPicker({
         </p>
       ) : (
         <div
-          className={`grid grid-cols-4 gap-2 sm:gap-2.5 ${quoteBusy ? "opacity-95" : ""}`}
+          className={`grid gap-2 sm:gap-2.5 ${
+            networks.length <= 1 ? "grid-cols-1 max-w-sm" : networks.length === 2 ? "grid-cols-2" : "grid-cols-4"
+          } ${quoteBusy ? "opacity-95" : ""}`}
           aria-busy={quoteBusy || savingSlug !== null}
         >
           {networks.map((n) => (

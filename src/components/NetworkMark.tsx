@@ -8,8 +8,8 @@ import { REDEEM_ICON_TILE_CLASS } from "@/lib/redeem-panel";
 
 type MarkProps = { className?: string; slug: string; size?: "default" | "md" | "lg" | "xl" };
 
-/** Logo tweaks so compact marks read on the dark redeem panel. */
-const COMPACT_LOGO_CLASS: Partial<Record<GlobalNetworkSlug, string>> = {
+/** Logo tweaks on dark redeem summary tiles (compact marks). */
+const DARK_TILE_LOGO_CLASS: Partial<Record<GlobalNetworkSlug, string>> = {
   three_uk: "brightness-0 invert opacity-90",
 };
 
@@ -27,27 +27,6 @@ export function NetworkMark({ slug, className = "" }: MarkProps) {
   }
 
   const logo = NETWORK_LOGOS[slug];
-
-  if (slug === "three_uk") {
-    return (
-      <span
-        className={`inline-flex items-center justify-center ${className}`.trim()}
-        aria-hidden
-      >
-        <Image
-          src={logo.src}
-          alt=""
-          width={logo.width}
-          height={logo.height}
-          className="h-auto max-h-[3.75rem] w-[3.5rem] shrink-0 object-contain object-center"
-          unoptimized
-        />
-        <span className="text-[1.375rem] font-extrabold leading-none tracking-tight text-slate-900 sm:text-[1.5rem]">
-          pro
-        </span>
-      </span>
-    );
-  }
 
   return (
     <Image
@@ -69,7 +48,7 @@ const COMPACT_MARK_SIZES = {
   xl: { tile: "h-16 w-20", logo: "max-h-[3.25rem]", fallback: "w-16" },
 } as const;
 
-/** Small logo tile for summary rows (icon only — no Three UK “pro” wordmark). */
+/** Small logo tile for summary rows on dark panels. */
 export function NetworkCompactMark({ slug, className = "", size = "default" }: MarkProps) {
   const dim = COMPACT_MARK_SIZES[size];
   const tileClass = `${REDEEM_ICON_TILE_CLASS} ${dim.tile} shrink-0 px-2`;
@@ -86,16 +65,20 @@ export function NetworkCompactMark({ slug, className = "", size = "default" }: M
   }
 
   const logo = NETWORK_LOGOS[slug];
+  const compactLogo =
+    slug === "three_uk"
+      ? { src: "/networks/three-logo.svg", width: 44, height: 44 }
+      : { src: logo.src, width: logo.width, height: logo.height };
 
   return (
     <span className={`${tileClass} ${className}`.trim()} aria-hidden>
       <Image
-        src={logo.src}
+        src={compactLogo.src}
         alt=""
-        width={logo.width}
-        height={logo.height}
-        className={`h-auto w-full object-contain object-center ${dim.logo} ${COMPACT_LOGO_CLASS[slug] ?? ""}`.trim()}
-        unoptimized={logo.src.endsWith(".svg")}
+        width={compactLogo.width}
+        height={compactLogo.height}
+        className={`h-auto w-full object-contain object-center ${dim.logo} ${DARK_TILE_LOGO_CLASS[slug] ?? ""}`.trim()}
+        unoptimized={compactLogo.src.endsWith(".svg")}
       />
     </span>
   );

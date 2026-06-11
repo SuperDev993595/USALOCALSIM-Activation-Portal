@@ -1291,6 +1291,249 @@
   .admin-nav-group:focus-visible {
     @apply outline-none ring-2 ring-brand-purple/50 ring-offset-2 ring-offset-[#0b1220];
   }
+
+  /* Voucher card tier bars — matches physical BASIC / PRO / ULTRA artwork */
+  .coverage-tier-banner {
+    --tier-green: #1b5e20;
+    --tier-blue: #0d47a1;
+    --tier-red: #b71c1c;
+    --tier-text: #0d1b2a;
+    --tier-arrow: 1.125rem;
+    --tier-tail: 5.25rem;
+    --tier-radius: 0.75rem;
+    --tier-border: 1px;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-height: 4.5rem;
+    border: var(--tier-border) solid #ffffff;
+    border-radius: var(--tier-radius);
+    overflow: hidden;
+    box-sizing: border-box;
+    text-align: left;
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .coverage-tier-banner--selected {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+  }
+
+  .group:hover .coverage-tier-banner:not(.coverage-tier-banner--selected) {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  }
+
+  .coverage-tier-banner__side {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+  }
+
+  .coverage-tier-banner__side--left {
+    width: 4.5rem;
+  }
+
+  .coverage-tier-banner__track {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .coverage-tier-banner__side--basic {
+    background-color: var(--tier-green);
+  }
+
+  .coverage-tier-banner__side--pro {
+    background-color: var(--tier-blue);
+  }
+
+  .coverage-tier-banner__side--ultra {
+    background-color: var(--tier-red);
+  }
+
+  .coverage-tier-banner__icon {
+    height: 2.35rem;
+    width: 2.35rem;
+  }
+
+  .coverage-tier-banner__icon--hero {
+    height: 2.85rem;
+    width: 2.85rem;
+  }
+
+  .coverage-tier-banner__icon--compact {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+
+  .coverage-tier-banner__icon--liberty {
+    height: 3.65rem;
+    width: 2.25rem;
+  }
+
+  .coverage-tier-banner__body {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.05rem;
+    margin-right: calc(-1 * var(--tier-arrow));
+    background: #ffffff;
+    padding: 0.55rem calc(var(--tier-tail) + var(--tier-arrow) * 0.35) 0.55rem 0.85rem;
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--tier-arrow)) 0,
+      100% 50%,
+      calc(100% - var(--tier-arrow)) 100%,
+      0 100%
+    );
+  }
+
+  .coverage-tier-banner__tail {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--tier-tail);
+    padding-left: var(--tier-arrow);
+    margin-left: calc(-1 * var(--tier-arrow));
+    clip-path: polygon(
+      0 50%,
+      var(--tier-arrow) 0,
+      100% 0,
+      100% 100%,
+      var(--tier-arrow) 100%
+    );
+  }
+
+  .coverage-tier-banner__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+
+  .coverage-tier-banner__title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: 0.05em;
+  }
+
+  .coverage-tier-banner__title--basic {
+    color: var(--tier-green);
+  }
+
+  .coverage-tier-banner__title--pro {
+    color: var(--tier-blue);
+  }
+
+  .coverage-tier-banner__title--ultra {
+    color: var(--tier-red);
+  }
+
+  .coverage-tier-banner__coverage {
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+    color: var(--tier-text);
+  }
+
+  .coverage-tier-banner--pro .coverage-tier-banner__coverage {
+    color: var(--tier-blue);
+  }
+
+  .coverage-tier-banner--ultra .coverage-tier-banner__coverage {
+    color: var(--tier-red);
+  }
+
+  .coverage-tier-banner__modality {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+    color: var(--tier-text);
+  }
+
+  .coverage-tier-banner__selected {
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .coverage-tier-banner__selected--basic {
+    color: var(--tier-green);
+  }
+
+  .coverage-tier-banner__selected--pro {
+    color: var(--tier-blue);
+  }
+
+  .coverage-tier-banner__selected--ultra {
+    color: var(--tier-red);
+  }
+
+  @media (min-width: 640px) {
+    .coverage-tier-banner {
+      --tier-arrow: 1.25rem;
+      --tier-tail: 6rem;
+      --tier-radius: 0.8125rem;
+      min-height: 4.85rem;
+    }
+
+    .coverage-tier-banner__side--left {
+      width: 5rem;
+    }
+
+    .coverage-tier-banner__icon {
+      height: 2.5rem;
+      width: 2.5rem;
+    }
+
+    .coverage-tier-banner__icon--hero {
+      height: 3.1rem;
+      width: 3.1rem;
+    }
+
+    .coverage-tier-banner__icon--compact {
+      height: 2.5rem;
+      width: 2.5rem;
+    }
+
+    .coverage-tier-banner__icon--liberty {
+      height: 4rem;
+      width: 2.45rem;
+    }
+
+    .coverage-tier-banner__body {
+      padding: 0.65rem calc(var(--tier-tail) + var(--tier-arrow) * 0.35) 0.65rem 1rem;
+    }
+
+    .coverage-tier-banner__title {
+      font-size: 1.375rem;
+    }
+
+    .coverage-tier-banner__coverage {
+      font-size: 0.8125rem;
+    }
+
+    .coverage-tier-banner__modality {
+      font-size: 0.75rem;
+    }
+  }
 }
 
 @layer utilities {

@@ -23,8 +23,8 @@ export const NETWORK_LOGOS: Record<GlobalNetworkSlug, NetworkLogoConfig> = {
     maxHeightClass: "max-h-[3.5rem]",
   },
   three_uk: {
-    src: "/networks/three-logo.svg",
-    width: 44,
+    src: "/networks/three-pro-wordmark.svg",
+    width: 100,
     height: 44,
     maxHeightClass: "max-h-[3.25rem]",
   },

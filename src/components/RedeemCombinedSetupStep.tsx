@@ -10,6 +10,7 @@ import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressFor
 import { RedeemShippingMethodPicker } from "@/components/RedeemShippingMethodPicker";
 import { RedeemPlanPicker } from "@/components/RedeemPlanPicker";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
+import type { TmobileAddonSku } from "@/lib/tmobile-addons";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
 import type { RedeemShippingForm } from "@/lib/redeem-shipping-address";
 import {
@@ -18,9 +19,11 @@ import {
   REDEEM_PRIMARY_BUTTON_CLASS,
 } from "@/lib/redeem-panel";
 import type { ShippingMethodId } from "@/lib/shipping-methods";
-import type { TmobileAddonSku } from "@/lib/tmobile-addons";
+import { RedeemTierPicker } from "@/components/RedeemTierPicker";
+import type { CoverageTier } from "@/lib/coverage-tier";
+import { coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
 
-export type SetupHighlight = "network" | "sim" | "details" | "plan" | null;
+export type SetupHighlight = "tier" | "network" | "sim" | "details" | "plan" | null;
 
 function SetupSection({
   step,
@@ -65,6 +68,7 @@ export function RedeemCombinedSetupStep({
   purchaseId,
   accessToken,
   showNetworkSection,
+  showTierSection,
   showFulfillmentSection,
   coverageTier,
   selectedNetworkSlug,
@@ -91,6 +95,7 @@ export function RedeemCombinedSetupStep({
   onBack,
   onContinue,
   onNetworkSelect,
+  onTierSelect,
   onFulfillmentChange,
   onIccidChange,
   onShippingFormChange,
@@ -101,6 +106,7 @@ export function RedeemCombinedSetupStep({
   purchaseId: string;
   accessToken: string;
   showNetworkSection: boolean;
+  showTierSection: boolean;
   showFulfillmentSection: boolean;
   coverageTier: string | null;
   selectedNetworkSlug: string;
@@ -127,6 +133,7 @@ export function RedeemCombinedSetupStep({
   onBack: () => void;
   onContinue: () => void;
   onNetworkSelect: (slug: string) => void;
+  onTierSelect: (tier: CoverageTier) => void;
   onFulfillmentChange: (type: RedeemFulfillmentType) => void;
   onIccidChange: (value: string) => void;
   onShippingFormChange: (form: RedeemShippingForm) => void;
@@ -136,8 +143,9 @@ export function RedeemCombinedSetupStep({
 }) {
   const t = useTranslations("redeemWizard");
 
-  const networkReady = !showNetworkSection || Boolean(selectedNetworkSlug);
-  const showPlanSection = planOnlyMode || networkReady;
+  const tierReady = !showTierSection || isCoverageTier(coverageTier ?? "");
+  const networkReady = tierReady && (!showNetworkSection || Boolean(selectedNetworkSlug));
+  const showPlanSection = planOnlyMode || !showTierSection || tierReady;
 
   let stepCounter = 0;
   const nextStep = () => ++stepCounter;
@@ -187,7 +195,9 @@ export function RedeemCombinedSetupStep({
             {planOnlyMode ? t("step4Title") : t("combinedSetupTitle")}
           </h2>
           <p className="mt-1 text-sm text-slate-400">
-            {planOnlyMode ? t("step4BodyTail") : t("combinedSetupBody")}
+            {planOnlyMode
+              ? t("step4BodyTail")
+              : t(showTierSection ? "combinedSetupBodyTier" : "combinedSetupBody")}
           </p>
         </div>
       </div>
@@ -197,130 +207,158 @@ export function RedeemCombinedSetupStep({
           <div className={`mx-auto max-w-2xl ${planPanelClass}`}>{planContent}</div>
         ) : (
           <div className="space-y-5">
+            {showTierSection ? (
+              <SetupSection
+                step={nextStep()}
+                title={t("stepTierTitle")}
+                hint={t("stepTierBody")}
+                highlight={highlight === "tier"}
+              >
+                <RedeemTierPicker
+                  purchaseId={purchaseId}
+                  accessToken={accessToken}
+                  selectedTier={coverageTier}
+                  disabled={loading}
+                  onSelect={onTierSelect}
+                />
+              </SetupSection>
+            ) : null}
+
             {showNetworkSection ? (
               <SetupSection
                 step={nextStep()}
                 title={t("stepNetworkTitle")}
-                hint={t("stepNetworkBody")}
+                hint={
+                  tierReady
+                    ? t(coverageTierNetworkBodyKey(coverageTier))
+                    : t("stepNetworkBodySelectTierFirst")
+                }
                 highlight={highlight === "network"}
+                dimmed={!tierReady}
               >
-                <RedeemNetworkPicker
-                  purchaseId={purchaseId}
-                  accessToken={accessToken}
-                  coverageTier={coverageTier}
-                  selectedSlug={selectedNetworkSlug}
-                  disabled={loading}
-                  quoteBusy={quoteBusy}
-                  onSelect={onNetworkSelect}
-                />
+                {tierReady ? (
+                  <RedeemNetworkPicker
+                    purchaseId={purchaseId}
+                    accessToken={accessToken}
+                    coverageTier={coverageTier}
+                    selectedSlug={selectedNetworkSlug}
+                    disabled={loading}
+                    quoteBusy={quoteBusy}
+                    onSelect={onNetworkSelect}
+                  />
+                ) : (
+                  <p className="text-sm leading-relaxed text-slate-500">{t("stepNetworkBodySelectTierFirst")}</p>
+                )}
               </SetupSection>
             ) : null}
 
-            {showFulfillmentSection ? (
-              <SetupSection
-                step={nextStep()}
-                title={t("step3Title")}
-                hint={t("step3Body")}
-                highlight={highlight === "sim"}
-                dimmed={!networkReady}
-              >
-                {ultraEsimOnly ? (
-                  <p className="mb-3 rounded border border-red-500/30 bg-red-950/35 px-3 py-2 text-sm text-red-100">
-                    {t("ultraEsimOnlyBanner")}
-                  </p>
-                ) : null}
-                <RedeemFulfillmentPicker
-                  value={fulfillmentType}
-                  onChange={onFulfillmentChange}
-                  disabled={loading || !networkReady}
-                  ultraEsimOnly={ultraEsimOnly}
-                />
-              </SetupSection>
-            ) : null}
-
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-8">
-              {showPlanSection ? (
+            {showPlanSection ? (
+              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:gap-8">
                 <SetupSection
                   step={nextStep()}
                   title={t("step4Title")}
-                  hint={t("step4BodySimple")}
+                  hint={networkReady ? t("step4BodySimple") : t("stepPlansSelectNetworkFirst")}
                   highlight={highlight === "plan"}
                   dimmed={!networkReady}
                 >
                   <div className={plansRefreshing ? "opacity-80 transition-opacity duration-150" : undefined}>
-                    {planContent}
+                    {networkReady ? (
+                      planContent
+                    ) : (
+                      <p className="text-sm leading-relaxed text-slate-500">{t("stepPlansSelectNetworkFirst")}</p>
+                    )}
                   </div>
                 </SetupSection>
-              ) : (
-                <div className="min-w-0" aria-hidden />
-              )}
 
-              {showFulfillmentSection && networkReady ? (
-                <aside className="min-w-0 lg:sticky lg:top-4">
-                  <SetupSection
-                    step={nextStep()}
-                    title={t("step3DetailsTitle")}
-                    hint={t("step3DetailsBody")}
-                    highlight={highlight === "details"}
-                  >
-                    {fulfillmentType === "ESIM" || ultraEsimOnly ? (
-                      <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-relaxed text-slate-300">
-                        {t("esimDetailsNote")}
-                      </p>
-                    ) : null}
+                {showFulfillmentSection ? (
+                  <div className="min-w-0 space-y-5 lg:sticky lg:top-4">
+                    <SetupSection
+                      step={nextStep()}
+                      title={t("step3Title")}
+                      hint={t("step3Body")}
+                      highlight={highlight === "sim"}
+                      dimmed={!networkReady}
+                    >
+                      {ultraEsimOnly ? (
+                        <p className="mb-3 rounded border border-red-500/30 bg-red-950/35 px-3 py-2 text-sm text-red-100">
+                          {t("ultraEsimOnlyBanner")}
+                        </p>
+                      ) : null}
+                      <RedeemFulfillmentPicker
+                        value={fulfillmentType}
+                        onChange={onFulfillmentChange}
+                        disabled={loading || !networkReady}
+                        ultraEsimOnly={ultraEsimOnly}
+                      />
+                    </SetupSection>
 
-                    {fulfillmentType === "EXISTING_SIM" ? (
-                      <section
-                        className={`${REDEEM_BRIGHT_PANEL_CLASS} ${
-                          highlight === "details" ? REDEEM_BRIGHT_PANEL_HIGHLIGHT_CLASS : ""
-                        }`}
-                        aria-labelledby="redeem-iccid-heading"
+                    {networkReady ? (
+                      <SetupSection
+                        step={nextStep()}
+                        title={t("step3DetailsTitle")}
+                        hint={t("step3DetailsBody")}
+                        highlight={highlight === "details"}
                       >
-                        <h3 id="redeem-iccid-heading" className="text-base font-semibold text-slate-900">
-                          {t("iccidLabel")}
-                        </h3>
-                        <div className="mt-4 space-y-2.5">
-                          <input
-                            id="redeem-iccid-input"
-                            value={iccid}
-                            onChange={(e) => onIccidChange(e.target.value)}
-                            disabled={loading}
-                            className={panelInputClass}
-                            placeholder={t("iccidPlaceholder")}
-                            aria-describedby="redeem-iccid-hint redeem-iccid-count"
-                          />
-                          <p id="redeem-iccid-hint" className="text-xs text-slate-500">
-                            {t("iccidHint")}
+                        {fulfillmentType === "ESIM" || ultraEsimOnly ? (
+                          <p className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-relaxed text-slate-300">
+                            {t("esimDetailsNote")}
                           </p>
-                          <p id="redeem-iccid-count" className="text-xs text-slate-400">
-                            {t("iccidCount", { count: iccidDigitCount })}
-                          </p>
-                        </div>
-                      </section>
-                    ) : null}
+                        ) : null}
 
-                    {fulfillmentType === "NEW_SIM_SHIPPING" ? (
-                      <div className="space-y-6">
-                        <RedeemShippingAddressForm
-                          value={shippingForm}
-                          onChange={onShippingFormChange}
-                          disabled={loading}
-                          fieldClass={panelInputClass}
-                        />
-                        <div className="space-y-3 border-t border-white/10 pt-5">
-                          <h4 className="text-sm font-semibold text-white">{t("shippingMethodHeading")}</h4>
-                          <RedeemShippingMethodPicker
-                            shippingMethodId={shippingMethodId}
-                            disabled={loading}
-                            onChange={onShippingMethodChange}
-                          />
-                        </div>
-                      </div>
+                        {fulfillmentType === "EXISTING_SIM" ? (
+                          <section
+                            className={`${REDEEM_BRIGHT_PANEL_CLASS} ${
+                              highlight === "details" ? REDEEM_BRIGHT_PANEL_HIGHLIGHT_CLASS : ""
+                            }`}
+                            aria-labelledby="redeem-iccid-heading"
+                          >
+                            <h3 id="redeem-iccid-heading" className="text-base font-semibold text-slate-900">
+                              {t("iccidLabel")}
+                            </h3>
+                            <div className="mt-4 space-y-2.5">
+                              <input
+                                id="redeem-iccid-input"
+                                value={iccid}
+                                onChange={(e) => onIccidChange(e.target.value)}
+                                disabled={loading}
+                                className={panelInputClass}
+                                placeholder={t("iccidPlaceholder")}
+                                aria-describedby="redeem-iccid-hint redeem-iccid-count"
+                              />
+                              <p id="redeem-iccid-hint" className="text-xs text-slate-500">
+                                {t("iccidHint")}
+                              </p>
+                              <p id="redeem-iccid-count" className="text-xs text-slate-400">
+                                {t("iccidCount", { count: iccidDigitCount })}
+                              </p>
+                            </div>
+                          </section>
+                        ) : null}
+
+                        {fulfillmentType === "NEW_SIM_SHIPPING" ? (
+                          <div className="space-y-6">
+                            <RedeemShippingAddressForm
+                              value={shippingForm}
+                              onChange={onShippingFormChange}
+                              disabled={loading}
+                              fieldClass={panelInputClass}
+                            />
+                            <div className="space-y-3 border-t border-white/10 pt-5">
+                              <h4 className="text-sm font-semibold text-white">{t("shippingMethodHeading")}</h4>
+                              <RedeemShippingMethodPicker
+                                shippingMethodId={shippingMethodId}
+                                disabled={loading}
+                                onChange={onShippingMethodChange}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+                      </SetupSection>
                     ) : null}
-                  </SetupSection>
-                </aside>
-              ) : null}
-            </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         )}
 

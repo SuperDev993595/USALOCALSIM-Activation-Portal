@@ -64,26 +64,70 @@ const TIER_ACCENT: Record<CoverageTier, TierAccent> = {
 export type CoverageTierCardUi = {
   title: string;
   subtitle: string;
+  modality: string;
   badge: string;
 };
 
 export const COVERAGE_TIER_UI: Record<CoverageTier, CoverageTierCardUi> = {
   [COVERAGE_TIER.BASIC]: {
     title: "BASIC",
-    subtitle: "USA · Canada · Mexico",
+    subtitle: "USA CANADA • MEXICO",
+    modality: "SIM & eSIM",
     badge: "Americas",
   },
   [COVERAGE_TIER.PRO]: {
     title: "PRO",
-    subtitle: "72 countries",
+    subtitle: "72 COUNTRIES",
+    modality: "SIM & eSIM",
     badge: "Global 72",
   },
   [COVERAGE_TIER.ULTRA]: {
     title: "ULTRA",
-    subtitle: "200+ countries · eSIM only",
+    subtitle: "200+ COUNTRIES",
+    modality: "eSIM ONLY",
     badge: "Worldwide",
   },
 };
+
+const TIER_BANNER_THEME: Record<
+  CoverageTier,
+  { banner: string; side: string; title: string; selectedPill: string; focusRing: string }
+> = {
+  [COVERAGE_TIER.BASIC]: {
+    banner: "coverage-tier-banner--basic",
+    side: "coverage-tier-banner__side--basic",
+    title: "coverage-tier-banner__title--basic",
+    selectedPill: "coverage-tier-banner__selected--basic",
+    focusRing: "focus-visible:ring-emerald-400/50",
+  },
+  [COVERAGE_TIER.PRO]: {
+    banner: "coverage-tier-banner--pro",
+    side: "coverage-tier-banner__side--pro",
+    title: "coverage-tier-banner__title--pro",
+    selectedPill: "coverage-tier-banner__selected--pro",
+    focusRing: "focus-visible:ring-sky-400/50",
+  },
+  [COVERAGE_TIER.ULTRA]: {
+    banner: "coverage-tier-banner--ultra",
+    side: "coverage-tier-banner__side--ultra",
+    title: "coverage-tier-banner__title--ultra",
+    selectedPill: "coverage-tier-banner__selected--ultra",
+    focusRing: "focus-visible:ring-red-400/50",
+  },
+};
+
+export function coverageTierBannerClasses(tier: CoverageTier, selected: boolean) {
+  const theme = TIER_BANNER_THEME[tier];
+  return {
+    banner: `${theme.banner}${selected ? " coverage-tier-banner--selected" : ""}`,
+    side: theme.side,
+    body: "coverage-tier-banner__body",
+    title: theme.title,
+    selectedPill: theme.selectedPill,
+    focusRing: theme.focusRing,
+    selectAnim: selected ? "animate-tier-select" : "",
+  };
+}
 
 const TIER_CARD_IDLE = "border-white/10 bg-black/30 hover:border-white/20 hover:bg-black/40";
 const TIER_CARD_SELECTED = "border bg-black/45";
@@ -109,6 +153,16 @@ export function coverageTierCardClasses(tier: CoverageTier, selected: boolean) {
 
 export function tierRequiresEsimOnly(tier: CoverageTier): boolean {
   return tier === COVERAGE_TIER.ULTRA;
+}
+
+/** i18n key for tier-specific network hint on the configure step. */
+export function coverageTierNetworkBodyKey(
+  tier: string | null | undefined,
+): "stepNetworkBody" | "stepNetworkBody_basic" | "stepNetworkBody_pro" | "stepNetworkBody_ultra" {
+  if (tier === COVERAGE_TIER.BASIC) return "stepNetworkBody_basic";
+  if (tier === COVERAGE_TIER.PRO) return "stepNetworkBody_pro";
+  if (tier === COVERAGE_TIER.ULTRA) return "stepNetworkBody_ultra";
+  return "stepNetworkBody";
 }
 
 export function isBasicTierNetwork(slug: string | null | undefined): boolean {

@@ -22,7 +22,8 @@ export function buildRedeemWizardStepMap(opts: {
   let n = 0;
   const pin = opts.skipPin ? 0 : ++n;
   const phone = ++n;
-  const tier = opts.showTier ? ++n : 0;
+  /** Tier lives inside configure — not a separate wizard step. */
+  const tier = 0;
   const setup = ++n;
   const payment = ++n;
   const date = ++n;

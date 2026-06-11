@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { BackChevronIcon } from "@/components/icons/BackChevronIcon";
 import { RedeemCombinedSetupStep, type SetupHighlight } from "@/components/RedeemCombinedSetupStep";
 import { RedeemPaymentStep } from "@/components/RedeemPaymentStep";
-import { RedeemTierStep } from "@/components/RedeemTierStep";
 import {
   EMPTY_REDEEM_SHIPPING,
   formatRedeemShippingAddress,
@@ -15,7 +14,7 @@ import {
 } from "@/lib/redeem-shipping-address";
 import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
-import { isCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
+import { isCoverageTier, NETWORK_SLUGS_BY_TIER, tierRequiresEsimOnly, type CoverageTier } from "@/lib/coverage-tier";
 import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 import {
@@ -83,7 +82,6 @@ function navSteps(
   const items: { key: string; step: number }[] = [];
   if (!stepMap.skipPin) items.push({ key: "navStep1", step: stepMap.pin });
   items.push({ key: "navStep2", step: stepMap.phone });
-  if (stepMap.showTier) items.push({ key: "navStepTier", step: stepMap.tier });
   if (showConfigInNav) items.push({ key: "navStepSetup", step: stepMap.setup });
   items.push({ key: "navStepPayment", step: stepMap.payment });
   items.push({ key: "navStep5", step: stepMap.date });
@@ -169,6 +167,7 @@ export function RedeepPhase2Client({
   const [loading, setLoading] = useState<"unlock" | "checkout" | "activate" | "sms" | "verifyPhone" | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const quoteSeqRef = useRef(0);
+  const quoteSyncKeyRef = useRef("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [wizardStep, setWizardStep] = useState<number>(() => {
@@ -176,9 +175,6 @@ export function RedeepPhase2Client({
     if (skipPinStep && purchaseIdProp?.trim()) {
       if (!redemptionPhoneVerifiedInitial) return stepMap.phone;
       if (resumeAfterPaidUpgrade) return stepMap.date;
-      if (showTierStep && !initialCoverageTier) {
-        return stepMap.tier || stepMap.setup;
-      }
       return stepMap.setup;
     }
     return initialWizardStep(stepMap, resumeAfterPaidUpgrade, redemptionPhoneVerifiedInitial);
@@ -217,13 +213,6 @@ export function RedeepPhase2Client({
       if (res.ok) setSelectedNetworkSlug(autoNetworkSlug);
     });
   }, [autoNetworkSlug, purchaseId, accessToken, selectedNetworkSlug]);
-
-  useEffect(() => {
-    if (!purchaseId.trim() || wizardStep !== stepMap.setup || plans.length > 0) return;
-    if (showNetworkStep && !selectedNetworkSlug && !autoNetworkSlug) return;
-    void loadPlansQuote();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- load plans once when entering configure
-  }, [wizardStep, purchaseId, plans.length, showNetworkStep, selectedNetworkSlug, autoNetworkSlug]);
 
   useEffect(() => {
     if (ultraEsimOnly && fulfillmentType !== "ESIM") {
@@ -396,18 +385,49 @@ export function RedeepPhase2Client({
     return true;
   }, [fulfillmentType, selectedPlanId, t, unlockAndQuote]);
 
+  const saveNetworkAndLoadPlans = useCallback(
+    async (slug: string) => {
+      setError(null);
+      const res = await fetch("/api/redeem/network/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purchaseId,
+          networkSlug: slug,
+          ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : t("errors.network"));
+        return false;
+      }
+      setSelectedNetworkSlug(slug);
+      setSelectedAddonSkus([]);
+      setAddonLines([]);
+      setSelectedPlanId("");
+      setTotals(null);
+      setPlans([]);
+      return loadPlansQuote();
+    },
+    [accessToken, loadPlansQuote, purchaseId, t],
+  );
+
   function redirectToIncompleteFulfillment() {
     setSetupHighlight(null);
     if (
       showConfigColumn &&
-      ((showNetworkStep && !selectedNetworkSlug) ||
+      ((showTierStep && !isCoverageTier(selectedCoverageTier)) ||
+        (showNetworkStep && !selectedNetworkSlug) ||
         (fulfillmentType === "EXISTING_SIM" && iccid.trim().length < 15) ||
         (fulfillmentType === "NEW_SIM_SHIPPING" &&
           (!isRedeemShippingComplete(shippingForm) || !shippingMethodId)))
     ) {
       setWizardStep(stepMap.setup);
       setForceShowConfig(true);
-      if (showNetworkStep && !selectedNetworkSlug) {
+      if (showTierStep && !isCoverageTier(selectedCoverageTier)) {
+        setSetupHighlight("tier");
+      } else if (showNetworkStep && !selectedNetworkSlug) {
         setSetupHighlight("network");
       } else {
         setSetupHighlight("details");
@@ -432,15 +452,66 @@ export function RedeepPhase2Client({
     setWizardStep(stepMap.payment);
   }
 
-  const handleNetworkSelect = useCallback((slug: string) => {
-    setSelectedNetworkSlug(slug);
+  const handleTierSelect = useCallback((tier: CoverageTier) => {
+    quoteSyncKeyRef.current = "";
+    setSelectedCoverageTier(tier);
+    setSelectedNetworkSlug("");
+    setSelectedPlanId("");
+    setPlans([]);
+    setTotals(null);
     setSelectedAddonSkus([]);
     setAddonLines([]);
-    setSelectedPlanId("");
-    setTotals(null);
+    setFulfillmentType(tierRequiresEsimOnly(tier) ? "ESIM" : "EXISTING_SIM");
     setSetupHighlight(null);
-    void loadPlansQuote();
-  }, [loadPlansQuote]);
+  }, []);
+
+  const handleNetworkSelect = useCallback((slug: string) => {
+    quoteSyncKeyRef.current = "";
+    setSelectedNetworkSlug(slug);
+    setSelectedPlanId("");
+    setPlans([]);
+    setTotals(null);
+    setSelectedAddonSkus([]);
+    setAddonLines([]);
+    setSetupHighlight(null);
+  }, []);
+
+  useEffect(() => {
+    if (wizardStep !== stepMap.setup || !purchaseId.trim()) return;
+    if (showTierStep && !isCoverageTier(selectedCoverageTier)) return;
+
+    void (async () => {
+      let slug = selectedNetworkSlug || autoNetworkSlug || "";
+
+      if (!slug && showTierStep && isCoverageTier(selectedCoverageTier)) {
+        const singleNetwork = NETWORK_SLUGS_BY_TIER[selectedCoverageTier];
+        if (singleNetwork.length === 1) {
+          await saveNetworkAndLoadPlans(singleNetwork[0]!);
+          return;
+        }
+      }
+
+      if (showNetworkStep && !slug) return;
+
+      const syncKey = `${selectedCoverageTier}|${slug}`;
+      if (quoteSyncKeyRef.current === syncKey && plans.length > 0) return;
+      quoteSyncKeyRef.current = syncKey;
+
+      await loadPlansQuote();
+    })();
+  }, [
+    wizardStep,
+    stepMap.setup,
+    purchaseId,
+    showTierStep,
+    showNetworkStep,
+    selectedCoverageTier,
+    selectedNetworkSlug,
+    autoNetworkSlug,
+    plans.length,
+    loadPlansQuote,
+    saveNetworkAndLoadPlans,
+  ]);
 
   async function sendRedeemSms() {
     if (!purchaseId.trim()) return;
@@ -489,8 +560,6 @@ export function RedeepPhase2Client({
       }
       if (resumeAfterPaidUpgrade) {
         setWizardStep(stepMap.date);
-      } else if (showTierStep) {
-        setWizardStep(stepMap.tier);
       } else {
         setWizardStep(stepMap.setup);
         if (skipFulfillmentStep || !showNetworkStep || selectedNetworkSlug || autoNetworkSlug) {
@@ -575,7 +644,9 @@ export function RedeepPhase2Client({
   const onWideStep = wizardStep === stepMap.setup;
   const shellClass = onWideStep ? REDEEM_SETUP_SHELL_CLASS : REDEEM_SHELL_CLASS;
 
+  const tierReady = !showTierStep || isCoverageTier(selectedCoverageTier);
   const setupReady =
+    tierReady &&
     (!showNetworkStep || Boolean(selectedNetworkSlug)) &&
     (skipFulfillmentStep && !forceShowConfig
       ? true
@@ -603,6 +674,7 @@ export function RedeepPhase2Client({
             : false;
 
   const selectFulfillmentType = useCallback((next: FulfillmentType) => {
+    quoteSyncKeyRef.current = "";
     const prevPlan = plans.find((p) => p.id === selectedPlanId);
     const incompatible =
       Boolean(prevPlan) &&
@@ -812,28 +884,11 @@ export function RedeepPhase2Client({
           </>
         ) : null}
 
-        {wizardStep === stepMap.tier && stepMap.showTier ? (
-          <RedeemTierStep
-            purchaseId={purchaseId}
-            accessToken={accessToken}
-            initialTier={selectedCoverageTier || null}
-            backLabel={t("backPhone")}
-            onBack={() => setWizardStep(stepMap.phone)}
-            onContinue={(tier) => {
-              setSelectedCoverageTier(tier);
-              setSelectedNetworkSlug("");
-              if (tierRequiresEsimOnly(tier)) {
-                setFulfillmentType("ESIM");
-              }
-              setWizardStep(stepMap.setup);
-            }}
-          />
-        ) : null}
-
         {wizardStep === stepMap.setup ? (
           <RedeemCombinedSetupStep
             purchaseId={purchaseId}
             accessToken={accessToken}
+            showTierSection={showConfigColumn && showTierStep && showNetworkStep}
             showNetworkSection={showConfigColumn && showNetworkStep}
             showFulfillmentSection={showConfigColumn}
             coverageTier={selectedCoverageTier || null}
@@ -858,8 +913,9 @@ export function RedeepPhase2Client({
             highlight={setupHighlight}
             planOnlyMode={!showConfigColumn}
             panelInputClass={redeepPanelInputClass}
-            onBack={() => setWizardStep(stepMap.showTier ? stepMap.tier : stepMap.phone)}
+            onBack={() => setWizardStep(stepMap.phone)}
             onContinue={continueFromSetup}
+            onTierSelect={handleTierSelect}
             onNetworkSelect={handleNetworkSelect}
             onFulfillmentChange={selectFulfillmentType}
             onIccidChange={setIccid}
@@ -887,7 +943,7 @@ export function RedeepPhase2Client({
             onBack={() => setWizardStep(stepMap.setup)}
             onChangeNetwork={() => {
               setWizardStep(stepMap.setup);
-              setSetupHighlight("network");
+              setSetupHighlight(showTierStep ? "tier" : "network");
             }}
             onChangeSimType={() => {
               setWizardStep(stepMap.setup);
