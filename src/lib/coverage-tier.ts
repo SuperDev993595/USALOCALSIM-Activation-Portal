@@ -175,6 +175,11 @@ export function tierRequiresEsimOnly(tier: CoverageTier): boolean {
   return tier === COVERAGE_TIER.ULTRA;
 }
 
+/** BASIC tier: user picks T-Mobile or Linkup before data plans load. */
+export function tierRequiresManualNetworkPick(tier: string | null | undefined): boolean {
+  return tier === COVERAGE_TIER.BASIC;
+}
+
 /** i18n key for tier-specific network hint on the configure step. */
 export function coverageTierNetworkBodyKey(
   tier: string | null | undefined,

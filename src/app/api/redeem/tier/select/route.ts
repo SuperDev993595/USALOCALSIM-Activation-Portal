@@ -4,7 +4,12 @@ import { z } from "zod";
 
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 
-import { COVERAGE_TIER, isCoverageTier, networkSlugForTier } from "@/lib/coverage-tier";
+import {
+  isBasicTierNetwork,
+  isCoverageTier,
+  networkSlugForTier,
+  tierRequiresManualNetworkPick,
+} from "@/lib/coverage-tier";
 
 import { prisma } from "@/lib/db";
 
@@ -117,7 +122,11 @@ export async function POST(req: Request) {
 
 
 
-  const networkSlug = tier === COVERAGE_TIER.BASIC ? null : networkSlugForTier(tier);
+  const networkSlug = tierRequiresManualNetworkPick(tier)
+    ? isBasicTierNetwork(purchase.redemptionNetworkSlug)
+      ? purchase.redemptionNetworkSlug
+      : null
+    : networkSlugForTier(tier);
 
 
 

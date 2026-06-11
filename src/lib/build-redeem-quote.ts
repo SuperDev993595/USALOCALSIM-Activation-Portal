@@ -3,9 +3,8 @@ import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/red
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
 import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
-import { redeemUsesTierStep } from "@/lib/redeem-config";
-import { isCoverageTier, redeemQuoteCoverageTier, tierRequiresEsimOnly, COVERAGE_TIER } from "@/lib/coverage-tier";
-import { planFilterForBasicTier, planFilterForNetwork } from "@/lib/redeem-network";
+import { isCoverageTier, redeemQuoteCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
+import { planFilterForNetwork } from "@/lib/redeem-network";
 import { threeUkExclusivePlanWhere } from "@/lib/three-uk-redeem";
 import { validateRedeemWizardSelections } from "@/lib/redeem-selection-guards";
 import {
@@ -15,6 +14,7 @@ import {
   listTmobileAddons,
   normalizeTmobileAddonSkus,
   serializeAddonSkus,
+  tmobileAddonsAvailableForRedeem,
 } from "@/lib/tmobile-addons";
 import type { RedeemResolvedVoucher } from "@/lib/redeem-voucher-resolve";
 
@@ -125,9 +125,6 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
     input.fulfillmentType ??
     (input.planId ? undefined : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
 
-  const basicTierMultiNetwork =
-    redeemUsesTierStep() && quoteCoverageTier === COVERAGE_TIER.BASIC && !network;
-
   const planRows = await prisma.plan.findMany({
     where: {
       active: true,
@@ -136,11 +133,7 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
         ? threeUkExclusivePlanWhere(network.id)
         : {
             ...marketWhere,
-            ...(basicTierMultiNetwork
-              ? planFilterForBasicTier()
-              : network
-                ? planFilterForNetwork(network.id)
-                : {}),
+            ...(network ? planFilterForNetwork(network.id) : {}),
             ...(quoteCoverageTier ? { coverageTier: quoteCoverageTier } : {}),
           }),
     },
@@ -206,8 +199,17 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
     input.fulfillmentType ??
     (quotePlan?.planType === "esim" ? REDEMPTION_FULFILLMENT_TYPES.ESIM : REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM);
 
-  const effectiveNetworkSlug = effectivePurchase.redemptionNetworkSlug;
-  const addonsAvailable = addonsAllowedForNetwork(effectiveNetworkSlug);
+  const effectiveNetworkSlug =
+    quotePlan?.networkSlug ?? effectivePurchase.redemptionNetworkSlug ?? network?.slug ?? null;
+
+  const addonsAvailable = tmobileAddonsAvailableForRedeem({
+    purchaseNetworkSlug: effectivePurchase.redemptionNetworkSlug ?? network?.slug,
+    planNetworkSlug: quotePlan?.networkSlug,
+    planSku: quotePlan?.sku,
+  });
+  const addonCatalogVisible =
+    addonsAvailable ||
+    addonsAllowedForNetwork(effectivePurchase.redemptionNetworkSlug ?? network?.slug);
   const selectedAddonSkus = addonsAvailable ? normalizeTmobileAddonSkus(input.addonSkus ?? []) : [];
   const addonCents = addonsAvailable ? addonCentsForSkus(selectedAddonSkus) : 0;
 
@@ -248,8 +250,8 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
       selectedPlanId: selectedPlan?.id ?? null,
       selectedFulfillmentType: selectedFulfillment,
       redemptionNetworkSlug: effectiveNetworkSlug,
-      tmobileAddonsAvailable: addonsAvailable,
-      tmobileAddons: addonsAvailable ? listTmobileAddons() : [],
+      tmobileAddonsAvailable: addonCatalogVisible,
+      tmobileAddons: addonCatalogVisible ? listTmobileAddons() : [],
       selectedAddonSkus,
       addonLines: addonLinesForSkus(selectedAddonSkus),
       totals,

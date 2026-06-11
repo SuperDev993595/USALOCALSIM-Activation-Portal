@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { isRedeemPhoneVerified, loadRedeemAuthorizedPurchase, redeemPhoneNotVerifiedMessage } from "@/lib/redeem-purchase-auth";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
-import { isCoverageTier, networkSlugForTier, COVERAGE_TIER } from "@/lib/coverage-tier";
+import { isCoverageTier, networkSlugForTier, tierRequiresManualNetworkPick } from "@/lib/coverage-tier";
 import { resolveVoucherForRedeem } from "@/lib/redeem-voucher-resolve";
 import { buildRedeemQuote } from "@/lib/build-redeem-quote";
 
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           networkSlug:
             body.networkSlug !== undefined
               ? body.networkSlug
-              : tierOverride === COVERAGE_TIER.BASIC
+              : tierRequiresManualNetworkPick(tierOverride)
                 ? null
                 : networkSlugForTier(tierOverride),
         }

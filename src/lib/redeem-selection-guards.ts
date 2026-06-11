@@ -1,5 +1,5 @@
 import { redeemUsesTierStep } from "@/lib/redeem-config";
-import { isCoverageTier, tierRequiresEsimOnly, COVERAGE_TIER, isBasicTierNetwork } from "@/lib/coverage-tier";
+import { isCoverageTier, tierRequiresEsimOnly, COVERAGE_TIER, isBasicTierNetwork, tierRequiresManualNetworkPick } from "@/lib/coverage-tier";
 import { planMarketsForRedeem, planMatchesRedeemMarkets } from "@/lib/redeem-plan-markets";
 import { networkRequiredForVoucher, resolveNetworkForRedeem } from "@/lib/redeem-network";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
@@ -49,8 +49,6 @@ export async function validateRedeemWizardSelections(
     };
   }
 
-  const basicTierMultiNetwork = redeemUsesTierStep() && tier === COVERAGE_TIER.BASIC;
-
   const effectiveNetworkSlug =
     opts?.networkSlug !== undefined ? opts.networkSlug : purchase.redemptionNetworkSlug;
 
@@ -59,10 +57,15 @@ export async function validateRedeemWizardSelections(
     voucher,
   });
 
-  if (networkRequiredForVoucher(voucher) && !network && !basicTierMultiNetwork) {
+  const basicTierAwaitingNetwork =
+    redeemUsesTierStep() && tierRequiresManualNetworkPick(tier) && !network;
+
+  if (networkRequiredForVoucher(voucher) && !network) {
     return {
       ok: false,
-      error: "Select a mobile network before choosing a plan.",
+      error: basicTierAwaitingNetwork
+        ? "Select T-Mobile or LINKUP & AT&T MOBILE before choosing a data plan."
+        : "Select a mobile network before choosing a plan.",
       code: "NETWORK_REQUIRED",
       status: 403,
     };

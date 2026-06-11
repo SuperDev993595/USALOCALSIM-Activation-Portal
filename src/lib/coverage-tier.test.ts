@@ -11,6 +11,7 @@ import {
   redeemQuoteCoverageTier,
   tierHasMultipleNetworks,
   tierRequiresEsimOnly,
+  tierRequiresManualNetworkPick,
 } from "@/lib/coverage-tier";
 
 describe("isCoverageTier", () => {
@@ -97,5 +98,13 @@ describe("coverageTierCardClasses", () => {
     expect(selected.selectAnim).toContain("animate-tier-select");
     expect(selected.checkAnim).toContain("animate-tier-check-pop");
     expect(idle.selectAnim).toBe("");
+  });
+});
+
+describe("tierRequiresManualNetworkPick", () => {
+  it("is true only for basic", () => {
+    expect(tierRequiresManualNetworkPick(COVERAGE_TIER.BASIC)).toBe(true);
+    expect(tierRequiresManualNetworkPick(COVERAGE_TIER.PRO)).toBe(false);
+    expect(tierRequiresManualNetworkPick(COVERAGE_TIER.ULTRA)).toBe(false);
   });
 });

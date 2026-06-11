@@ -79,7 +79,7 @@ describe("validateRedeemWizardSelections", () => {
     }
   });
 
-  it("allows basic tier without network until plan is chosen", async () => {
+  it("requires network for basic tier", async () => {
     resolveNetwork.mockResolvedValue(null);
     const result = await validateRedeemWizardSelections(
       {
@@ -89,10 +89,9 @@ describe("validateRedeemWizardSelections", () => {
       },
       globalVoucher,
     );
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.network).toBeNull();
-      expect(result.planMarkets).toEqual(["us"]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("NETWORK_REQUIRED");
     }
   });
 
@@ -162,7 +161,7 @@ describe("validateRedeemPlanForSelections", () => {
     expect(err?.code).toBe("NETWORK_PLAN_MISMATCH");
   });
 
-  it("accepts linkup plan for basic tier without purchase network", () => {
+  it("accepts linkup plan for basic tier when network is linkup", () => {
     const err = validateRedeemPlanForSelections({
       plan: {
         market: "us",
@@ -171,7 +170,10 @@ describe("validateRedeemPlanForSelections", () => {
         network: { slug: "linkup_att" },
         planType: "physical_sim",
       },
-      selections: selections({ tier: "basic", network: null }),
+      selections: selections({
+        tier: "basic",
+        network: { slug: "linkup_att", id: "net-att" },
+      }),
     });
     expect(err).toBeNull();
   });

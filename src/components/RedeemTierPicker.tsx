@@ -29,10 +29,10 @@ export const RedeemTierPicker = memo(function RedeemTierPicker({
 
   const pickTier = useCallback(
     (tier: CoverageTier) => {
-      if (disabled || busy || tier === selected) return;
+      if (disabled || tier === selected) return;
       onPickTier(tier);
     },
-    [busy, disabled, onPickTier, selected],
+    [disabled, onPickTier, selected],
   );
 
   return (
@@ -53,7 +53,7 @@ export const RedeemTierPicker = memo(function RedeemTierPicker({
               role="radio"
               aria-checked={isSelected}
               data-tier={tier}
-              disabled={disabled || (busy && !isPending)}
+              disabled={disabled}
               className={`group block w-full min-w-0 max-w-full p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-60 ${styles.focusRing} ${styles.selectAnim}`}
               onClick={() => pickTier(tier)}
             >

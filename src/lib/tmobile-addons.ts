@@ -51,3 +51,21 @@ export function serializeAddonSkus(skus: string[]): string {
 export function addonsAllowedForNetwork(networkSlug: string | null | undefined): boolean {
   return networkSlug?.trim().toLowerCase() === TMOBILE_NETWORK_SLUG;
 }
+
+/** Linkup / AT&T catalog rows must never offer T-Mobile-only add-ons. */
+export function isTmobileExclusivePlanSku(sku: string | null | undefined): boolean {
+  const normalized = sku?.trim().toUpperCase() ?? "";
+  if (!normalized) return true;
+  return normalized.startsWith("TM-");
+}
+
+/** Whether optional T-Mobile add-ons apply for the current redeem selection. */
+export function tmobileAddonsAvailableForRedeem(input: {
+  purchaseNetworkSlug?: string | null;
+  planNetworkSlug?: string | null;
+  planSku?: string | null;
+}): boolean {
+  const networkSlug = input.planNetworkSlug?.trim() || input.purchaseNetworkSlug?.trim() || "";
+  if (!addonsAllowedForNetwork(networkSlug)) return false;
+  return isTmobileExclusivePlanSku(input.planSku);
+}

@@ -14,9 +14,9 @@ import {
 } from "@/lib/redeem-shipping-address";
 import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
-import { COVERAGE_TIER, COVERAGE_TIER_ORDER, isCoverageTier, networkSlugForTier, tierRequiresEsimOnly, type CoverageTier } from "@/lib/coverage-tier";
+import { COVERAGE_TIER, COVERAGE_TIER_ORDER, isCoverageTier, networkSlugForTier, tierRequiresEsimOnly, tierRequiresManualNetworkPick, type CoverageTier } from "@/lib/coverage-tier";
 import { defaultFulfillmentForTier, type RedeemQuotePayload } from "@/lib/build-redeem-quote";
-import { addonsAllowedForNetwork, type TmobileAddonSku } from "@/lib/tmobile-addons";
+import { listTmobileAddons, type TmobileAddonSku, tmobileAddonsAvailableForRedeem } from "@/lib/tmobile-addons";
 import { localTotalsForPlan } from "@/lib/redeem-plan-selection";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 import {
@@ -53,10 +53,11 @@ type PlanRow = {
 
 type FulfillmentType = "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM";
 
-function tierQuoteSyncKey(tier: CoverageTier, fType?: FulfillmentType): string {
+function tierQuoteSyncKey(tier: CoverageTier, fType?: FulfillmentType, networkSlug?: string): string {
   const fulfillment = fType ?? (tierRequiresEsimOnly(tier) ? "ESIM" : "EXISTING_SIM");
-  if (tier === COVERAGE_TIER.BASIC) return `${tier}|basic-multi|${fulfillment}`;
-  return `${tier}|${networkSlugForTier(tier) ?? ""}|${fulfillment}`;
+  const network =
+    tierRequiresManualNetworkPick(tier) ? (networkSlug?.trim() ?? "") : (networkSlugForTier(tier) ?? "");
+  return `${tier}|${network}|${fulfillment}`;
 }
 
 function initialWizardStep(
@@ -176,6 +177,7 @@ export function RedeepPhase2Client({
   const [loading, setLoading] = useState<"unlock" | "checkout" | "activate" | "sms" | "verifyPhone" | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const quoteSeqRef = useRef(0);
+  const tierPersistSeqRef = useRef(0);
   const planQuoteSyncRef = useRef(0);
   const quoteSyncKeyRef = useRef("");
   const tierQuoteCacheRef = useRef(new Map<string, RedeemQuotePayload>());
@@ -201,14 +203,30 @@ export function RedeepPhase2Client({
 
   const showConfigColumn = !skipFulfillmentStep || forceShowConfig;
   const showConfigInNav = showConfigColumn;
+  const isBasicTier =
+    isCoverageTier(selectedCoverageTier) && selectedCoverageTier === COVERAGE_TIER.BASIC;
+  const basicTierNetworkPick = showTierStep && isBasicTier;
+  const networkSelectionRequired = showNetworkStep || basicTierNetworkPick;
   const navStepsList = useMemo(
     () => navSteps(stepMap, showConfigInNav),
     [stepMap, showConfigInNav],
   );
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
-  const showTmobileAddons =
-    addonsAllowedForNetwork(selectedNetworkSlug) && Boolean(selectedPlanId);
+  const showTmobileAddons = useMemo(
+    () =>
+      Boolean(selectedPlanId) &&
+      tmobileAddonsAvailableForRedeem({
+        purchaseNetworkSlug: selectedNetworkSlug,
+        planNetworkSlug: selectedPlan?.networkSlug,
+        planSku: selectedPlan?.sku,
+      }),
+    [selectedPlan, selectedPlanId, selectedNetworkSlug],
+  );
+  const resolvedTmobileAddonOptions = useMemo(() => {
+    if (!showTmobileAddons) return [];
+    return tmobileAddonOptions.length > 0 ? tmobileAddonOptions : listTmobileAddons();
+  }, [showTmobileAddons, tmobileAddonOptions]);
   const iccidDigitCount = useMemo(() => iccid.replace(/\D/g, "").length, [iccid]);
 
   useEffect(() => {
@@ -240,6 +258,9 @@ export function RedeepPhase2Client({
       if (data.selectedFulfillmentType) {
         setFulfillmentType(data.selectedFulfillmentType as FulfillmentType);
       }
+      if (typeof data.redemptionNetworkSlug === "string" && data.redemptionNetworkSlug) {
+        setSelectedNetworkSlug(data.redemptionNetworkSlug);
+      }
       if (Array.isArray(data.tmobileAddons)) {
         setTmobileAddonOptions(data.tmobileAddons);
       }
@@ -268,6 +289,7 @@ export function RedeepPhase2Client({
 
   const prefetchTierQuote = useCallback(
     async (tier: CoverageTier) => {
+      if (tierRequiresManualNetworkPick(tier)) return;
       if (!purchaseId.trim()) return;
       const fType = defaultFulfillmentForTier(tier) as FulfillmentType;
       const syncKey = tierQuoteSyncKey(tier, fType);
@@ -281,7 +303,7 @@ export function RedeepPhase2Client({
           body: JSON.stringify({
             purchaseId,
             coverageTier: tier,
-            networkSlug: tier === COVERAGE_TIER.BASIC ? null : networkSlugForTier(tier),
+            networkSlug: networkSlugForTier(tier),
             fulfillmentType: fType,
             ...(voucherFromPurchase ? {} : { voucherCode }),
             ...(at ? { accessToken: at } : {}),
@@ -374,8 +396,9 @@ export function RedeepPhase2Client({
           ...(tierOverride
             ? {
                 coverageTier: tierOverride,
-                networkSlug:
-                  tierOverride === COVERAGE_TIER.BASIC ? null : networkSlugForTier(tierOverride),
+                networkSlug: tierRequiresManualNetworkPick(tierOverride)
+                  ? selectedNetworkSlug || null
+                  : networkSlugForTier(tierOverride),
               }
             : {}),
           ...(at ? { accessToken: at } : {}),
@@ -392,7 +415,10 @@ export function RedeepPhase2Client({
       applyQuotePayload(data, { preserveSelectedPlan: Boolean(planId), planId });
       const nextPlans = data.plans ?? [];
       if (tierOverride && !planId) {
-        tierQuoteCacheRef.current.set(tierQuoteSyncKey(tierOverride, fType), data);
+        tierQuoteCacheRef.current.set(
+          tierQuoteSyncKey(tierOverride, fType, selectedNetworkSlug),
+          data,
+        );
       }
       return { ok: true, plans: nextPlans };
     } catch {
@@ -413,6 +439,7 @@ export function RedeepPhase2Client({
     accessToken,
     fulfillmentType,
     purchaseId,
+    selectedNetworkSlug,
     shippingMethodId,
     t,
     voucherCode,
@@ -478,7 +505,7 @@ export function RedeepPhase2Client({
     if (
       showConfigColumn &&
       ((showTierStep && !isCoverageTier(selectedCoverageTier)) ||
-        (showNetworkStep && !selectedNetworkSlug) ||
+        (networkSelectionRequired && !selectedNetworkSlug) ||
         (fulfillmentType === "EXISTING_SIM" && iccid.trim().length < 15) ||
         (fulfillmentType === "NEW_SIM_SHIPPING" &&
           (!isRedeemShippingComplete(shippingForm) || !shippingMethodId)))
@@ -487,7 +514,7 @@ export function RedeepPhase2Client({
       setForceShowConfig(true);
       if (showTierStep && !isCoverageTier(selectedCoverageTier)) {
         setSetupHighlight("tier");
-      } else if (showNetworkStep && !selectedNetworkSlug) {
+      } else if (networkSelectionRequired && !selectedNetworkSlug) {
         setSetupHighlight("network");
       } else {
         setSetupHighlight("details");
@@ -514,32 +541,40 @@ export function RedeepPhase2Client({
 
   const handleTierSelect = useCallback(
     (tier: CoverageTier) => {
-      if (tier === selectedCoverageTier && plans.length > 0) return;
+      const manualNetwork = tierRequiresManualNetworkPick(tier);
+      if (tier === selectedCoverageTier && !manualNetwork && plans.length > 0) return;
 
       const fType = defaultFulfillmentForTier(tier) as FulfillmentType;
-      const syncKey = tierQuoteSyncKey(tier, fType);
+      const syncKey = tierQuoteSyncKey(
+        tier,
+        fType,
+        manualNetwork ? "" : (networkSlugForTier(tier) ?? ""),
+      );
       quoteSyncKeyRef.current = syncKey;
 
       startTransition(() => {
         setSelectedCoverageTier(tier);
-        setSelectedNetworkSlug(tier === COVERAGE_TIER.BASIC ? "" : networkSlugForTier(tier) ?? "");
+        setSelectedNetworkSlug(manualNetwork ? "" : (networkSlugForTier(tier) ?? ""));
         setSelectedPlanId("");
         setTotals(null);
+        if (manualNetwork) setPlans([]);
         setSelectedAddonSkus([]);
         setAddonLines([]);
         setFulfillmentType(fType);
-        setSetupHighlight(null);
+        setSetupHighlight(manualNetwork ? "network" : null);
         setTierError(null);
         setError(null);
       });
 
-      const cached = tierQuoteCacheRef.current.get(syncKey);
-      if (cached) {
-        applyQuotePayload(cached);
+      if (!manualNetwork) {
+        const cached = tierQuoteCacheRef.current.get(syncKey);
+        if (cached) {
+          applyQuotePayload(cached);
+        }
       }
 
       setTierPersisting(tier);
-      const seq = ++quoteSeqRef.current;
+      const seq = ++tierPersistSeqRef.current;
       void (async () => {
         try {
           const at = accessToken.trim();
@@ -549,7 +584,7 @@ export function RedeepPhase2Client({
             body: JSON.stringify({
               purchaseId,
               coverageTier: tier,
-              includeQuote: true,
+              includeQuote: !manualNetwork,
               fulfillmentType: fType,
               ...(at ? { accessToken: at } : {}),
             }),
@@ -557,24 +592,26 @@ export function RedeepPhase2Client({
           const data = (await res.json().catch(() => ({}))) as {
             error?: string;
             quote?: RedeemQuotePayload;
+            networkSlug?: string | null;
           };
-          if (seq !== quoteSeqRef.current) return;
+          if (seq !== tierPersistSeqRef.current) return;
           if (!res.ok) {
             setTierError(typeof data.error === "string" ? data.error : t("errors.tier"));
             return;
+          }
+          if (manualNetwork && data.networkSlug) {
+            setSelectedNetworkSlug(data.networkSlug);
           }
           if (data.quote) {
             applyQuotePayload(data.quote);
             tierQuoteCacheRef.current.set(syncKey, data.quote);
           }
         } catch {
-          if (seq === quoteSeqRef.current) {
+          if (seq === tierPersistSeqRef.current) {
             setTierError(t("errors.tier"));
           }
         } finally {
-          if (seq === quoteSeqRef.current) {
-            setTierPersisting(null);
-          }
+          setTierPersisting((cur) => (cur === tier ? null : cur));
         }
       })();
     },
@@ -596,9 +633,12 @@ export function RedeepPhase2Client({
     if (showTierStep && !isCoverageTier(selectedCoverageTier)) return;
 
     void (async () => {
-      if (showTierStep && !showNetworkStep && isCoverageTier(selectedCoverageTier)) {
+      if (showTierStep && isCoverageTier(selectedCoverageTier)) {
+        if (tierRequiresManualNetworkPick(selectedCoverageTier) && !selectedNetworkSlug) {
+          return;
+        }
         const fType = defaultFulfillmentForTier(selectedCoverageTier) as FulfillmentType;
-        const syncKey = tierQuoteSyncKey(selectedCoverageTier, fType);
+        const syncKey = tierQuoteSyncKey(selectedCoverageTier, fType, selectedNetworkSlug);
         if (quoteSyncKeyRef.current === syncKey) return;
         quoteSyncKeyRef.current = syncKey;
 
@@ -613,7 +653,7 @@ export function RedeepPhase2Client({
       }
 
       let slug = selectedNetworkSlug || autoNetworkSlug || "";
-      if (showNetworkStep && !slug) return;
+      if (networkSelectionRequired && !slug) return;
 
       const syncKey = `${selectedCoverageTier}|${slug}`;
       if (quoteSyncKeyRef.current === syncKey) return;
@@ -626,7 +666,7 @@ export function RedeepPhase2Client({
     stepMap.setup,
     purchaseId,
     showTierStep,
-    showNetworkStep,
+    networkSelectionRequired,
     selectedCoverageTier,
     selectedNetworkSlug,
     autoNetworkSlug,
@@ -683,7 +723,7 @@ export function RedeepPhase2Client({
         setWizardStep(stepMap.date);
       } else {
         setWizardStep(stepMap.setup);
-        if (skipFulfillmentStep || !showNetworkStep || selectedNetworkSlug || autoNetworkSlug) {
+        if (skipFulfillmentStep || !networkSelectionRequired || selectedNetworkSlug || autoNetworkSlug) {
           await loadPlansQuote();
         }
       }
@@ -768,7 +808,7 @@ export function RedeepPhase2Client({
   const tierReady = !showTierStep || isCoverageTier(selectedCoverageTier);
   const setupReady =
     tierReady &&
-    (!showNetworkStep || Boolean(selectedNetworkSlug)) &&
+    (!networkSelectionRequired || Boolean(selectedNetworkSlug)) &&
     (skipFulfillmentStep && !forceShowConfig
       ? true
       : ultraEsimOnly || fulfillmentType === "ESIM"
@@ -808,7 +848,7 @@ export function RedeepPhase2Client({
     if (next !== "NEW_SIM_SHIPPING") {
       setShippingMethodId(DEFAULT_SHIPPING_METHOD_ID);
     }
-    if (wizardStep === stepMap.setup && (selectedNetworkSlug || !showNetworkStep)) {
+    if (wizardStep === stepMap.setup && (selectedNetworkSlug || !networkSelectionRequired)) {
       void loadPlansQuote({ preserveSelectedPlan: !incompatible, fulfillmentType: next });
     }
   }, [
@@ -816,7 +856,7 @@ export function RedeepPhase2Client({
     plans,
     selectedNetworkSlug,
     selectedPlanId,
-    showNetworkStep,
+    networkSelectionRequired,
     stepMap.setup,
     wizardStep,
   ]);
@@ -854,7 +894,17 @@ export function RedeepPhase2Client({
 
       const planNetwork = plan.networkSlug?.trim() ?? "";
       const networkForAddons = planNetwork || selectedNetworkSlug;
-      const addons = addonsAllowedForNetwork(networkForAddons) ? selectedAddonSkus : [];
+      const addonsEligible = tmobileAddonsAvailableForRedeem({
+        purchaseNetworkSlug: selectedNetworkSlug,
+        planNetworkSlug: planNetwork,
+        planSku: plan.sku,
+      });
+      const addons = addonsEligible ? selectedAddonSkus : [];
+
+      if (!addonsEligible) {
+        setSelectedAddonSkus([]);
+        setAddonLines([]);
+      }
 
       setTotals(
         localTotalsForPlan({
@@ -877,8 +927,13 @@ export function RedeepPhase2Client({
           }
         }
         if (seq !== planQuoteSyncRef.current) return;
-        const syncedAddons =
-          addonsAllowedForNetwork(planNetwork || selectedNetworkSlug) ? selectedAddonSkus : [];
+        const syncedAddons = tmobileAddonsAvailableForRedeem({
+          purchaseNetworkSlug: selectedNetworkSlug,
+          planNetworkSlug: planNetwork,
+          planSku: plan.sku,
+        })
+          ? selectedAddonSkus
+          : [];
         await unlockAndQuote(planId, fulfillmentType, syncedAddons, undefined, { silent: true });
       })();
     },
@@ -895,22 +950,30 @@ export function RedeepPhase2Client({
   );
 
   const handleAddonChange = useCallback((skus: TmobileAddonSku[]) => {
-    setSelectedAddonSkus(skus);
     if (!selectedPlanId) return;
     const plan = plans.find((p) => p.id === selectedPlanId);
-    if (plan) {
-      setTotals(
-        localTotalsForPlan({
-          plan,
-          creditAmountCents: creditCents,
-          fulfillmentType,
-          shippingMethodId,
-          addonSkus: skus,
-        }),
-      );
+    if (
+      !plan ||
+      !tmobileAddonsAvailableForRedeem({
+        purchaseNetworkSlug: selectedNetworkSlug,
+        planNetworkSlug: plan.networkSlug,
+        planSku: plan.sku,
+      })
+    ) {
+      return;
     }
+    setSelectedAddonSkus(skus);
+    setTotals(
+      localTotalsForPlan({
+        plan,
+        creditAmountCents: creditCents,
+        fulfillmentType,
+        shippingMethodId,
+        addonSkus: skus,
+      }),
+    );
     void unlockAndQuote(selectedPlanId, fulfillmentType, skus, undefined, { silent: true });
-  }, [creditCents, fulfillmentType, plans, selectedPlanId, shippingMethodId, unlockAndQuote]);
+  }, [creditCents, fulfillmentType, plans, selectedNetworkSlug, selectedPlanId, shippingMethodId, unlockAndQuote]);
 
   const handleShippingMethodChange = useCallback((next: ShippingMethodId) => {
     setShippingMethodId(next);
@@ -1102,8 +1165,7 @@ export function RedeepPhase2Client({
             purchaseId={purchaseId}
             accessToken={accessToken}
             showTierSection={showConfigColumn && showTierStep}
-            showTierNetworkDisplay={showConfigColumn && showTierStep}
-            showNetworkSection={showConfigColumn && showNetworkStep}
+            showNetworkSection={showConfigColumn && showNetworkStep && !showTierStep}
             showFulfillmentSection={showConfigColumn}
             coverageTier={selectedCoverageTier || null}
             selectedNetworkSlug={selectedNetworkSlug}
@@ -1117,7 +1179,7 @@ export function RedeepPhase2Client({
             creditCents={creditCents}
             selectedPlanId={selectedPlanId}
             showTmobileAddons={showTmobileAddons}
-            tmobileAddonOptions={tmobileAddonOptions}
+            tmobileAddonOptions={resolvedTmobileAddonOptions}
             selectedAddonSkus={selectedAddonSkus}
             plansLoading={quoteBusy && plans.length === 0}
             plansRefreshing={quoteBusy && plans.length > 0}
@@ -1154,7 +1216,7 @@ export function RedeepPhase2Client({
             voucherFromPurchase={voucherFromPurchase}
             voucherCode={voucherCode}
             shippingMethodId={shippingMethodId}
-            showNetworkChange={showConfigColumn && showNetworkStep}
+            showNetworkChange={showConfigColumn && (showNetworkStep || basicTierNetworkPick)}
             showSimChange={showConfigColumn}
             onBack={() => setWizardStep(stepMap.setup)}
             onChangeNetwork={() => {

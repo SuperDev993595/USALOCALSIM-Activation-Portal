@@ -1,7 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { GLOBAL_NETWORK_SLUGS, type GlobalNetworkSlug } from "@/lib/network-catalog";
-import {
+import { GLOBAL_NETWORK_SLUGS, type GlobalNetworkSlug } from "@/lib/network-catalog";import {
   VOUCHER_PRODUCT_TYPE,
   effectiveVoucherProductType,
 } from "@/lib/voucher-product-type";
@@ -35,11 +34,6 @@ export async function resolveNetworkForRedeem(input: {
     select: { id: true, slug: true },
   });
   return network;
-}
-
-/** Quote/checkout: BASIC tier plans on T-Mobile or Linkup (no manual network step). */
-export function planFilterForBasicTier(): Prisma.PlanWhereInput {
-  return { network: { slug: { in: ["t_mobile", "linkup_att"] } } };
 }
 
 /** Quote/checkout: only catalog plans tied to the selected carrier (exclude legacy rows with no networkId). */

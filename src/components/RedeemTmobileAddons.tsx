@@ -89,7 +89,7 @@ export function RedeemTmobileAddons({
                     onChange={(e) => toggle(sku, e.target.checked)}
                   />
                   <span
-                    className="pointer-events-none absolute inset-0 rounded border border-white/25 bg-slate-950/80 transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-[#E20074]/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-950 peer-checked:border-[#E20074] peer-checked:bg-[#E20074] peer-disabled:opacity-50"
+                    className="pointer-events-none absolute inset-0 rounded border border-slate-400/55 bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-[#E20074]/50 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-slate-900 peer-checked:border-[#E20074] peer-checked:bg-[#E20074] peer-checked:shadow-none peer-disabled:opacity-50"
                     aria-hidden
                   />
                   <AddonCheckIcon className="pointer-events-none absolute inset-0 m-auto h-3 w-3 text-white opacity-0 transition-opacity duration-150 peer-checked:opacity-100" />

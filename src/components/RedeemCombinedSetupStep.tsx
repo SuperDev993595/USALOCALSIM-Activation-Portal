@@ -27,7 +27,7 @@ import type { ShippingMethodId } from "@/lib/shipping-methods";
 import { RedeemTierPicker } from "@/components/RedeemTierPicker";
 import { RedeemTierNetworkDisplay } from "@/components/RedeemTierNetworkDisplay";
 import type { CoverageTier } from "@/lib/coverage-tier";
-import { coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
+import { COVERAGE_TIER, coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
 
 export type SetupHighlight = "tier" | "network" | "sim" | "details" | "plan" | null;
 
@@ -37,6 +37,7 @@ function SetupSection({
   hint,
   highlight,
   dimmed,
+  bodyCentered = false,
   children,
 }: {
   step: number;
@@ -44,13 +45,15 @@ function SetupSection({
   hint?: string;
   highlight?: boolean;
   dimmed?: boolean;
+  /** Center step body in the remaining section space (network column beside tier picker). */
+  bodyCentered?: boolean;
   children: ReactNode;
 }) {
   return (
     <section
-      className={`${REDEEM_SECTION_CLASS}${highlight ? ` ${REDEEM_SECTION_HIGHLIGHT_CLASS}` : ""}${
-        dimmed ? ` ${REDEEM_SECTION_DIMMED_CLASS}` : ""
-      }`}
+      className={`${REDEEM_SECTION_CLASS}${bodyCentered ? " flex h-full flex-col" : ""}${
+        highlight ? ` ${REDEEM_SECTION_HIGHLIGHT_CLASS}` : ""
+      }${dimmed ? ` ${REDEEM_SECTION_DIMMED_CLASS}` : ""}`}
     >
       <div className={`${REDEEM_SECTION_HEADER_CLASS}${highlight ? " border-amber-500/30" : ""}`}>
         <span
@@ -67,7 +70,13 @@ function SetupSection({
           {hint ? <p className="mt-1 text-sm leading-relaxed text-slate-400">{hint}</p> : null}
         </div>
       </div>
-      {children}
+      {bodyCentered ? (
+        <div className="flex min-h-[10rem] w-full flex-1 flex-col items-center justify-center px-1 py-2 sm:min-h-[12rem]">
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </section>
   );
 }
@@ -77,7 +86,6 @@ export function RedeemCombinedSetupStep({
   accessToken,
   showNetworkSection,
   showTierSection,
-  showTierNetworkDisplay,
   showFulfillmentSection,
   coverageTier,
   selectedNetworkSlug,
@@ -118,8 +126,6 @@ export function RedeemCombinedSetupStep({
   accessToken: string;
   showNetworkSection: boolean;
   showTierSection: boolean;
-  /** Read-only network panel beside tier picker (tier flow). */
-  showTierNetworkDisplay: boolean;
   showFulfillmentSection: boolean;
   coverageTier: string | null;
   selectedNetworkSlug: string;
@@ -159,8 +165,12 @@ export function RedeemCombinedSetupStep({
   const t = useTranslations("redeemWizard");
 
   const tierReady = !showTierSection || isCoverageTier(coverageTier ?? "");
-  const selectionReady =
-    tierReady && (!showNetworkSection || Boolean(selectedNetworkSlug));
+  const isBasicTier = isCoverageTier(coverageTier ?? "") && coverageTier === COVERAGE_TIER.BASIC;
+  /** Tier flow: BASIC needs an explicit network pick; legacy flow uses showNetworkSection. */
+  const networkRequiredForPlans = showTierSection ? isBasicTier : showNetworkSection;
+  const networkColumnInteractive = showTierSection && isBasicTier;
+  const networkColumnDimmed = !tierReady;
+  const selectionReady = tierReady && (!networkRequiredForPlans || Boolean(selectedNetworkSlug));
   const showPlanSection = planOnlyMode || !showTierSection || tierReady;
 
   let stepCounter = 0;
@@ -221,18 +231,12 @@ export function RedeemCombinedSetupStep({
         ) : (
           <div className="space-y-6">
             {showTierSection ? (
-              <SetupSection
-                step={nextStep()}
-                title={t("stepTierTitle")}
-                hint={t("stepTierBody")}
-                highlight={highlight === "tier"}
-              >
-                <div
-                  className={
-                    showTierNetworkDisplay
-                      ? "grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:gap-6 [&_.tier-network-display]:h-full"
-                      : undefined
-                  }
+              <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch xl:gap-8">
+                <SetupSection
+                  step={nextStep()}
+                  title={t("stepTierTitle")}
+                  hint={t("stepTierBody")}
+                  highlight={highlight === "tier"}
                 >
                   <RedeemTierPicker
                     selectedTier={coverageTier}
@@ -241,24 +245,55 @@ export function RedeemCombinedSetupStep({
                     disabled={loading}
                     onPickTier={onTierSelect}
                   />
-                  {showTierNetworkDisplay ? (
+                </SetupSection>
+                <SetupSection
+                  step={nextStep()}
+                  title={networkColumnInteractive ? t("stepNetworkTitle") : t("tierNetworkDisplayTitle")}
+                  hint={
+                    !tierReady
+                      ? t("stepNetworkBodySelectTierFirst")
+                      : networkColumnInteractive
+                        ? tierPending
+                          ? t("savingTier")
+                          : t("stepNetworkBody_basic_pick")
+                        : isCoverageTier(coverageTier ?? "")
+                          ? t(coverageTierNetworkBodyKey(coverageTier))
+                          : t("tierNetworkDisplayEmpty")
+                  }
+                  highlight={highlight === "network"}
+                  dimmed={networkColumnDimmed}
+                  bodyCentered
+                >
+                  {!tierReady ? (
+                    <p className="max-w-sm text-center text-sm leading-relaxed text-slate-500">
+                      {t("stepNetworkBodySelectTierFirst")}
+                    </p>
+                  ) : networkColumnInteractive ? (
+                    <RedeemNetworkPicker
+                      key={coverageTier ?? "basic"}
+                      purchaseId={purchaseId}
+                      accessToken={accessToken}
+                      coverageTier={coverageTier}
+                      selectedSlug={selectedNetworkSlug}
+                      disabled={loading}
+                      quoteBusy={quoteBusy}
+                      onSelect={onNetworkSelect}
+                    />
+                  ) : (
                     <RedeemTierNetworkDisplay coverageTier={coverageTier} />
-                  ) : null}
-                </div>
-              </SetupSection>
+                  )}
+                </SetupSection>
+              </div>
             ) : null}
 
-            {showNetworkSection ? (
+            {showNetworkSection && !showTierSection ? (
               <SetupSection
                 step={nextStep()}
                 title={t("stepNetworkTitle")}
-                hint={
-                  tierReady
-                    ? t(coverageTierNetworkBodyKey(coverageTier))
-                    : t("stepNetworkBodySelectTierFirst")
-                }
+                hint={tierReady ? t("stepNetworkBody_basic_pick") : t("stepNetworkBodySelectTierFirst")}
                 highlight={highlight === "network"}
                 dimmed={!tierReady}
+                bodyCentered
               >
                 {tierReady ? (
                   <RedeemNetworkPicker
@@ -271,7 +306,9 @@ export function RedeemCombinedSetupStep({
                     onSelect={onNetworkSelect}
                   />
                 ) : (
-                  <p className="text-sm leading-relaxed text-slate-500">{t("stepNetworkBodySelectTierFirst")}</p>
+                  <p className="max-w-sm text-center text-sm leading-relaxed text-slate-500">
+                    {t("stepNetworkBodySelectTierFirst")}
+                  </p>
                 )}
               </SetupSection>
             ) : null}
@@ -281,13 +318,15 @@ export function RedeemCombinedSetupStep({
                 <SetupSection
                   step={nextStep()}
                   title={t("step4Title")}
-                  hint={selectionReady ? t("step4BodySimple") : t("stepPlansSelectTierFirst")}
+                  hint={selectionReady ? t("step4BodySimple") : isBasicTier && tierReady && !selectedNetworkSlug ? t("stepPlansSelectNetworkFirst") : t("stepPlansSelectTierFirst")}
                   highlight={highlight === "plan"}
                   dimmed={!selectionReady}
                 >
                   <div className={plansRefreshing ? "opacity-80 transition-opacity duration-150" : undefined}>
                     {selectionReady ? (
                       planContent
+                    ) : isBasicTier && tierReady && !selectedNetworkSlug ? (
+                      <p className="text-sm leading-relaxed text-slate-500">{t("stepPlansSelectNetworkFirst")}</p>
                     ) : (
                       <p className="text-sm leading-relaxed text-slate-500">{t("stepPlansSelectTierFirst")}</p>
                     )}

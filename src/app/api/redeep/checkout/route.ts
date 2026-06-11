@@ -18,9 +18,9 @@ import { stripeCheckoutPaymentOptions } from "@/lib/stripe-checkout-options";
 import {
   addonCentsForSkus,
   addonLinesForSkus,
-  addonsAllowedForNetwork,
   normalizeTmobileAddonSkus,
   serializeAddonSkus,
+  tmobileAddonsAvailableForRedeem,
 } from "@/lib/tmobile-addons";
 
 const bodySchema = z.object({
@@ -112,7 +112,17 @@ export async function POST(req: Request) {
   }
 
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
-  const addonsOk = addonsAllowedForNetwork(purchase.redemptionNetworkSlug);
+  const addonsOk = tmobileAddonsAvailableForRedeem({
+    purchaseNetworkSlug: purchase.redemptionNetworkSlug,
+    planNetworkSlug: plan.network?.slug,
+    planSku: plan.sku,
+  });
+  if (!addonsOk && (body.addonSkus?.length ?? 0) > 0) {
+    return NextResponse.json(
+      { error: "T-Mobile add-ons are not available for this plan.", code: "ADDON_NOT_ALLOWED" },
+      { status: 400 },
+    );
+  }
   const selectedAddonSkus = addonsOk ? normalizeTmobileAddonSkus(body.addonSkus ?? []) : [];
   const addonCents = addonsOk ? addonCentsForSkus(selectedAddonSkus) : 0;
   const totals = computeRedemptionTotals({

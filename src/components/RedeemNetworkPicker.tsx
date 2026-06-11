@@ -34,7 +34,7 @@ const NetworkPickerCard = memo(function NetworkPickerCard({
       type="button"
       aria-label={label}
       aria-pressed={isSelected}
-      className={`network-picker-card relative flex h-[4.25rem] min-w-0 rounded-xl border bg-slate-100/95 px-1.5 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 sm:h-[4.75rem] sm:px-2 md:h-[5rem] ${
+      className={`network-picker-card relative flex h-[4.25rem] w-full min-w-0 rounded-xl border bg-slate-100/95 px-1.5 py-2 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60 sm:h-[4.75rem] sm:px-2 md:h-[5rem] ${
         isSelected ? "network-picker-card--selected border-2" : "border border-white/20"
       }`}
       style={{ ["--network-brand" as string]: brandHex }}
@@ -88,6 +88,12 @@ export const RedeemNetworkPicker = memo(function RedeemNetworkPicker({
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingSlug(null);
+    setSavingSlug(null);
+    setError(null);
+  }, [coverageTier]);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,24 +153,26 @@ export const RedeemNetworkPicker = memo(function RedeemNetworkPicker({
   const displaySlug = pendingSlug ?? selectedSlug;
 
   return (
-    <div className="space-y-3">
+    <div className="flex w-full max-w-lg flex-col items-center justify-center space-y-3">
       {error ? (
-        <p className="rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm text-red-100">{error}</p>
+        <p className="w-full rounded border border-red-500/30 bg-red-950/40 px-3 py-2 text-center text-sm text-red-100">
+          {error}
+        </p>
       ) : null}
       {loading === "load" ? (
-        <p className="text-sm text-slate-400">{t("loadingNetworks")}</p>
+        <p className="text-center text-sm text-slate-400">{t("loadingNetworks")}</p>
       ) : networks.length === 0 ? (
-        <p className="rounded border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
+        <p className="rounded border border-amber-500/30 bg-amber-950/30 px-3 py-2 text-center text-sm text-amber-100">
           {t("networksUnavailable")}
         </p>
       ) : (
         <div
-          className={`grid gap-2.5 sm:gap-3 ${
+          className={`grid w-full justify-items-center gap-2.5 sm:gap-3 ${
             networks.length <= 1
-              ? "grid-cols-1 max-w-md"
+              ? "max-w-md grid-cols-1"
               : networks.length === 2
-                ? "grid-cols-1 sm:grid-cols-2"
-                : "grid-cols-2 lg:grid-cols-4"
+                ? "max-w-md grid-cols-1 sm:max-w-lg sm:grid-cols-2"
+                : "max-w-3xl grid-cols-2 lg:grid-cols-4"
           } ${quoteBusy ? "opacity-95" : ""}`}
           aria-busy={quoteBusy || savingSlug !== null}
         >
@@ -181,7 +189,7 @@ export const RedeemNetworkPicker = memo(function RedeemNetworkPicker({
         </div>
       )}
       {savingSlug ? (
-        <p className="text-xs text-slate-400" role="status">
+        <p className="text-center text-xs text-slate-400" role="status">
           {t("savingNetwork")}
         </p>
       ) : null}
