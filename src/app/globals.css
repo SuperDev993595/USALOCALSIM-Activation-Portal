@@ -1292,19 +1292,22 @@
     @apply outline-none ring-2 ring-brand-purple/50 ring-offset-2 ring-offset-[#0b1220];
   }
 
-  /* Voucher card tier bars — matches physical BASIC / PRO / ULTRA artwork */
+  /* Voucher card tier bars — shared column widths for BASIC / PRO / ULTRA */
   .coverage-tier-banner {
     --tier-green: #1b5e20;
     --tier-blue: #0d47a1;
     --tier-red: #b71c1c;
     --tier-text: #0d1b2a;
     --tier-arrow: 1.125rem;
+    --tier-left: 4.25rem;
     --tier-tail: 5.25rem;
     --tier-radius: 0.75rem;
     --tier-border: 1px;
     display: flex;
     align-items: stretch;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     min-height: 4.5rem;
     border: var(--tier-border) solid #ffffff;
     border-radius: var(--tier-radius);
@@ -1333,13 +1336,16 @@
   }
 
   .coverage-tier-banner__side--left {
-    width: 4.5rem;
+    flex: 0 0 var(--tier-left);
+    width: var(--tier-left);
+    max-width: var(--tier-left);
+    min-width: var(--tier-left);
   }
 
   .coverage-tier-banner__track {
     display: flex;
+    flex: 1 1 0%;
     min-width: 0;
-    flex: 1 1 auto;
     align-items: stretch;
     overflow: hidden;
   }
@@ -1380,14 +1386,14 @@
     position: relative;
     z-index: 2;
     display: flex;
+    flex: 1 1 0%;
     min-width: 0;
-    flex: 1 1 auto;
     flex-direction: column;
     justify-content: center;
     gap: 0.05rem;
     margin-right: calc(-1 * var(--tier-arrow));
     background: #ffffff;
-    padding: 0.55rem calc(var(--tier-tail) + var(--tier-arrow) * 0.35) 0.55rem 0.85rem;
+    padding: 0.55rem calc(var(--tier-arrow) * 1.35) 0.55rem 0.85rem;
     clip-path: polygon(
       0 0,
       calc(100% - var(--tier-arrow)) 0,
@@ -1401,10 +1407,12 @@
     position: relative;
     z-index: 1;
     display: flex;
-    flex-shrink: 0;
+    flex: 0 0 var(--tier-tail);
+    width: var(--tier-tail);
+    max-width: var(--tier-tail);
+    min-width: var(--tier-tail);
     align-items: center;
     justify-content: center;
-    width: var(--tier-tail);
     padding-left: var(--tier-arrow);
     margin-left: calc(-1 * var(--tier-arrow));
     clip-path: polygon(
@@ -1448,6 +1456,7 @@
     line-height: 1.25;
     letter-spacing: 0.04em;
     color: var(--tier-text);
+    overflow-wrap: anywhere;
   }
 
   .coverage-tier-banner--pro .coverage-tier-banner__coverage {
@@ -1489,13 +1498,10 @@
   @media (min-width: 640px) {
     .coverage-tier-banner {
       --tier-arrow: 1.25rem;
+      --tier-left: 4.75rem;
       --tier-tail: 6rem;
       --tier-radius: 0.8125rem;
       min-height: 4.85rem;
-    }
-
-    .coverage-tier-banner__side--left {
-      width: 5rem;
     }
 
     .coverage-tier-banner__icon {
@@ -1519,7 +1525,7 @@
     }
 
     .coverage-tier-banner__body {
-      padding: 0.65rem calc(var(--tier-tail) + var(--tier-arrow) * 0.35) 0.65rem 1rem;
+      padding: 0.65rem calc(var(--tier-arrow) * 1.35) 0.65rem 1rem;
     }
 
     .coverage-tier-banner__title {
@@ -1539,14 +1545,9 @@
 @layer utilities {
   @keyframes tier-select-pop {
     0% {
-      transform: scale(0.98);
-      opacity: 0.9;
-    }
-    55% {
-      transform: scale(1.02);
+      opacity: 0.88;
     }
     100% {
-      transform: scale(1.01);
       opacity: 1;
     }
   }

@@ -33,7 +33,7 @@ export const CoverageTierBanner = memo(function CoverageTierBanner({
   const styles = coverageTierBannerClasses(tier, selected);
 
   return (
-    <span className={`coverage-tier-banner ${styles.banner} ${className}`.trim()} data-tier={tier}>
+    <span className={`coverage-tier-banner min-w-0 ${styles.banner} ${className}`.trim()} data-tier={tier}>
       <span className={`coverage-tier-banner__side coverage-tier-banner__side--left ${styles.side}`}>
         <TierLeftIcon
           tier={tier}
@@ -58,9 +58,11 @@ export const CoverageTierBanner = memo(function CoverageTierBanner({
           <span className="coverage-tier-banner__modality">{ui.modality}</span>
         </span>
         <span className={`coverage-tier-banner__tail ${styles.side}`}>
-          {tier === COVERAGE_TIER.BASIC ? (
-            <TierGlobeIcon className="coverage-tier-banner__icon coverage-tier-banner__icon--compact" />
-          ) : null}
+          <TierGlobeIcon
+            className={`coverage-tier-banner__icon coverage-tier-banner__icon--compact${
+              tier === COVERAGE_TIER.BASIC ? "" : " opacity-0"
+            }`}
+          />
         </span>
       </span>
     </span>

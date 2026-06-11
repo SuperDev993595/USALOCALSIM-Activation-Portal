@@ -33,7 +33,7 @@ export function DevTierBannersPreview() {
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
-                className={`w-full p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${styles.focusRing} ${styles.selectAnim}`}
+                className={`block w-full min-w-0 max-w-full p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${styles.focusRing} ${styles.selectAnim}`}
                 onClick={() => setSelected(tier)}
               >
                 <CoverageTierBanner
