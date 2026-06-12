@@ -252,27 +252,74 @@
 
   @media (max-width: 1279px) {
     .public-site.public-site--redeem .redeem-bg-card {
-      max-width: min(30vw, 280px);
-      opacity: 0.06;
+      max-width: min(34vw, 300px);
+      opacity: 0.095;
     }
 
     .public-site.public-site--redeem .redeem-bg-card--back {
-      display: none;
+      max-width: min(30vw, 260px);
+      opacity: 0.08;
     }
   }
 
   @media (max-width: 1023px) {
+    .public-site.public-site--redeem .redeem-bg-card {
+      max-width: min(44vw, 280px);
+      max-height: min(52svh, 480px);
+      opacity: 0.115;
+      filter: saturate(0.88) brightness(1) contrast(1.02);
+      -webkit-mask-image: radial-gradient(ellipse 82% 86% at 50% 48%, #000 38%, transparent 82%);
+      mask-image: radial-gradient(ellipse 82% 86% at 50% 48%, #000 38%, transparent 82%);
+    }
+
     .public-site.public-site--redeem .redeem-bg-card--front {
-      left: 50%;
+      left: -4%;
+      top: 5%;
+      bottom: auto;
+      transform: rotate(-5deg);
+    }
+
+    .public-site.public-site--redeem .redeem-bg-card--back {
+      display: block;
+      right: -5%;
       top: auto;
-      bottom: 4%;
-      max-width: min(56vw, 240px);
-      opacity: 0.045;
-      transform: translateX(-50%) rotate(-2deg);
+      bottom: 6%;
+      max-width: min(40vw, 250px);
+      opacity: 0.1;
+      transform: rotate(6deg);
+      -webkit-mask-image: radial-gradient(ellipse 82% 86% at 50% 52%, #000 34%, transparent 80%);
+      mask-image: radial-gradient(ellipse 82% 86% at 50% 52%, #000 34%, transparent 80%);
+    }
+
+    .public-site.public-site--redeem .redeem-bg-vignette {
+      background: radial-gradient(
+        ellipse 115% 95% at 50% 50%,
+        transparent 36%,
+        rgba(0, 16, 78, 0.2) 100%
+      );
     }
 
     .public-site.public-site--redeem .redeem-bg-map {
       opacity: 0.12;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .public-site.public-site--redeem .redeem-bg-card {
+      max-width: min(52vw, 240px);
+      opacity: 0.125;
+    }
+
+    .public-site.public-site--redeem .redeem-bg-card--front {
+      left: -8%;
+      top: 3%;
+    }
+
+    .public-site.public-site--redeem .redeem-bg-card--back {
+      right: -10%;
+      bottom: 4%;
+      max-width: min(48vw, 220px);
+      opacity: 0.11;
     }
   }
 
