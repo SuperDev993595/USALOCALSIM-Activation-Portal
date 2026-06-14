@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Three UK Mobile Plans | USALOCALSIM",
+  title: "Three UK Pre-loaded Data Plans | USALOCALSIM",
   description:
-    "View Three UK Mobile plans and activate your USALOCALSIM voucher. Three UK exclusive cards skip network selection and go straight to plan redemption.",
+    "View Three UK pre-loaded data plans with 71-country roaming. Activate your USALOCALSIM voucher — eSIM or physical SIM, official Three UK bundles.",
 };
 
 export default function ThreeUkRedeemLayout({ children }: { children: React.ReactNode }) {

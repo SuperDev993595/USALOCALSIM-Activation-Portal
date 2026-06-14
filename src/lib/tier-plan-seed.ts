@@ -7,11 +7,24 @@ export type TierPlanSeed = {
   dataAllowance: string;
   durationDays: number;
   priceCents: number;
+  /** Overrides priceCents for eSIM rows when seeding dual-priced plans. */
+  esimPriceCents?: number;
+  /** Overrides priceCents for physical SIM rows when seeding dual-priced plans. */
+  physicalPriceCents?: number;
   networkSlug: "three_uk" | "orange" | "t_mobile" | "linkup_att";
   planTypes: ("physical_sim" | "esim")[];
   tier: CoverageTier;
   market: "us" | "global" | "uk";
 };
+
+export function resolveTierPlanPriceCents(
+  seed: TierPlanSeed,
+  planType: "physical_sim" | "esim",
+): number {
+  if (planType === "esim" && seed.esimPriceCents != null) return seed.esimPriceCents;
+  if (planType === "physical_sim" && seed.physicalPriceCents != null) return seed.physicalPriceCents;
+  return seed.priceCents;
+}
 
 /** @deprecated Prefer `planCatalogDisplayName` + `Plan.sku`. Kept for legacy name matching. */
 export function planSeedDisplayName(

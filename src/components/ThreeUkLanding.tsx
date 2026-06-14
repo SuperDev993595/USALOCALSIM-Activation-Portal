@@ -1,29 +1,19 @@
+"use client";
+
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import { NetworkMark } from "@/components/NetworkMark";
-import {
-  formatPlanPriceUsd,
-  type ThreeUkPublicPlan,
-} from "@/lib/three-uk-public-plans";
+import { ThreeUkCoveredCountries } from "@/components/ThreeUkCoveredCountries";
+import { ThreeUkPlanCard } from "@/components/ThreeUkPlanCard";
+import type { ThreeUkPublicPlan } from "@/lib/three-uk-public-plans";
 import {
   REDEEM_PANEL_CLASS,
   REDEEM_PRIMARY_BUTTON_CLASS,
   REDEEM_SHELL_CLASS,
 } from "@/lib/redeem-panel";
 
-function planTypeLabel(
-  types: ThreeUkPublicPlan["planTypes"],
-  t: Awaited<ReturnType<typeof getTranslations<"threeUkLanding">>>,
-): string {
-  const hasPhysical = types.includes("physical_sim");
-  const hasEsim = types.includes("esim");
-  if (hasPhysical && hasEsim) return t("planTypeBoth");
-  if (hasEsim) return t("planTypeEsim");
-  return t("planTypePhysical");
-}
-
-export async function ThreeUkLanding({ plans }: { plans: ThreeUkPublicPlan[] }) {
-  const t = await getTranslations("threeUkLanding");
+export function ThreeUkLanding({ plans }: { plans: ThreeUkPublicPlan[] }) {
+  const t = useTranslations("threeUkLanding");
 
   return (
     <div className={REDEEM_SHELL_CLASS}>
@@ -36,6 +26,9 @@ export async function ThreeUkLanding({ plans }: { plans: ThreeUkPublicPlan[] }) 
             <NetworkMark slug="three_uk" className="min-h-[3.5rem]" />
           </div>
           <h1 className="mt-5 text-2xl font-bold text-white md:text-3xl">{t("title")}</h1>
+          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-emerald-300/80">
+            {t("subtitle")}
+          </p>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300">{t("body")}</p>
         </div>
 
@@ -43,30 +36,13 @@ export async function ThreeUkLanding({ plans }: { plans: ThreeUkPublicPlan[] }) 
           <h2 className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
             {t("plansHeading")}
           </h2>
-          <ul className="mt-4 space-y-3">
+          <div className="mt-4 space-y-4">
             {plans.map((plan) => (
-              <li
-                key={plan.sku}
-                className="rounded-lg border border-white/12 bg-black/25 px-4 py-3.5 transition hover:border-white/20 hover:bg-black/35"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-white">{plan.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {plan.dataAllowance} · {t("durationDays", { days: plan.durationDays })}
-                    </p>
-                    <p className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                      {planTypeLabel(plan.planTypes, t)}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-lg font-bold tabular-nums text-emerald-300">
-                    {formatPlanPriceUsd(plan.priceCents)}
-                  </p>
-                </div>
-              </li>
+              <ThreeUkPlanCard key={plan.sku} plan={plan} />
             ))}
-          </ul>
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500">{t("plansNote")}</p>
+          </div>
+          <ThreeUkCoveredCountries />
+          <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500">{t("plansNote")}</p>
         </div>
 
         <div className="mt-8 space-y-3">

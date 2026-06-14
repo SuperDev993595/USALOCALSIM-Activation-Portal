@@ -2117,3 +2117,25 @@
     opacity: 1;
   }
 }
+
+/* Three UK product page: smooth covered-countries accordion */
+.three-uk-countries .three-uk-countries-panel {
+  animation: three-uk-countries-open 0.22s ease-out;
+}
+
+@keyframes three-uk-countries-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .three-uk-countries .three-uk-countries-panel {
+    animation: none;
+  }
+}

@@ -60,6 +60,18 @@ function tierQuoteSyncKey(tier: CoverageTier, fType?: FulfillmentType, networkSl
   return `${tier}|${network}|${fulfillment}`;
 }
 
+function setupQuoteSyncKey(input: {
+  showTierStep: boolean;
+  coverageTier: string;
+  networkSlug: string;
+  fulfillmentType: FulfillmentType;
+}): string {
+  if (input.showTierStep && isCoverageTier(input.coverageTier)) {
+    return tierQuoteSyncKey(input.coverageTier, input.fulfillmentType, input.networkSlug);
+  }
+  return `${input.coverageTier}|${input.networkSlug}|${input.fulfillmentType}`;
+}
+
 function initialWizardStep(
   stepMap: ReturnType<typeof buildRedeemWizardStepMap>,
   resumeAfterPaidUpgrade: boolean,
@@ -637,8 +649,12 @@ export function RedeepPhase2Client({
         if (tierRequiresManualNetworkPick(selectedCoverageTier) && !selectedNetworkSlug) {
           return;
         }
-        const fType = defaultFulfillmentForTier(selectedCoverageTier) as FulfillmentType;
-        const syncKey = tierQuoteSyncKey(selectedCoverageTier, fType, selectedNetworkSlug);
+        const syncKey = setupQuoteSyncKey({
+          showTierStep,
+          coverageTier: selectedCoverageTier,
+          networkSlug: selectedNetworkSlug,
+          fulfillmentType,
+        });
         if (quoteSyncKeyRef.current === syncKey) return;
         quoteSyncKeyRef.current = syncKey;
 
@@ -648,18 +664,23 @@ export function RedeepPhase2Client({
           return;
         }
 
-        await loadPlansQuote();
+        await loadPlansQuote({ fulfillmentType });
         return;
       }
 
-      let slug = selectedNetworkSlug || autoNetworkSlug || "";
+      const slug = selectedNetworkSlug || autoNetworkSlug || "";
       if (networkSelectionRequired && !slug) return;
 
-      const syncKey = `${selectedCoverageTier}|${slug}`;
+      const syncKey = setupQuoteSyncKey({
+        showTierStep,
+        coverageTier: selectedCoverageTier,
+        networkSlug: slug,
+        fulfillmentType,
+      });
       if (quoteSyncKeyRef.current === syncKey) return;
       quoteSyncKeyRef.current = syncKey;
 
-      await loadPlansQuote();
+      await loadPlansQuote({ fulfillmentType });
     })();
   }, [
     wizardStep,
@@ -670,6 +691,7 @@ export function RedeepPhase2Client({
     selectedCoverageTier,
     selectedNetworkSlug,
     autoNetworkSlug,
+    fulfillmentType,
     loadPlansQuote,
     applyQuotePayload,
   ]);
@@ -835,7 +857,6 @@ export function RedeepPhase2Client({
             : false;
 
   const selectFulfillmentType = useCallback((next: FulfillmentType) => {
-    quoteSyncKeyRef.current = "";
     const prevPlan = plans.find((p) => p.id === selectedPlanId);
     const incompatible =
       Boolean(prevPlan) &&
@@ -848,15 +869,25 @@ export function RedeepPhase2Client({
     if (next !== "NEW_SIM_SHIPPING") {
       setShippingMethodId(DEFAULT_SHIPPING_METHOD_ID);
     }
-    if (wizardStep === stepMap.setup && (selectedNetworkSlug || !networkSelectionRequired)) {
+    const slug = selectedNetworkSlug || autoNetworkSlug || "";
+    if (wizardStep === stepMap.setup && (slug || !networkSelectionRequired)) {
+      quoteSyncKeyRef.current = setupQuoteSyncKey({
+        showTierStep,
+        coverageTier: selectedCoverageTier,
+        networkSlug: slug,
+        fulfillmentType: next,
+      });
       void loadPlansQuote({ preserveSelectedPlan: !incompatible, fulfillmentType: next });
     }
   }, [
+    autoNetworkSlug,
     loadPlansQuote,
     plans,
+    selectedCoverageTier,
     selectedNetworkSlug,
     selectedPlanId,
     networkSelectionRequired,
+    showTierStep,
     stepMap.setup,
     wizardStep,
   ]);
@@ -1224,6 +1255,7 @@ export function RedeepPhase2Client({
               setSetupHighlight(showTierStep ? "tier" : "network");
             }}
             onChangeSimType={() => {
+              if (skipFulfillmentStep) setForceShowConfig(true);
               setWizardStep(stepMap.setup);
               setSetupHighlight("sim");
             }}

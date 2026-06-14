@@ -4,7 +4,11 @@ import { PRO_TIER_MOCK_PLANS, RETIRED_PRO_TIER_SKUS } from "../src/lib/pro-tier-
 import { parseSkuFromPlanName } from "../src/lib/plan-sku";
 import { tierPlanSeedRow, type TierPlanSeed } from "../src/lib/tier-plan-seed";
 import { GLOBAL_BRIEFING_PLANS } from "../src/lib/global-briefing-catalog";
-import { THREE_UK_EXCLUSIVE_MOCK_PLANS } from "../src/lib/three-uk-exclusive-catalog";
+import {
+  RETIRED_THREE_UK_EXCLUSIVE_SKUS,
+  THREE_UK_EXCLUSIVE_MOCK_PLANS,
+} from "../src/lib/three-uk-exclusive-catalog";
+import { resolveTierPlanPriceCents } from "../src/lib/tier-plan-seed";
 import { ULTRA_TIER_MOCK_PLANS, RETIRED_ULTRA_TIER_SKUS } from "../src/lib/ultra-tier-catalog-mock";
 
 const ALL_NETWORKS = [
@@ -34,6 +38,7 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
     const networkId = networkIdBySlug.get(p.networkSlug);
     if (!networkId) continue;
     for (const planType of p.planTypes) {
+      const priceCents = resolveTierPlanPriceCents(p, planType);
       const { sku, name, legacyName } = tierPlanSeedRow(p.sku, p.name, planType);
       const existing = await prisma.plan.findFirst({
         where: {
@@ -52,7 +57,7 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
             name,
             dataAllowance: p.dataAllowance,
             durationDays: p.durationDays,
-            priceCents: p.priceCents,
+            priceCents,
             coverageTier: p.tier,
             active: true,
           },
@@ -66,7 +71,7 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
           name,
           dataAllowance: p.dataAllowance,
           durationDays: p.durationDays,
-          priceCents: p.priceCents,
+          priceCents,
           planType,
           market: p.market,
           networkId,
@@ -206,8 +211,13 @@ export async function seedTierCatalogs(prisma: PrismaClient): Promise<void> {
 
   const threeUkEx = await seedPlanRows(prisma, THREE_UK_EXCLUSIVE_MOCK_PLANS, networkIdBySlug);
   console.log(
-    `Seeded Three UK exclusive (MOCK): ${threeUkEx.created} created, ${threeUkEx.updated} updated (${THREE_UK_EXCLUSIVE_MOCK_PLANS.length} SKUs).`,
+    `Seeded Three UK exclusive: ${threeUkEx.created} created, ${threeUkEx.updated} updated (${THREE_UK_EXCLUSIVE_MOCK_PLANS.length} SKUs).`,
   );
+
+  const retiredThreeUk = await deactivateRetiredSkus(prisma, RETIRED_THREE_UK_EXCLUSIVE_SKUS);
+  if (retiredThreeUk > 0) {
+    console.log(`Deactivated ${retiredThreeUk} retired Three UK exclusive plan row(s).`);
+  }
 
   const backfilled = await backfillPlanSkusFromNames(prisma);
   if (backfilled > 0) {
