@@ -3,6 +3,7 @@ import { REDEMPTION_FULFILLMENT_TYPES, computeRedemptionTotals } from "@/lib/red
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
 import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
+import { orangeUltraBypassesCreditPlanFilter } from "@/lib/orange-redeem-plans";
 import { isCoverageTier, redeemQuoteCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { planFilterForNetwork } from "@/lib/redeem-network";
 import { threeUkExclusivePlanWhere } from "@/lib/three-uk-redeem";
@@ -154,40 +155,46 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
   const creditAmountCents = effectiveVoucherCreditCents(voucher);
   const quoteFulfillment = fulfillmentForQuote ?? REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM;
 
-  const plans = filterRedeemQuotePlans(
-    planRows
-      .map((p) => {
-        const t = computeRedemptionTotals({
-          planPriceCents: p.priceCents,
-          creditAmountCents,
-          fulfillmentType: quoteFulfillment,
-          shippingMethodId: input.shippingMethodId,
-        });
-        const matchesVoucherCredit = isPerfectMatchPlanPrice(p.priceCents, creditAmountCents);
-        return {
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          dataAllowance: p.dataAllowance,
-          durationDays: p.durationDays,
-          market: p.market,
-          planType: p.planType,
-          priceCents: p.priceCents,
-          networkSlug: p.network?.slug ?? null,
-          balanceDueCents: t.balanceDueCents,
-          creditAppliedCents: t.creditAppliedCents,
-          fullyCoveredByWallet: t.balanceDueCents <= 0,
-          matchesVoucherCredit,
-        };
-      })
-      .sort((a, b) => {
-        if (a.matchesVoucherCredit !== b.matchesVoucherCredit) {
-          return a.matchesVoucherCredit ? -1 : 1;
-        }
-        return a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents;
-      }),
-    creditAmountCents,
+  const mappedPlans = planRows
+    .map((p) => {
+      const t = computeRedemptionTotals({
+        planPriceCents: p.priceCents,
+        creditAmountCents,
+        fulfillmentType: quoteFulfillment,
+        shippingMethodId: input.shippingMethodId,
+      });
+      const matchesVoucherCredit = isPerfectMatchPlanPrice(p.priceCents, creditAmountCents);
+      return {
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        dataAllowance: p.dataAllowance,
+        durationDays: p.durationDays,
+        market: p.market,
+        planType: p.planType,
+        priceCents: p.priceCents,
+        networkSlug: p.network?.slug ?? null,
+        balanceDueCents: t.balanceDueCents,
+        creditAppliedCents: t.creditAppliedCents,
+        fullyCoveredByWallet: t.balanceDueCents <= 0,
+        matchesVoucherCredit,
+      };
+    })
+    .sort((a, b) => {
+      if (a.matchesVoucherCredit !== b.matchesVoucherCredit) {
+        return a.matchesVoucherCredit ? -1 : 1;
+      }
+      return a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents;
+    });
+
+  const bypassCreditFilter = orangeUltraBypassesCreditPlanFilter(
+    quoteCoverageTier,
+    network?.slug ?? effectivePurchase.redemptionNetworkSlug,
   );
+
+  const plans = bypassCreditFilter
+    ? mappedPlans
+    : filterRedeemQuotePlans(mappedPlans, creditAmountCents);
 
   const baselinePlans = plans.filter((p) => p.matchesVoucherCredit);
   const suggestedPlanId = baselinePlans[0]?.id ?? plans[0]?.id ?? null;

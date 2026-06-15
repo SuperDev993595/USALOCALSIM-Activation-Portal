@@ -9,6 +9,7 @@ import { RedeemNetworkPicker } from "@/components/RedeemNetworkPicker";
 import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressForm";
 import { RedeemShippingMethodPicker } from "@/components/RedeemShippingMethodPicker";
 import { RedeemPlanPicker } from "@/components/RedeemPlanPicker";
+import { RedeemOrangeUltraPlanPicker } from "@/components/RedeemOrangeUltraPlanPicker";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
@@ -28,6 +29,7 @@ import { RedeemTierPicker } from "@/components/RedeemTierPicker";
 import { RedeemTierNetworkDisplay } from "@/components/RedeemTierNetworkDisplay";
 import type { CoverageTier } from "@/lib/coverage-tier";
 import { COVERAGE_TIER, coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
+import { redeemPlansUseOrangeUltraPicker } from "@/lib/orange-redeem-plans";
 
 export type SetupHighlight = "tier" | "network" | "sim" | "details" | "plan" | null;
 
@@ -179,11 +181,24 @@ export function RedeemCombinedSetupStep({
   const backArrowButtonClass =
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-500/55 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-500/45 disabled:pointer-events-none disabled:opacity-40";
 
+  const isUltraTier = isCoverageTier(coverageTier ?? "") && coverageTier === COVERAGE_TIER.ULTRA;
+  const networkSlugForPlans = selectedNetworkSlug || (isUltraTier ? "orange" : "");
+  const useOrangeUltraPicker = redeemPlansUseOrangeUltraPicker(plans, ultraEsimOnly, networkSlugForPlans);
+
   const planContent =
     plansLoading && plans.length === 0 ? (
       <p className="text-sm text-slate-400" role="status">
         {t("loadingPlans")}
       </p>
+    ) : useOrangeUltraPicker ? (
+      <RedeemOrangeUltraPlanPicker
+        creditCents={creditCents}
+        plans={plans}
+        selectedPlanId={selectedPlanId}
+        loading={loading}
+        refreshing={plansRefreshing}
+        onSelectPlan={onSelectPlan}
+      />
     ) : (
       <RedeemPlanPicker
         creditCents={creditCents}
