@@ -10,6 +10,7 @@ import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressFor
 import { RedeemShippingMethodPicker } from "@/components/RedeemShippingMethodPicker";
 import { RedeemPlanPicker } from "@/components/RedeemPlanPicker";
 import { RedeemOrangeUltraPlanPicker } from "@/components/RedeemOrangeUltraPlanPicker";
+import { RedeemThreeUkPlanPicker } from "@/components/RedeemThreeUkPlanPicker";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
@@ -30,6 +31,7 @@ import { RedeemTierNetworkDisplay } from "@/components/RedeemTierNetworkDisplay"
 import type { CoverageTier } from "@/lib/coverage-tier";
 import { COVERAGE_TIER, coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
 import { redeemPlansUseOrangeUltraPicker } from "@/lib/orange-redeem-plans";
+import { redeemPlansUseThreeUkPicker } from "@/lib/three-uk-redeem-plans";
 
 export type SetupHighlight = "tier" | "network" | "sim" | "details" | "plan" | null;
 
@@ -182,8 +184,11 @@ export function RedeemCombinedSetupStep({
     "inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-500/55 p-2 text-slate-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-500/45 disabled:pointer-events-none disabled:opacity-40";
 
   const isUltraTier = isCoverageTier(coverageTier ?? "") && coverageTier === COVERAGE_TIER.ULTRA;
-  const networkSlugForPlans = selectedNetworkSlug || (isUltraTier ? "orange" : "");
+  const isProTier = isCoverageTier(coverageTier ?? "") && coverageTier === COVERAGE_TIER.PRO;
+  const networkSlugForPlans =
+    selectedNetworkSlug || (isUltraTier ? "orange" : isProTier ? "three_uk" : "");
   const useOrangeUltraPicker = redeemPlansUseOrangeUltraPicker(plans, ultraEsimOnly, networkSlugForPlans);
+  const useThreeUkPicker = !useOrangeUltraPicker && redeemPlansUseThreeUkPicker(plans, networkSlugForPlans);
 
   const planContent =
     plansLoading && plans.length === 0 ? (
@@ -192,6 +197,15 @@ export function RedeemCombinedSetupStep({
       </p>
     ) : useOrangeUltraPicker ? (
       <RedeemOrangeUltraPlanPicker
+        creditCents={creditCents}
+        plans={plans}
+        selectedPlanId={selectedPlanId}
+        loading={loading}
+        refreshing={plansRefreshing}
+        onSelectPlan={onSelectPlan}
+      />
+    ) : useThreeUkPicker ? (
+      <RedeemThreeUkPlanPicker
         creditCents={creditCents}
         plans={plans}
         selectedPlanId={selectedPlanId}

@@ -4,7 +4,10 @@ import type { TierPlanSeed } from "./tier-plan-seed";
 export const THREE_UK_PHYSICAL_SIM_SURCHARGE_CENTS = 400;
 
 export type ThreeUkExclusiveCatalogEntry = {
+  /** Type B exclusive voucher SKU (`market: uk`). */
   sku: string;
+  /** PRO tier SKU on global vouchers (`market: global`, `coverageTier: pro`). */
+  proSku: string;
   name: string;
   dataAllowance: string;
   durationDays: number;
@@ -23,6 +26,7 @@ export type ThreeUkExclusiveCatalogEntry = {
 export const THREE_UK_EXCLUSIVE_CATALOG: ThreeUkExclusiveCatalogEntry[] = [
   {
     sku: "3UK-EX-40GB-30D",
+    proSku: "PRO-3UK-40GB-30D",
     name: "Three UK — 40 GB Data Plan",
     dataAllowance: "40 GB",
     durationDays: 30,
@@ -34,6 +38,7 @@ export const THREE_UK_EXCLUSIVE_CATALOG: ThreeUkExclusiveCatalogEntry[] = [
   },
   {
     sku: "3UK-EX-100GB-30D",
+    proSku: "PRO-3UK-100GB-30D",
     name: "Three UK — 100 GB Data Plan",
     dataAllowance: "100 GB",
     durationDays: 30,
@@ -45,6 +50,7 @@ export const THREE_UK_EXCLUSIVE_CATALOG: ThreeUkExclusiveCatalogEntry[] = [
   },
   {
     sku: "3UK-EX-200GB-30D",
+    proSku: "PRO-3UK-200GB-30D",
     name: "Three UK — 200 GB Data Plan",
     dataAllowance: "200 GB",
     durationDays: 30,
@@ -56,6 +62,7 @@ export const THREE_UK_EXCLUSIVE_CATALOG: ThreeUkExclusiveCatalogEntry[] = [
   },
   {
     sku: "3UK-EX-UNL-30D",
+    proSku: "PRO-3UK-UNL-30D",
     name: "Three UK — Unlimited Data Plan",
     dataAllowance: "Unlimited",
     durationDays: 30,
@@ -73,11 +80,25 @@ export const RETIRED_THREE_UK_EXCLUSIVE_SKUS = [
 ] as const;
 
 export const THREE_UK_EXCLUSIVE_CATALOG_SKUS = THREE_UK_EXCLUSIVE_CATALOG.map((entry) => entry.sku);
+export const THREE_UK_PRO_CATALOG_SKUS = THREE_UK_EXCLUSIVE_CATALOG.map((entry) => entry.proSku);
+export const ALL_THREE_UK_CATALOG_SKUS = [
+  ...THREE_UK_EXCLUSIVE_CATALOG_SKUS,
+  ...THREE_UK_PRO_CATALOG_SKUS,
+] as const;
 
-const catalogBySku = new Map(THREE_UK_EXCLUSIVE_CATALOG.map((entry) => [entry.sku, entry]));
+const catalogByAnySku = new Map<string, ThreeUkExclusiveCatalogEntry>();
+for (const entry of THREE_UK_EXCLUSIVE_CATALOG) {
+  catalogByAnySku.set(entry.sku, entry);
+  catalogByAnySku.set(entry.proSku, entry);
+}
 
 export function lookupThreeUkCatalogEntry(sku: string): ThreeUkExclusiveCatalogEntry | undefined {
-  return catalogBySku.get(sku.trim().toUpperCase());
+  return catalogByAnySku.get(sku.trim().toUpperCase());
+}
+
+export function isThreeUkCatalogSku(sku: string | null | undefined): boolean {
+  const normalized = sku?.trim().toUpperCase() ?? "";
+  return normalized.length > 0 && catalogByAnySku.has(normalized);
 }
 
 /** TierPlanSeed rows for prisma seed (esim + physical_sim with distinct prices). */

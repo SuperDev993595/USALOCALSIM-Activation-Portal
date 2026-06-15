@@ -4,6 +4,7 @@ import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
 import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
 import { orangeUltraBypassesCreditPlanFilter } from "@/lib/orange-redeem-plans";
+import { threeUkBypassesCreditPlanFilter } from "@/lib/three-uk-redeem-plans";
 import { isCoverageTier, redeemQuoteCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { planFilterForNetwork } from "@/lib/redeem-network";
 import { threeUkExclusivePlanWhere } from "@/lib/three-uk-redeem";
@@ -187,10 +188,16 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
       return a.balanceDueCents - b.balanceDueCents || a.priceCents - b.priceCents;
     });
 
-  const bypassCreditFilter = orangeUltraBypassesCreditPlanFilter(
-    quoteCoverageTier,
-    network?.slug ?? effectivePurchase.redemptionNetworkSlug,
-  );
+  const bypassCreditFilter =
+    orangeUltraBypassesCreditPlanFilter(
+      quoteCoverageTier,
+      network?.slug ?? effectivePurchase.redemptionNetworkSlug,
+    ) ||
+    threeUkBypassesCreditPlanFilter(
+      quoteCoverageTier,
+      network?.slug ?? effectivePurchase.redemptionNetworkSlug,
+      threeUkExclusive,
+    );
 
   const plans = bypassCreditFilter
     ? mappedPlans

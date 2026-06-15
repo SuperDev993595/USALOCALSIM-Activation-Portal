@@ -32,6 +32,7 @@ describe("THREE_UK_EXCLUSIVE_CATALOG", () => {
     for (const plan of THREE_UK_EXCLUSIVE_CATALOG) {
       expect(plan.physicalPriceCents - plan.esimPriceCents).toBe(THREE_UK_PHYSICAL_SIM_SURCHARGE_CENTS);
       expect(plan.planTypes).toEqual(["physical_sim", "esim"]);
+      expect(plan.proSku.startsWith("PRO-3UK-")).toBe(true);
     }
   });
 
