@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { BASIC_TIER_NETWORKS, BASIC_TIER_PLANS, RETIRED_LINKUP_BASIC_SKUS } from "../src/lib/basic-tier-catalog";
+import { BASIC_TIER_NETWORKS, BASIC_TIER_PLANS, BASIC_TMOBILE_PLANS, LEGACY_BASIC_BRIEFING_SKUS, RETIRED_LINKUP_BASIC_SKUS } from "../src/lib/basic-tier-catalog";
 import { PRO_TIER_MOCK_PLANS, RETIRED_PRO_TIER_SKUS } from "../src/lib/pro-tier-catalog-mock";
 import { parseSkuFromPlanName } from "../src/lib/plan-sku";
 import { tierPlanSeedRow, type TierPlanSeed } from "../src/lib/tier-plan-seed";
@@ -40,18 +40,55 @@ async function seedPlanRows(prisma: PrismaClient, plans: TierPlanSeed[], network
     for (const planType of p.planTypes) {
       const priceCents = resolveTierPlanPriceCents(p, planType);
       const { sku, name, legacyName } = tierPlanSeedRow(p.sku, p.name, planType);
-      const existing = await prisma.plan.findFirst({
+      const existingBySku = await prisma.plan.findFirst({
+        where: { sku, planType },
+      });
+      if (existingBySku) {
+        await prisma.plan.update({
+          where: { id: existingBySku.id },
+          data: {
+            sku,
+            name,
+            dataAllowance: p.dataAllowance,
+            durationDays: p.durationDays,
+            priceCents,
+            coverageTier: p.tier,
+            active: true,
+          },
+        });
+        updated++;
+        continue;
+      }
+
+      const existingByName = await prisma.plan.findFirst({
         where: {
-          OR: [
-            { sku, planType },
-            { name: legacyName, networkId, market: p.market, planType },
-            { name, networkId, market: p.market, planType },
-          ],
+          networkId,
+          market: p.market,
+          planType,
+          OR: [{ name: legacyName }, { name }],
         },
       });
-      if (existing) {
+      if (existingByName) {
+        const existingSku = existingByName.sku?.trim().toUpperCase() ?? "";
+        if (existingSku && existingSku !== sku) {
+          await prisma.plan.create({
+            data: {
+              sku,
+              name,
+              dataAllowance: p.dataAllowance,
+              durationDays: p.durationDays,
+              priceCents,
+              planType,
+              market: p.market,
+              networkId,
+              coverageTier: p.tier,
+            },
+          });
+          created++;
+          continue;
+        }
         await prisma.plan.update({
-          where: { id: existing.id },
+          where: { id: existingByName.id },
           data: {
             sku,
             name,
@@ -182,6 +219,20 @@ export async function seedTierCatalogs(prisma: PrismaClient): Promise<void> {
   const briefing = await seedPlanRows(prisma, GLOBAL_BRIEFING_PLANS, networkIdBySlug);
   console.log(
     `Seeded global briefing ($35 match): ${briefing.created} created, ${briefing.updated} updated (${GLOBAL_BRIEFING_PLANS.length} SKUs).`,
+  );
+
+  const retiredBriefing = await deactivateRetiredSkus(prisma, LEGACY_BASIC_BRIEFING_SKUS);
+  if (retiredBriefing > 0) {
+    console.log(`Deactivated ${retiredBriefing} legacy briefing plan row(s) (superseded by BASIC matrix).`);
+  }
+
+  const tmobileBasic: TierPlanSeed[] = BASIC_TMOBILE_PLANS.map((p) => ({
+    ...p,
+    market: "us" as const,
+  }));
+  const tmRestore = await seedPlanRows(prisma, tmobileBasic, networkIdBySlug);
+  console.log(
+    `Ensured T-Mobile BASIC matrix: ${tmRestore.created} created, ${tmRestore.updated} updated (${BASIC_TMOBILE_PLANS.length} SKUs).`,
   );
 
   const pro = await seedPlanRows(prisma, PRO_TIER_MOCK_PLANS, networkIdBySlug);

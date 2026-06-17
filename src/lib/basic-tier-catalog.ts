@@ -55,6 +55,33 @@ export const BASIC_LINKUP_PLANS: BasicTierPlanSeed[] = [
 
 export const BASIC_TIER_PLANS: BasicTierPlanSeed[] = [...BASIC_TMOBILE_PLANS, ...BASIC_LINKUP_PLANS];
 
+export const BASIC_TMOBILE_CATALOG_SKUS = BASIC_TMOBILE_PLANS.map((plan) => plan.sku);
+export const BASIC_LINKUP_CATALOG_SKUS = BASIC_LINKUP_PLANS.map((plan) => plan.sku);
+
+/** Legacy $35 briefing row — not part of the BASIC tier matrix (TM-UNL-*). */
+export const LEGACY_BASIC_BRIEFING_SKUS = ["TM-35-10D", "3UK-35-10GB", "ORG-35-12GB"] as const;
+
+export const BASIC_TIER_CATALOG_SKUS = BASIC_TIER_PLANS.map((plan) => plan.sku);
+
+const basicCatalogBySku = new Map(BASIC_TIER_PLANS.map((plan) => [plan.sku, plan]));
+
+export function lookupBasicCatalogEntry(sku: string): BasicTierPlanSeed | undefined {
+  return basicCatalogBySku.get(sku.trim().toUpperCase());
+}
+
+export function isBasicCatalogSku(sku: string | null | undefined): boolean {
+  const normalized = sku?.trim().toUpperCase() ?? "";
+  return normalized.length > 0 && basicCatalogBySku.has(normalized);
+}
+
+export function basicCatalogProductLine(
+  sku: string | null | undefined,
+): "tmobile" | "linkup" | null {
+  const entry = lookupBasicCatalogEntry(sku ?? "");
+  if (!entry) return null;
+  return entry.networkSlug === "t_mobile" ? "tmobile" : "linkup";
+}
+
 /** T-Mobile-only optional add-ons (redeem configure step). */
 export const BASIC_TMOBILE_ADDONS = [
   {

@@ -592,6 +592,7 @@
     "pickPlanHint": "Pick one plan to see your totals and enable checkout.",
     "planCoveredByWallet": "Fully covered by your wallet",
     "planPerfectMatch": "Uses full voucher — no change",
+    "planPopularBadge": "Popular",
     "baselinePlansHeading": "Included with your ${amount} voucher",
     "upgradePlansHeading": "Upgrade options (pay difference at checkout)",
     "allPlansHeading": "Available plans",
@@ -788,6 +789,20 @@
     "trackingUnauthorized": "Session expired. Sign in again.",
     "settingsTitle": "Settings",
     "settingsSubtitle": "Change your sign-in password. We email a verification code first."
+  },
+  "basicLanding": {
+    "productLineTmobile": "T-Mobile Unlimited · USA · Canada · Mexico",
+    "productLineLinkup": "LINKUP & AT&T Mobile · Powered by AT&T",
+    "priceIncludesFee": "Includes data plan + activation & setup fee",
+    "simSelectorEsim": "eSIM (Digital Delivery)",
+    "simSelectorPhysical": "Physical SIM Card",
+    "featureTmobileData": "Unlimited USA high-speed data",
+    "featureUsaNumber": "FREE USA phone number included",
+    "featureTmobileSms": "Unlimited USA SMS",
+    "featureTmobileLocalCalls": "Unlimited USA local calls",
+    "featureLinkupData": "{amount} high-speed data allowance",
+    "featureLinkupLocalCalls": "Local calls included",
+    "featureLinkupIntl": "International calls & SMS included"
   },
   "orangeLanding": {
     "title": "Orange ULTRA eSIM Data Plans",

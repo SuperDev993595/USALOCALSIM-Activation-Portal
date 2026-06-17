@@ -4,6 +4,26 @@ export function parseSkuFromPlanName(name: string): string | null {
   return m?.[1]?.trim().toUpperCase() ?? null;
 }
 
+/** Resolve catalog SKU from DB column or plan title (for redeem quote rows). */
+export function resolvePlanSkuFromRow(row: {
+  sku?: string | null;
+  name: string;
+}): string {
+  const fromColumn = row.sku?.trim().toUpperCase();
+  if (fromColumn) return fromColumn;
+
+  const fromBrackets = parseSkuFromPlanName(row.name);
+  if (fromBrackets) return fromBrackets;
+
+  const tmDays = row.name.match(/T-Mobile\s+Unlimited\s*[—-]\s*(\d+)\s*days/i);
+  if (tmDays) return `TM-UNL-${tmDays[1]}D`;
+
+  const linkupGb = row.name.match(/LINKUP\s*&\s*AT&T\s*[—-]\s*(\d+)\s*GB/i);
+  if (linkupGb) return `ATT-LIM-${linkupGb[1]}GB`;
+
+  return "";
+}
+
 export function normalizePlanSku(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
 }

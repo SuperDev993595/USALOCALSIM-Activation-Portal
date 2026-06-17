@@ -7,12 +7,11 @@ import {
   RedeemSelectablePlanCard,
 } from "@/components/RedeemSelectablePlanCard";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
-import { lookupThreeUkCatalogEntry } from "@/lib/three-uk-exclusive-catalog";
+import { inferBasicProductLine } from "@/lib/basic-redeem-plans";
 import { isPopularRedeemPlan } from "@/lib/redeem-popular-plan";
-import { isThreeUkUnlimitedPlan } from "@/lib/three-uk-public-plans";
-import { planListDisplayName, resolvePlanSkuFromRow } from "@/lib/plan-sku";
+import { planListDisplayName } from "@/lib/plan-sku";
 
-export function RedeemThreeUkPlanCard({
+export function RedeemBasicPlanCard({
   plan,
   isSelected,
   disabled,
@@ -29,26 +28,35 @@ export function RedeemThreeUkPlanCard({
   coveredByWalletLabel: string;
   onSelect: (planId: string) => void;
 }) {
-  const t = useTranslations("threeUkLanding");
+  const tBasic = useTranslations("basicLanding");
   const tWizard = useTranslations("redeemWizard");
-  const catalog = lookupThreeUkCatalogEntry(resolvePlanSkuFromRow(plan));
+  const productLine = inferBasicProductLine(plan);
   const due = plan.balanceDueCents ?? 0;
   const isEsim = plan.planType === "esim";
+  const isTmobile = productLine === "tmobile";
   const isPopular = isPopularRedeemPlan(plan);
 
-  const ukDataFeature = isThreeUkUnlimitedPlan(plan)
-    ? t("featureUkDataUnlimited")
-    : t("featureUkData", { amount: plan.dataAllowance });
+  const features =
+    productLine === "tmobile"
+      ? [
+          tBasic("featureTmobileData"),
+          tBasic("featureUsaNumber"),
+          tBasic("featureTmobileSms"),
+          tBasic("featureTmobileLocalCalls"),
+        ]
+      : productLine === "linkup"
+        ? [
+            tBasic("featureLinkupData", { amount: plan.dataAllowance }),
+            tBasic("featureUsaNumber"),
+            tBasic("featureLinkupLocalCalls"),
+            tBasic("featureLinkupIntl"),
+          ]
+        : [];
 
-  const features = catalog
-    ? [
-        ukDataFeature,
-        t("featureRoaming", { amount: catalog.roamingData }),
-        t("featureUkNumber"),
-        t("featureCallsSms"),
-        t("featurePreActivated"),
-      ]
-    : [];
+  const accentCheck = isTmobile ? "text-pink-400" : "text-sky-400";
+  const accentPrice = isTmobile
+    ? "text-sm font-semibold tabular-nums text-pink-300 sm:text-lg"
+    : "text-sm font-semibold tabular-nums text-sky-300 sm:text-lg";
 
   return (
     <RedeemSelectablePlanCard
@@ -63,24 +71,26 @@ export function RedeemThreeUkPlanCard({
         <RedeemPlanPriceColumn
           priceCents={plan.priceCents}
           dueCents={due}
-          priceClassName="text-sm font-semibold tabular-nums text-emerald-300 sm:text-lg"
+          priceClassName={accentPrice}
           matchesVoucherCredit={plan.matchesVoucherCredit}
           fullyCoveredByWallet={plan.fullyCoveredByWallet}
           perfectMatchLabel={perfectMatchLabel}
           coveredByWalletLabel={coveredByWalletLabel}
           showFeeNote={isSelected}
-          feeNote={t("priceIncludesFee")}
+          feeNote={tBasic("priceIncludesFee")}
         />
       }
       details={
         features.length > 0 ? (
           <div className="space-y-4">
-            {catalog ? (
-              <p className="text-xs font-medium text-emerald-300/90">{catalog.officialBundle}</p>
+            {productLine ? (
+              <p className={`text-xs font-medium ${isTmobile ? "text-pink-300/90" : "text-sky-300/90"}`}>
+                {isTmobile ? tBasic("productLineTmobile") : tBasic("productLineLinkup")}
+              </p>
             ) : null}
-            <RedeemPlanFeatureList features={features} checkClassName="text-emerald-400" />
+            <RedeemPlanFeatureList features={features} checkClassName={accentCheck} />
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-              {isEsim ? t("simSelectorEsim") : t("simSelectorPhysical")}
+              {isEsim ? tBasic("simSelectorEsim") : tBasic("simSelectorPhysical")}
             </p>
           </div>
         ) : undefined

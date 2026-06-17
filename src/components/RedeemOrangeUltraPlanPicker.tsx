@@ -89,7 +89,7 @@ export function RedeemOrangeUltraPlanPicker({
       ) : null}
 
       <div
-        className={`space-y-3 ${refreshing ? "transition-opacity duration-150" : ""}`}
+        className={`space-y-2.5 ${refreshing ? "transition-opacity duration-150" : ""}`}
         role="radiogroup"
         aria-label={tWizard("step4Title")}
         aria-busy={refreshing}
@@ -129,12 +129,10 @@ export function RedeemOrangeUltraPlanPicker({
         </div>
       ) : null}
 
-      {activeTab === "europe" ? <OrangeEuropeCountries /> : null}
+      {activeTab === "europe" && selectedPlanId ? <OrangeEuropeCountries /> : null}
 
-      {activeTab === "world" && selectedPlan && selectedPlan.dataAllowance ? (
+      {activeTab === "world" && selectedPlanId && selectedPlan?.dataAllowance ? (
         <OrangeWorldZones dataAllowance={selectedPlan.dataAllowance} />
-      ) : activeTab === "world" && visiblePlans[0] ? (
-        <OrangeWorldZones dataAllowance={visiblePlans[0].dataAllowance} />
       ) : null}
     </div>
   );

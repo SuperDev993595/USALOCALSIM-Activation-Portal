@@ -7,7 +7,7 @@ import type { TierPlanSeed } from "./tier-plan-seed";
 export const GLOBAL_BRIEFING_PLANS: TierPlanSeed[] = [
   {
     sku: "TM-35-10D",
-    name: "T-Mobile Unlimited — 10 days",
+    name: "T-Mobile Unlimited — 10 days ($35 briefing)",
     dataAllowance: "Unlimited USA",
     durationDays: 10,
     priceCents: 3500,

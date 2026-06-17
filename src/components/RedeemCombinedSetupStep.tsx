@@ -10,6 +10,7 @@ import { RedeemShippingAddressForm } from "@/components/RedeemShippingAddressFor
 import { RedeemShippingMethodPicker } from "@/components/RedeemShippingMethodPicker";
 import { RedeemPlanPicker } from "@/components/RedeemPlanPicker";
 import { RedeemOrangeUltraPlanPicker } from "@/components/RedeemOrangeUltraPlanPicker";
+import { RedeemBasicPlanPicker } from "@/components/RedeemBasicPlanPicker";
 import { RedeemThreeUkPlanPicker } from "@/components/RedeemThreeUkPlanPicker";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
@@ -31,6 +32,7 @@ import { RedeemTierNetworkDisplay } from "@/components/RedeemTierNetworkDisplay"
 import type { CoverageTier } from "@/lib/coverage-tier";
 import { COVERAGE_TIER, coverageTierNetworkBodyKey, isCoverageTier } from "@/lib/coverage-tier";
 import { redeemPlansUseOrangeUltraPicker } from "@/lib/orange-redeem-plans";
+import { redeemPlansUseBasicPicker } from "@/lib/basic-redeem-plans";
 import { redeemPlansUseThreeUkPicker } from "@/lib/three-uk-redeem-plans";
 
 export type SetupHighlight = "tier" | "network" | "sim" | "details" | "plan" | null;
@@ -189,6 +191,8 @@ export function RedeemCombinedSetupStep({
     selectedNetworkSlug || (isUltraTier ? "orange" : isProTier ? "three_uk" : "");
   const useOrangeUltraPicker = redeemPlansUseOrangeUltraPicker(plans, ultraEsimOnly, networkSlugForPlans);
   const useThreeUkPicker = !useOrangeUltraPicker && redeemPlansUseThreeUkPicker(plans, networkSlugForPlans);
+  const useBasicPicker =
+    !useOrangeUltraPicker && !useThreeUkPicker && redeemPlansUseBasicPicker(plans, networkSlugForPlans);
 
   const planContent =
     plansLoading && plans.length === 0 ? (
@@ -212,6 +216,21 @@ export function RedeemCombinedSetupStep({
         loading={loading}
         refreshing={plansRefreshing}
         onSelectPlan={onSelectPlan}
+      />
+    ) : useBasicPicker ? (
+      <RedeemBasicPlanPicker
+        creditCents={creditCents}
+        plans={plans}
+        selectedPlanId={selectedPlanId}
+        networkSlug={networkSlugForPlans}
+        strictCatalog={isBasicTier}
+        showTmobileAddons={showTmobileAddons}
+        tmobileAddonOptions={tmobileAddonOptions}
+        selectedAddonSkus={selectedAddonSkus}
+        loading={loading}
+        refreshing={plansRefreshing}
+        onSelectPlan={onSelectPlan}
+        onAddonChange={onAddonChange}
       />
     ) : (
       <RedeemPlanPicker

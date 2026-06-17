@@ -4,6 +4,8 @@ import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import { isPerfectMatchPlanPrice } from "@/lib/plan-perfect-match";
 import { filterRedeemQuotePlans } from "@/lib/redeem-plan-filter";
 import { orangeUltraBypassesCreditPlanFilter } from "@/lib/orange-redeem-plans";
+import { basicBypassesCreditPlanFilter, filterStrictBasicCatalogPlans, isBasicNetworkSlug, shouldUseStrictBasicCatalog, sortBasicRedeemPlans } from "@/lib/basic-redeem-plans";
+import { resolvePlanSkuFromRow } from "@/lib/plan-sku";
 import { threeUkBypassesCreditPlanFilter } from "@/lib/three-uk-redeem-plans";
 import { isCoverageTier, redeemQuoteCoverageTier, tierRequiresEsimOnly } from "@/lib/coverage-tier";
 import { planFilterForNetwork } from "@/lib/redeem-network";
@@ -167,7 +169,7 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
       const matchesVoucherCredit = isPerfectMatchPlanPrice(p.priceCents, creditAmountCents);
       return {
         id: p.id,
-        sku: p.sku,
+        sku: resolvePlanSkuFromRow({ sku: p.sku, name: p.name }) || p.sku,
         name: p.name,
         dataAllowance: p.dataAllowance,
         durationDays: p.durationDays,
@@ -197,11 +199,25 @@ export async function buildRedeemQuote(input: BuildRedeemQuoteInput): Promise<Bu
       quoteCoverageTier,
       network?.slug ?? effectivePurchase.redemptionNetworkSlug,
       threeUkExclusive,
+    ) ||
+    basicBypassesCreditPlanFilter(
+      quoteCoverageTier,
+      network?.slug ?? effectivePurchase.redemptionNetworkSlug,
     );
 
-  const plans = bypassCreditFilter
+  const filteredPlans = bypassCreditFilter
     ? mappedPlans
     : filterRedeemQuotePlans(mappedPlans, creditAmountCents);
+
+  const quoteNetworkSlug = network?.slug ?? effectivePurchase.redemptionNetworkSlug;
+  const strictBasicCatalog = shouldUseStrictBasicCatalog(quoteCoverageTier);
+  const basicScopedPlans =
+    isBasicNetworkSlug(quoteNetworkSlug) && strictBasicCatalog
+      ? filterStrictBasicCatalogPlans(filteredPlans, quoteNetworkSlug)
+      : filteredPlans;
+  const plans = isBasicNetworkSlug(quoteNetworkSlug)
+    ? sortBasicRedeemPlans(basicScopedPlans, quoteNetworkSlug)
+    : filteredPlans;
 
   const baselinePlans = plans.filter((p) => p.matchesVoucherCredit);
   const suggestedPlanId = baselinePlans[0]?.id ?? plans[0]?.id ?? null;
