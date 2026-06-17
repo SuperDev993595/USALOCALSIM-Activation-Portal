@@ -2,7 +2,7 @@ import { resolvePlanSkuFromRow } from "@/lib/plan-sku";
 
 /** Mid-tier / best-value SKUs highlighted on configure service plan lists. */
 export const POPULAR_REDEEM_PLAN_SKUS = new Set([
-  "TM-UNL-20D",
+  "TM-UNL-10D",
   "ATT-LIM-30GB",
   "3UK-EX-100GB-30D",
   "PRO-3UK-100GB-30D",

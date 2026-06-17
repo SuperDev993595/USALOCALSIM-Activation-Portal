@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import type { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import type { VoucherProductType } from "../src/lib/voucher-product-type";
+import { DEFAULT_PREPAID_VOUCHER_FACE_VALUE_CENTS } from "../src/lib/prepaid-voucher";
 
 type DemoCardSeed = {
   label: string;
@@ -211,7 +212,7 @@ export async function seedDemoPrepaidCards(
       pin: "USL-G-DEMO0001",
       voucherProductType: "global",
       retailMarket: "us",
-      faceValueCents: 3500,
+      faceValueCents: DEFAULT_PREPAID_VOUCHER_FACE_VALUE_CENTS,
     },
     {
       label: "Three UK exclusive — direct redeem test",
@@ -219,7 +220,7 @@ export async function seedDemoPrepaidCards(
       pin: "USLTUK-DEMO0001",
       voucherProductType: "three_uk",
       retailMarket: "uk",
-      faceValueCents: 3500,
+      faceValueCents: DEFAULT_PREPAID_VOUCHER_FACE_VALUE_CENTS,
     },
     {
       label: "Global — cart QR then redeem",

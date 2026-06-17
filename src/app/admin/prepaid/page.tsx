@@ -278,7 +278,7 @@ export default function AdminPrepaidImportPage() {
                   USALOCAL001,USL-G-K7H2M9P4,5000,us,USALOCAL001,,global
                 </p>
                 <p className="font-mono text-xs text-slate-700">
-                  USALOCAL002,USLTUK-X8N2R5T7,3500,uk,USALOCAL002,,three_uk
+                  USALOCAL002,USLTUK-X8N2R5T7,3900,uk,USALOCAL002,,three_uk
                 </p>
                 <ul className="list-inside list-disc space-y-1 text-xs text-slate-600">
                   <li>

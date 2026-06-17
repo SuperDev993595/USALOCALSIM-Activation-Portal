@@ -58,8 +58,15 @@ export const BASIC_TIER_PLANS: BasicTierPlanSeed[] = [...BASIC_TMOBILE_PLANS, ..
 export const BASIC_TMOBILE_CATALOG_SKUS = BASIC_TMOBILE_PLANS.map((plan) => plan.sku);
 export const BASIC_LINKUP_CATALOG_SKUS = BASIC_LINKUP_PLANS.map((plan) => plan.sku);
 
-/** Legacy $35 briefing row — not part of the BASIC tier matrix (TM-UNL-*). */
-export const LEGACY_BASIC_BRIEFING_SKUS = ["TM-35-10D", "3UK-35-10GB", "ORG-35-12GB"] as const;
+/** Legacy briefing rows — not part of the BASIC tier matrix (TM-UNL-* / ATT-LIM-*). */
+export const LEGACY_BASIC_BRIEFING_SKUS = [
+  "TM-35-10D",
+  "3UK-35-10GB",
+  "ORG-35-12GB",
+  "TM-39-10D",
+  "3UK-39-10GB",
+  "ORG-39-12GB",
+] as const;
 
 export const BASIC_TIER_CATALOG_SKUS = BASIC_TIER_PLANS.map((plan) => plan.sku);
 

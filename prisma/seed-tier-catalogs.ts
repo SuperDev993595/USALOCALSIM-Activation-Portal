@@ -218,7 +218,7 @@ export async function seedTierCatalogs(prisma: PrismaClient): Promise<void> {
 
   const briefing = await seedPlanRows(prisma, GLOBAL_BRIEFING_PLANS, networkIdBySlug);
   console.log(
-    `Seeded global briefing ($35 match): ${briefing.created} created, ${briefing.updated} updated (${GLOBAL_BRIEFING_PLANS.length} SKUs).`,
+    `Seeded global briefing ($39 match): ${briefing.created} created, ${briefing.updated} updated (${GLOBAL_BRIEFING_PLANS.length} SKUs).`,
   );
 
   const retiredBriefing = await deactivateRetiredSkus(prisma, LEGACY_BASIC_BRIEFING_SKUS);

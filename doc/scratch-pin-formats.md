@@ -39,8 +39,8 @@ VOUCHER_PREFIX_THREE_UK="USLTUK-,3UK-,USL-3UK-"
 
 | Type | Serial (POS) | Scratch PIN | Credit | Redeem path |
 |------|--------------|-------------|--------|-------------|
-| Global | `USALOCALGLO001` | `USL-G-DEMO0001` | $35 | `/redeem` |
-| Three UK | `USALOCAL3UK001` | `USLTUK-DEMO0001` | $35 | `/redeem/three-uk` |
+| Global | `USALOCALGLO001` | `USL-G-DEMO0001` | $39 | `/redeem` |
+| Three UK | `USALOCAL3UK001` | `USLTUK-DEMO0001` | $39 | `/redeem/three-uk` |
 | Global (cart QR) | `USALOCALDEMO123` | `USL-G-DEMO0002` | $50 | `/cart?serial=…` or `/redeem` |
 
 All demo cards are **POS-paid** and **eligible** — enter scratch PIN at `/redeem/enter` without dealer scan.
