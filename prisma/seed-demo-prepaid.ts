@@ -223,7 +223,7 @@ export async function seedDemoPrepaidCards(
       faceValueCents: DEFAULT_PREPAID_VOUCHER_FACE_VALUE_CENTS,
     },
     {
-      label: "Global — cart QR then redeem",
+      label: "Global — dealer POS / redeem demo",
       serial: cartSerial,
       pin: "USL-G-DEMO0002",
       voucherProductType: "global",

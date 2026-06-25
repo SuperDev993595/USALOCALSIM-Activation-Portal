@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { seedDemoCartCards } from "./seed-demo-cart";
 import { seedDemoPrepaidCards } from "./seed-demo-prepaid";
 import { seedTierCatalogs } from "./seed-tier-catalogs";
 
@@ -50,7 +51,7 @@ async function main() {
 
   await seedTierCatalogs(prisma);
 
-  // Demo prepaid QR flow (optional): `/cart?serial=…` then PIN `SCRATCHDEMO1` after checkout.
+  // Demo prepaid QR flow: `/cart?serial=USALOCARTCHK01` for unpaid checkout (see seed-demo-cart.ts).
   let prepaidBasic = await prisma.plan.findFirst({
     where: { name: "Prepaid Basic 30d", market: "us", planType: "physical_sim" },
   });
@@ -82,6 +83,11 @@ async function main() {
     });
   }
   await seedDemoPrepaidCards(prisma, {
+    basePlanId: prepaidBasic.id,
+    upgradePlanId: prepaidPremium.id,
+  });
+
+  await seedDemoCartCards(prisma, {
     basePlanId: prepaidBasic.id,
     upgradePlanId: prepaidPremium.id,
   });

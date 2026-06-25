@@ -41,6 +41,15 @@ VOUCHER_PREFIX_THREE_UK="USLTUK-,3UK-,USL-3UK-"
 |------|--------------|-------------|--------|-------------|
 | Global | `USALOCALGLO001` | `USL-G-DEMO0001` | $39 | `/redeem` |
 | Three UK | `USALOCAL3UK001` | `USLTUK-DEMO0001` | $39 | `/redeem/three-uk` |
-| Global (cart QR) | `USALOCALDEMO123` | `USL-G-DEMO0002` | $50 | `/cart?serial=…` or `/redeem` |
+| Global (dealer POS) | `USALOCALDEMO123` | `USL-G-DEMO0002` | $50 | `/redeem/enter` (POS-paid) |
 
-All demo cards are **POS-paid** and **eligible** — enter scratch PIN at `/redeem/enter` without dealer scan.
+POS-paid redeem cards: enter scratch PIN at `/redeem/enter` without dealer scan.
+
+### Cart checkout (D2C)
+
+| State | Serial (QR) | Scratch PIN | Face value | Test flow |
+|-------|-------------|-------------|------------|-----------|
+| Unpaid | `USALOCARTCHK01` | `USL-G-CART0001` | $50 | `/cart?serial=USALOCARTCHK01` → plans → Stripe test checkout |
+| Paid (simulated Stripe) | `USALOCARTPAID01` | `USL-G-CART0002` | $50 | `/cart?serial=USALOCARTPAID01` → redeem |
+
+Override unpaid serial with `CART_DEMO_SERIAL` when seeding.
