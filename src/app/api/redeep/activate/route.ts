@@ -10,6 +10,11 @@ import {
   validateRedeemPlanForSelections,
   validateRedeemWizardSelections,
 } from "@/lib/redeem-selection-guards";
+import {
+  effectiveRedeemFulfillmentType,
+  parseRedeemEsimDeviceIds,
+  redeemFlowRequiresEsimDeviceIds,
+} from "@/lib/redeem-esim-device";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -86,10 +91,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Choose how customer connects before activation." }, { status: 400 });
   }
 
+  const effectiveFulfillment = effectiveRedeemFulfillmentType({
+    fulfillmentType,
+    planType: plan.planType,
+    ultraEsimOnly: wizardSel.ultraEsimOnly,
+  });
+
   const planErr = validateRedeemPlanForSelections({
     plan,
     selections: wizardSel,
-    fulfillmentType,
+    fulfillmentType: effectiveFulfillment,
   });
   if (planErr) {
     return NextResponse.json({ error: planErr.error, code: planErr.code }, { status: planErr.status });
@@ -102,6 +113,18 @@ export async function POST(req: Request) {
     !purchase.redemptionShippingAddress?.trim()
   ) {
     return NextResponse.json({ error: "Shipping address is required for physical SIM delivery." }, { status: 400 });
+  }
+
+  const needsEsimDevice = redeemFlowRequiresEsimDeviceIds({
+    fulfillmentType: effectiveFulfillment,
+    planType: plan.planType,
+    ultraEsimOnly: wizardSel.ultraEsimOnly,
+  });
+  const parsedEsimDevice = needsEsimDevice
+    ? parseRedeemEsimDeviceIds(purchase.redemptionDeviceImei, purchase.redemptionDeviceEid)
+    : null;
+  if (parsedEsimDevice && !parsedEsimDevice.ok) {
+    return NextResponse.json({ error: parsedEsimDevice.error }, { status: 400 });
   }
 
   const paidTowardRedemption = purchase.redemptionCreditAppliedCents + purchase.redemptionExtraPaidCents;
@@ -122,7 +145,7 @@ export async function POST(req: Request) {
         customerEmail: purchase.customerEmail,
         customerPhone: purchase.redemptionPhoneE164 ?? voucher.customerPhone,
         linkedIccid: purchase.redemptionIccid?.trim() || null,
-        fulfillmentType,
+        fulfillmentType: effectiveFulfillment,
       },
     });
     if (claimed.count === 0) throw new Error("VOUCHER_CLAIM_FAILED");
@@ -149,10 +172,12 @@ export async function POST(req: Request) {
         travelDate: serviceStart,
         status: "scheduled",
         iccid: purchase.redemptionIccid?.trim() || null,
-        hasPartnerSim: fulfillmentType === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
+        hasPartnerSim: effectiveFulfillment === REDEMPTION_FULFILLMENT_TYPES.EXISTING_SIM,
         hardwareDeductionCents: 0,
         shippingDeductionCents: purchase.redemptionShippingCents,
         customerPhoneE164: servicePhoneE164,
+        deviceImei: parsedEsimDevice?.ok ? parsedEsimDevice.imei : null,
+        deviceEid: parsedEsimDevice?.ok ? parsedEsimDevice.eid : null,
       },
     });
   });

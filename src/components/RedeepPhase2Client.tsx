@@ -18,6 +18,11 @@ import { COVERAGE_TIER, COVERAGE_TIER_ORDER, isCoverageTier, networkSlugForTier,
 import { defaultFulfillmentForTier, type RedeemQuotePayload } from "@/lib/build-redeem-quote";
 import { listTmobileAddons, type TmobileAddonSku, tmobileAddonsAvailableForRedeem } from "@/lib/tmobile-addons";
 import { localTotalsForPlan } from "@/lib/redeem-plan-selection";
+import {
+  effectiveRedeemFulfillmentType,
+  redeemEsimDeviceIdsValid,
+  redeemFlowRequiresEsimDeviceIds,
+} from "@/lib/redeem-esim-device";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
 import {
   DEFAULT_SHIPPING_METHOD_ID,
@@ -173,6 +178,9 @@ export function RedeepPhase2Client({
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>("EXISTING_SIM");
   const [iccid, setIccid] = useState("");
+  const [deviceImei, setDeviceImei] = useState("");
+  const [deviceEid, setDeviceEid] = useState("");
+  const [showEsimDeviceErrors, setShowEsimDeviceErrors] = useState(false);
   const [shippingForm, setShippingForm] = useState<RedeemShippingForm>(EMPTY_REDEEM_SHIPPING);
   const [shippingMethodId, setShippingMethodId] = useState<ShippingMethodId>(DEFAULT_SHIPPING_METHOD_ID);
   const [activationDate, setActivationDate] = useState("");
@@ -225,6 +233,25 @@ export function RedeepPhase2Client({
   );
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === selectedPlanId) ?? null, [plans, selectedPlanId]);
+  const esimDeviceRequired = useMemo(
+    () =>
+      redeemFlowRequiresEsimDeviceIds({
+        fulfillmentType,
+        planType: selectedPlan?.planType,
+        ultraEsimOnly,
+      }),
+    [fulfillmentType, selectedPlan?.planType, ultraEsimOnly],
+  );
+  const esimDeviceReady = !esimDeviceRequired || redeemEsimDeviceIdsValid(deviceImei, deviceEid);
+  const effectiveFulfillmentType = useMemo(
+    () =>
+      effectiveRedeemFulfillmentType({
+        fulfillmentType,
+        planType: selectedPlan?.planType,
+        ultraEsimOnly,
+      }),
+    [fulfillmentType, selectedPlan?.planType, ultraEsimOnly],
+  );
   const showTmobileAddons = useMemo(
     () =>
       Boolean(selectedPlanId) &&
@@ -520,14 +547,20 @@ export function RedeepPhase2Client({
         (networkSelectionRequired && !selectedNetworkSlug) ||
         (fulfillmentType === "EXISTING_SIM" && iccid.trim().length < 15) ||
         (fulfillmentType === "NEW_SIM_SHIPPING" &&
-          (!isRedeemShippingComplete(shippingForm) || !shippingMethodId)))
+          (!isRedeemShippingComplete(shippingForm) || !shippingMethodId)) ||
+        (esimDeviceRequired && !esimDeviceReady))
     ) {
       setWizardStep(stepMap.setup);
       setForceShowConfig(true);
+      if (esimDeviceRequired && !esimDeviceReady) {
+        setShowEsimDeviceErrors(true);
+      }
       if (showTierStep && !isCoverageTier(selectedCoverageTier)) {
         setSetupHighlight("tier");
       } else if (networkSelectionRequired && !selectedNetworkSlug) {
         setSetupHighlight("network");
+      } else if (esimDeviceRequired && !esimDeviceReady) {
+        setSetupHighlight("details");
       } else {
         setSetupHighlight("details");
       }
@@ -548,6 +581,12 @@ export function RedeepPhase2Client({
       setSetupHighlight("plan");
       return;
     }
+    if (!esimDeviceReady) {
+      setShowEsimDeviceErrors(true);
+      setSetupHighlight("details");
+      return;
+    }
+    setShowEsimDeviceErrors(false);
     setWizardStep(stepMap.payment);
   }
 
@@ -770,8 +809,10 @@ export function RedeepPhase2Client({
           purchaseId,
           ...(voucherFromPurchase ? {} : { voucherCode }),
           planId: selectedPlanId,
-          fulfillmentType,
+          fulfillmentType: effectiveFulfillmentType,
           iccid,
+          deviceImei: esimDeviceRequired ? deviceImei.trim() : undefined,
+          deviceEid: esimDeviceRequired ? deviceEid.trim() : undefined,
           shippingAddress:
             fulfillmentType === "NEW_SIM_SHIPPING"
               ? `${formatRedeemShippingAddress(shippingForm)}\nShipping service: ${resolveShippingMethod(shippingMethodId).id}`
@@ -787,7 +828,7 @@ export function RedeepPhase2Client({
         return;
       }
       if (data.zeroDue) {
-        await unlockAndQuote(selectedPlanId, fulfillmentType);
+        await unlockAndQuote(selectedPlanId, effectiveFulfillmentType);
         setWizardStep(stepMap.date);
         return;
       }
@@ -832,9 +873,9 @@ export function RedeepPhase2Client({
     tierReady &&
     (!networkSelectionRequired || Boolean(selectedNetworkSlug)) &&
     (skipFulfillmentStep && !forceShowConfig
-      ? true
+      ? esimDeviceReady
       : ultraEsimOnly || fulfillmentType === "ESIM"
-        ? true
+        ? esimDeviceReady
         : fulfillmentType === "EXISTING_SIM"
           ? iccid.trim().length >= 15
           : fulfillmentType === "NEW_SIM_SHIPPING"
@@ -847,9 +888,9 @@ export function RedeepPhase2Client({
 
   const fulfillmentReady =
     skipFulfillmentStep && !forceShowConfig
-      ? true
+      ? esimDeviceReady
       : ultraEsimOnly || fulfillmentType === "ESIM"
-        ? true
+        ? esimDeviceReady
         : fulfillmentType === "EXISTING_SIM"
           ? iccid.trim().length >= 15
           : fulfillmentType === "NEW_SIM_SHIPPING"
@@ -1232,13 +1273,19 @@ export function RedeepPhase2Client({
             onShippingMethodChange={handleShippingMethodChange}
             onSelectPlan={handleSelectPlan}
             onAddonChange={handleAddonChange}
+            esimDeviceRequired={esimDeviceRequired}
+            deviceImei={deviceImei}
+            deviceEid={deviceEid}
+            onDeviceImeiChange={setDeviceImei}
+            onDeviceEidChange={setDeviceEid}
+            showEsimDeviceErrors={showEsimDeviceErrors}
           />
         ) : null}
 
         {wizardStep === stepMap.payment ? (
           <RedeemPaymentStep
             networkSlug={selectedNetworkSlug}
-            fulfillmentType={fulfillmentType}
+            fulfillmentType={effectiveFulfillmentType}
             iccid={iccid}
             selectedPlan={selectedPlan}
             addonLines={addonLines}

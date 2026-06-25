@@ -232,6 +232,8 @@ model CartPurchase {
   redemptionAccessExpiresAt   DateTime?
   redemptionFulfillmentType String? // "EXISTING_SIM" | "NEW_SIM_SHIPPING" | "ESIM"
   redemptionIccid           String?
+  redemptionDeviceImei      String?
+  redemptionDeviceEid       String?
   redemptionShippingAddress String? @db.Text
   redemptionShippingCents   Int     @default(0)
   redemptionCreditAppliedCents Int  @default(0)

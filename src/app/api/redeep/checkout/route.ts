@@ -22,6 +22,11 @@ import {
   serializeAddonSkus,
   tmobileAddonsAvailableForRedeem,
 } from "@/lib/tmobile-addons";
+import {
+  effectiveRedeemFulfillmentType,
+  parseRedeemEsimDeviceIds,
+  redeemFlowRequiresEsimDeviceIds,
+} from "@/lib/redeem-esim-device";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -34,6 +39,8 @@ const bodySchema = z.object({
     REDEMPTION_FULFILLMENT_TYPES.ESIM,
   ]),
   iccid: z.string().optional(),
+  deviceImei: z.string().optional(),
+  deviceEid: z.string().optional(),
   shippingAddress: z.string().optional(),
   shippingMethodId: z.string().optional(),
   accessToken: z.string().optional(),
@@ -102,10 +109,28 @@ export async function POST(req: Request) {
   });
   if (!plan) return NextResponse.json({ error: "Plan not found." }, { status: 404 });
 
+  const effectiveFulfillment = effectiveRedeemFulfillmentType({
+    fulfillmentType: body.fulfillmentType,
+    planType: plan.planType,
+    ultraEsimOnly: wizardSel.ultraEsimOnly,
+  });
+
+  const needsEsimDevice = redeemFlowRequiresEsimDeviceIds({
+    fulfillmentType: effectiveFulfillment,
+    planType: plan.planType,
+    ultraEsimOnly: wizardSel.ultraEsimOnly,
+  });
+  const parsedEsimDevice = needsEsimDevice
+    ? parseRedeemEsimDeviceIds(body.deviceImei, body.deviceEid)
+    : null;
+  if (parsedEsimDevice && !parsedEsimDevice.ok) {
+    return NextResponse.json({ error: parsedEsimDevice.error }, { status: 400 });
+  }
+
   const planErr = validateRedeemPlanForSelections({
     plan,
     selections: wizardSel,
-    fulfillmentType: body.fulfillmentType,
+    fulfillmentType: effectiveFulfillment,
   });
   if (planErr) {
     return NextResponse.json({ error: planErr.error, code: planErr.code }, { status: planErr.status });
@@ -128,7 +153,7 @@ export async function POST(req: Request) {
   const totals = computeRedemptionTotals({
     planPriceCents: plan.priceCents,
     creditAmountCents,
-    fulfillmentType: body.fulfillmentType,
+    fulfillmentType: effectiveFulfillment,
     shippingMethodId: body.shippingMethodId,
     addonCents,
   });
@@ -140,8 +165,10 @@ export async function POST(req: Request) {
     where: { id: purchase.id },
     data: {
       planId: plan.id,
-      redemptionFulfillmentType: body.fulfillmentType,
+      redemptionFulfillmentType: effectiveFulfillment,
       redemptionIccid: body.iccid?.trim() || null,
+      redemptionDeviceImei: parsedEsimDevice?.ok ? parsedEsimDevice.imei : null,
+      redemptionDeviceEid: parsedEsimDevice?.ok ? parsedEsimDevice.eid : null,
       redemptionShippingAddress: body.shippingAddress?.trim() || null,
       redemptionShippingCents: totals.shippingCents,
       redemptionCreditAppliedCents: totals.creditAppliedCents,

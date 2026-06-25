@@ -12,6 +12,7 @@ import { RedeemPlanPicker } from "@/components/RedeemPlanPicker";
 import { RedeemOrangeUltraPlanPicker } from "@/components/RedeemOrangeUltraPlanPicker";
 import { RedeemBasicPlanPicker } from "@/components/RedeemBasicPlanPicker";
 import { RedeemThreeUkPlanPicker } from "@/components/RedeemThreeUkPlanPicker";
+import { RedeemEsimDeviceFields } from "@/components/RedeemEsimDeviceFields";
 import type { RedeemPlanRow } from "@/components/RedeemPlanPaymentStep";
 import type { TmobileAddonSku } from "@/lib/tmobile-addons";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
@@ -127,6 +128,12 @@ export function RedeemCombinedSetupStep({
   onShippingMethodChange,
   onSelectPlan,
   onAddonChange,
+  esimDeviceRequired,
+  deviceImei,
+  deviceEid,
+  onDeviceImeiChange,
+  onDeviceEidChange,
+  showEsimDeviceErrors,
 }: {
   purchaseId: string;
   accessToken: string;
@@ -167,6 +174,12 @@ export function RedeemCombinedSetupStep({
   onShippingMethodChange: (id: ShippingMethodId) => void;
   onSelectPlan: (planId: string) => void;
   onAddonChange: (skus: TmobileAddonSku[]) => void;
+  esimDeviceRequired: boolean;
+  deviceImei: string;
+  deviceEid: string;
+  onDeviceImeiChange: (value: string) => void;
+  onDeviceEidChange: (value: string) => void;
+  showEsimDeviceErrors?: boolean;
 }) {
   const t = useTranslations("redeemWizard");
 
@@ -275,7 +288,21 @@ export function RedeemCombinedSetupStep({
 
       <div className="mt-6 w-full space-y-6">
         {planOnlyMode ? (
-          <div className={`mx-auto max-w-2xl ${REDEEM_SECTION_CLASS} ${planPanelClass}`.trim()}>{planContent}</div>
+          <div className={`mx-auto max-w-2xl space-y-6 ${REDEEM_SECTION_CLASS} ${planPanelClass}`.trim()}>
+            {planContent}
+            {esimDeviceRequired ? (
+              <RedeemEsimDeviceFields
+                deviceImei={deviceImei}
+                deviceEid={deviceEid}
+                onDeviceImeiChange={onDeviceImeiChange}
+                onDeviceEidChange={onDeviceEidChange}
+                disabled={loading}
+                panelInputClass={panelInputClass}
+                highlight={highlight === "details"}
+                showErrors={showEsimDeviceErrors}
+              />
+            ) : null}
+          </div>
         ) : (
           <div className="space-y-6">
             {showTierSection ? (
@@ -411,7 +438,19 @@ export function RedeemCombinedSetupStep({
                         highlight={highlight === "details"}
                       >
                         {fulfillmentType === "ESIM" || ultraEsimOnly ? (
-                          <p className={REDEEM_INFO_STRIP_CLASS}>{t("esimDetailsNote")}</p>
+                          <div className="space-y-4">
+                            <p className={REDEEM_INFO_STRIP_CLASS}>{t("esimDetailsNote")}</p>
+                            <RedeemEsimDeviceFields
+                              deviceImei={deviceImei}
+                              deviceEid={deviceEid}
+                              onDeviceImeiChange={onDeviceImeiChange}
+                              onDeviceEidChange={onDeviceEidChange}
+                              disabled={loading}
+                              panelInputClass={panelInputClass}
+                              highlight={highlight === "details"}
+                              showErrors={showEsimDeviceErrors}
+                            />
+                          </div>
                         ) : null}
 
                         {fulfillmentType === "EXISTING_SIM" ? (
