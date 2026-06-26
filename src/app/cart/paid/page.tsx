@@ -46,6 +46,7 @@ export default async function CartPaidPage({
       <CartPaidClient
         purchaseId={purchase.id}
         redeemHref={redeemHref}
+        invoiceHref={`/invoice/${purchase.id}`}
         plan={{
           name: purchase.plan.name,
           dataAllowance: purchase.plan.dataAllowance,

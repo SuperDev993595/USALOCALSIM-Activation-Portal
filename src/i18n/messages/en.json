@@ -414,6 +414,7 @@
     "paidNextStep3": "Verify the service phone number (SMS in Phase 2)",
     "paidPlanReadOnlyHint": "Bundled pack from checkout. Your final plan and add-ons are chosen during redemption.",
     "proceedActivation": "Proceed to activation",
+    "viewInvoice": "View / print invoice",
     "alreadyRedeemedTitle": "Already activated",
     "alreadyRedeemedBody": "This purchase has already been linked to a voucher.",
     "redeemTitle": "Activate your card",
@@ -707,6 +708,7 @@
     "activateFailed": "Activation failed.",
     "lastSale": "Last activated card",
     "customerRedeemLink": "Customer redeem link",
+    "viewInvoice": "View / print invoice",
     "unlockTitle": "Legacy unlock",
     "unlockSubtitle": "Activate non-prepaid voucher codes after sale. Prepaid cards use <scanLink>Scan & sell</scanLink>.",
     "unlockRecentPanel": "Recent unlocks",
@@ -882,5 +884,13 @@
     "errors": {
       "generic": "Unable to verify this voucher. Check the code and try again."
     }
+  },
+  "invoice": {
+    "title": "Invoice",
+    "documentLabel": "Purchase invoice",
+    "retailReceipt": "Retail purchase receipt",
+    "print": "Print invoice",
+    "back": "← Back",
+    "supportPrefix": "Questions about this purchase?"
   }
 }

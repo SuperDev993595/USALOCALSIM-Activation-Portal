@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { sendCartPurchasePaidEmail } from "./email";
+import { displayTransactionId, invoiceUrl } from "./invoice";
 import { getMercadoPagoAccessToken } from "./mercadopago-config";
 import { authorizePrepaidAfterPayment } from "./prepaid-authorize";
 import { PREPAID_PAYMENT_SOURCES } from "./prepaid-payment-source";
@@ -305,7 +306,11 @@ async function sendPaidEmailIfNeeded(
 ) {
   const purchase = await prisma.cartPurchase.findUnique({
     where: { id: purchaseId },
-    include: { resumeToken: true },
+    include: {
+      resumeToken: true,
+      prepaidCard: { select: { retailMarket: true } },
+      plan: { select: { market: true } },
+    },
   });
   if (!purchase?.redemptionAccessToken || !purchase.resumeToken) return;
 
@@ -320,5 +325,9 @@ async function sendPaidEmailIfNeeded(
     planName,
     resumeUrl,
     directRedeemUrl,
+    invoiceUrl: invoiceUrl(purchase.id, purchase.redemptionAccessToken),
+    amountPaidCents: purchase.amountPaidCents,
+    transactionId: displayTransactionId(purchase),
+    amountMarket: purchase.prepaidCard?.retailMarket ?? purchase.plan.market,
   });
 }

@@ -4,6 +4,7 @@ import {
   ACTIVATION_SCENARIO_CART_VOUCHER,
   ACTIVATION_SCENARIO_CART_VOUCHER_LEGACY,
 } from "@/lib/stripe-cart-flow";
+import { formatPaidAmountForEmail } from "@/lib/invoice";
 
 function getTransport() {
   if (process.env.RESEND_API_KEY) {
@@ -251,13 +252,30 @@ export async function sendCartPurchasePaidEmail(opts: {
   resumeUrl: string;
   /** PIN + date only — no SMS step (keep this link private). */
   directRedeemUrl?: string;
+  invoiceUrl?: string;
+  amountPaidCents?: number;
+  transactionId?: string;
+  amountMarket?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const subject = `USALOCALSIM — payment received (${opts.planName})`;
   const direct = opts.directRedeemUrl?.trim();
+  const invoice = opts.invoiceUrl?.trim();
+  const amountFormatted =
+    opts.amountPaidCents != null
+      ? formatPaidAmountForEmail(opts.amountPaidCents, opts.amountMarket ?? "us")
+      : null;
+  const amountLine = amountFormatted ? `Amount paid: ${amountFormatted}\n` : "";
+  const txnLine = opts.transactionId?.trim()
+    ? `Transaction ID: ${opts.transactionId.trim()}\n`
+    : "";
   const text =
     `Thank you for your purchase.\n\n` +
-    `Plan: ${opts.planName}\n\n` +
+    `Plan: ${opts.planName}\n` +
+    amountLine +
+    txnLine +
+    `\n` +
     `Next step: enter the PIN from your physical card and your service start date.\n\n` +
+    (invoice ? `View or print your invoice:\n${invoice}\n\n` : "") +
     (direct
       ? `Open this link on any device to continue (no SMS code on this step — PIN only):\n${direct}\n\n`
       : "") +
@@ -267,7 +285,16 @@ export async function sendCartPurchasePaidEmail(opts: {
   const html =
     `<p>Thank you for your purchase.</p>` +
     `<p><strong>Plan:</strong> ${escapeHtml(opts.planName)}</p>` +
+    (amountFormatted
+      ? `<p><strong>Amount paid:</strong> ${escapeHtml(amountFormatted)}</p>`
+      : "") +
+    (opts.transactionId?.trim()
+      ? `<p><strong>Transaction ID:</strong> ${escapeHtml(opts.transactionId.trim())}</p>`
+      : "") +
     `<p>Next step: enter the PIN from your physical card and your service start date.</p>` +
+    (invoice
+      ? `<p><a href="${escapeHtml(invoice)}">View or print invoice</a></p>`
+      : "") +
     (direct
       ? `<p><a href="${escapeHtml(direct)}">Open activation (PIN only, no SMS)</a></p>` +
         `<p style="font-size:12px;color:#555">Anyone with this link can use your paid activation step — treat it like cash.</p>`

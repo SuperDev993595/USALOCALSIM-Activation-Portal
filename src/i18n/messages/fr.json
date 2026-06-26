@@ -863,5 +863,13 @@
     "errors": {
       "generic": "Impossible de vérifier ce voucher. Vérifiez le code et réessayez."
     }
+  },
+  "invoice": {
+    "title": "Facture",
+    "documentLabel": "Facture d'achat",
+    "retailReceipt": "Reçu d'achat en magasin",
+    "print": "Imprimer la facture",
+    "back": "← Retour",
+    "supportPrefix": "Des questions sur cet achat ?"
   }
 }

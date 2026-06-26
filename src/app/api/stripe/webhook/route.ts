@@ -12,6 +12,7 @@ import {
 } from "@/lib/stripe-cart-flow";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { sendCartPurchasePaidEmail } from "@/lib/email";
+import { displayTransactionId, invoiceUrl } from "@/lib/invoice";
 import { authorizePrepaidAfterPayment } from "@/lib/prepaid-authorize";
 import { PREPAID_PAYMENT_SOURCES } from "@/lib/prepaid-payment-source";
 import { normalizePhoneE164 } from "@/lib/phone-e164";
@@ -218,6 +219,14 @@ export async function POST(req: Request) {
         planName: plan.name,
         resumeUrl,
         directRedeemUrl,
+        invoiceUrl: invoiceUrl(createdPurchase.id, redemptionAccessToken),
+        amountPaidCents: paidCents,
+        transactionId: displayTransactionId({
+          id: createdPurchase.id,
+          externalPaymentRef: paymentId,
+          stripePaymentId: paymentId,
+        }),
+        amountMarket: cartSession.claimedPrepaidCard?.retailMarket ?? plan.market,
       });
       if (!mail.ok) {
         await prisma.auditLog.create({

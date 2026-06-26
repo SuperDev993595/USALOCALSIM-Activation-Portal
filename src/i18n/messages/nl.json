@@ -863,5 +863,13 @@
     "errors": {
       "generic": "Deze voucher kon niet worden geverifieerd. Controleer de code en probeer opnieuw."
     }
+  },
+  "invoice": {
+    "title": "Factuur",
+    "documentLabel": "Aankoopfactuur",
+    "retailReceipt": "Winkelbon",
+    "print": "Factuur afdrukken",
+    "back": "← Terug",
+    "supportPrefix": "Vragen over deze aankoop?"
   }
 }

@@ -857,5 +857,13 @@
     "errors": {
       "generic": "Dieser Gutschein konnte nicht verifiziert werden. Prüfen Sie den Code und versuchen Sie es erneut."
     }
+  },
+  "invoice": {
+    "title": "Rechnung",
+    "documentLabel": "Kaufrechnung",
+    "retailReceipt": "Einzelhandelsbeleg",
+    "print": "Rechnung drucken",
+    "back": "← Zurück",
+    "supportPrefix": "Fragen zu diesem Kauf?"
   }
 }

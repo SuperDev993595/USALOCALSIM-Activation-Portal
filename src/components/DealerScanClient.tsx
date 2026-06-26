@@ -39,7 +39,11 @@ export function DealerScanClient() {
   const [receiptRef, setReceiptRef] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [preview, setPreview] = useState<CardPreview | null>(null);
-  const [lastSuccess, setLastSuccess] = useState<{ redeemUrl: string; serial: string } | null>(null);
+  const [lastSuccess, setLastSuccess] = useState<{
+    redeemUrl: string;
+    serial: string;
+    purchaseId: string;
+  } | null>(null);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [loading, setLoading] = useState<"preview" | "activate" | null>(null);
   const [cameraOn, setCameraOn] = useState(false);
@@ -237,6 +241,7 @@ export function DealerScanClient() {
         error?: string;
         redeemUrl?: string;
         creditAmountCents?: number;
+        purchaseId?: string;
       };
       if (!res.ok) {
         setMessage({ type: "err", text: data.error ?? t("activateFailed") });
@@ -246,6 +251,7 @@ export function DealerScanClient() {
       setLastSuccess({
         redeemUrl: typeof data.redeemUrl === "string" ? data.redeemUrl : "",
         serial: preview.serial,
+        purchaseId: typeof data.purchaseId === "string" ? data.purchaseId : "",
       });
       setPreview(null);
       setScanValue("");
@@ -286,6 +292,16 @@ export function DealerScanClient() {
                 <a href={lastSuccess.redeemUrl} className="link-accent mt-2 inline-block break-all text-xs">
                   {t("customerRedeemLink")}
                 </a>
+                {lastSuccess.purchaseId ? (
+                  <a
+                    href={`/invoice/${lastSuccess.purchaseId}`}
+                    className="link-accent mt-2 block text-xs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("viewInvoice")}
+                  </a>
+                ) : null}
               </span>
             }
             onDismiss={() => setLastSuccess(null)}

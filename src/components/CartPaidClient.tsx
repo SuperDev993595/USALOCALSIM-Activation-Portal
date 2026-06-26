@@ -26,11 +26,13 @@ function SuccessCheckIcon() {
 
 export function CartPaidClient({
   redeemHref,
+  invoiceHref,
   plan,
   variant,
 }: {
   purchaseId: string; // used by server page for lookup; not shown in UI
   redeemHref: string;
+  invoiceHref: string;
   plan: CartCheckoutPlanSummary;
   variant: "ready" | "redeemed";
 }) {
@@ -111,6 +113,12 @@ export function CartPaidClient({
           <Link href={redeemHref} className={`${CART_PRIMARY_BUTTON_CLASS} text-center`}>
             {t("proceedActivation")}
           </Link>
+
+          <p className="cart-flow-footer mt-4 text-center">
+            <Link href={invoiceHref} className="cart-flow-footer-link" target="_blank" rel="noopener noreferrer">
+              {t("viewInvoice")}
+            </Link>
+          </p>
         </div>
 
         <footer className="cart-flow-footer">
