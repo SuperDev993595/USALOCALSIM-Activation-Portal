@@ -2,6 +2,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
+import { isLinkupCreditCheckout } from "@/lib/cart-checkout-variant";
+import {
+  isLinkupExclusiveVoucher,
+  validateLinkupEntryBundle,
+} from "@/lib/linkup-exclusive-prepaid";
+import { CartLinkupCreditCheckout } from "@/components/CartLinkupCreditCheckout";
+import { CartLinkupPrepaidConfigError } from "@/components/CartLinkupPrepaidConfigError";
 import { CartRegistrationAndPayment } from "@/components/CartRegistrationAndPayment";
 import { getPrepaidPaidRedirect } from "@/lib/prepaid-paid-redirect";
 
@@ -22,9 +29,11 @@ export default async function CartPlansPage() {
   const prepaid = await prisma.prepaidCard.findFirst({
     where: { claimedCartSessionId: sid },
     include: {
+      voucher: { select: { voucherProductType: true, code: true } },
       basePlan: {
         select: {
           id: true,
+          sku: true,
           name: true,
           dataAllowance: true,
           durationDays: true,
@@ -42,6 +51,26 @@ export default async function CartPlansPage() {
   const paidRedirect = await getPrepaidPaidRedirect(prepaid.id);
   if (paidRedirect) {
     redirect(paidRedirect.redirectPath);
+  }
+
+  if (isLinkupExclusiveVoucher(prepaid.voucher)) {
+    const bundleCheck = validateLinkupEntryBundle({
+      faceValueCents: prepaid.faceValueCents,
+      basePlanSku: prepaid.basePlan.sku,
+    });
+    if (!bundleCheck.ok) {
+      return (
+        <div className="cart-flow-page">
+          <CartLinkupPrepaidConfigError code={bundleCheck.code} />
+        </div>
+      );
+    }
+
+    return (
+      <div className="cart-flow-page">
+        <CartLinkupCreditCheckout plan={prepaid.basePlan} faceValueCents={prepaid.faceValueCents} />
+      </div>
+    );
   }
 
   const plans = [prepaid.basePlan];

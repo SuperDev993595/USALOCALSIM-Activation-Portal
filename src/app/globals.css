@@ -741,6 +741,74 @@
     @apply space-y-3 pt-1;
   }
 
+  .public-site--cart .cart-credit-checkout-banner {
+    @apply mb-5 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-left;
+  }
+
+  .public-site--cart .cart-credit-checkout-banner-icon {
+    @apply mt-0.5 h-5 w-5 shrink-0 text-emerald-600;
+  }
+
+  .public-site--cart .cart-credit-checkout-banner-title {
+    @apply text-sm font-semibold text-emerald-900;
+  }
+
+  .public-site--cart .cart-credit-checkout-banner-body {
+    @apply mt-0.5 text-xs leading-relaxed text-emerald-800/90;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary {
+    @apply rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-4;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-heading {
+    @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-rows {
+    @apply mt-3 space-y-2.5;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-row {
+    @apply flex flex-col gap-0.5 border-b border-slate-200/80 pb-2.5 text-sm last:border-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between sm:gap-4;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-row dt {
+    @apply shrink-0 font-medium text-slate-600;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-row dd {
+    @apply text-right font-medium text-slate-900 sm:max-w-[60%];
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-row--highlight dd {
+    @apply flex flex-col items-end gap-0.5;
+  }
+
+  .public-site--cart .cart-credit-checkout-credits {
+    @apply text-base font-bold uppercase tracking-wide text-[#00104E];
+  }
+
+  .public-site--cart .cart-credit-checkout-credits-note {
+    @apply text-[10px] font-normal normal-case text-slate-500;
+  }
+
+  .public-site--cart .cart-credit-checkout-summary-row--total {
+    @apply border-t border-slate-300/80 pt-3;
+  }
+
+  .public-site--cart .cart-credit-checkout-total-usd {
+    @apply text-xl font-bold tabular-nums text-[#00104E];
+  }
+
+  .public-site--cart .cart-credit-checkout-payment-note {
+    @apply text-center text-xs leading-relaxed text-slate-600;
+  }
+
+  .public-site--cart .cart-flow-panel--linkup-credit .cart-flow-header--accent {
+    @apply pt-1;
+  }
+
   .public-site--cart .cart-flow-secure-hint {
     @apply pt-1 text-center text-xs leading-relaxed text-slate-500;
   }

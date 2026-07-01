@@ -145,7 +145,15 @@ export async function loadPrepaidCardClaimedBySession(sessionId: string) {
       upgradePlanId: true,
       retailMarket: true,
       faceValueCents: true,
-      voucher: { select: { creditAmountCents: true, paymentStatus: true } },
+      basePlan: { select: { sku: true } },
+      voucher: {
+        select: {
+          creditAmountCents: true,
+          paymentStatus: true,
+          voucherProductType: true,
+          code: true,
+        },
+      },
     },
   });
 }

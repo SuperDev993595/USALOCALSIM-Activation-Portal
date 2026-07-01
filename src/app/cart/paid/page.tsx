@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { CartPaidClient } from "@/components/CartPaidClient";
+import { creditsFromFaceValueCents, isLinkupCreditCheckout } from "@/lib/cart-checkout-variant";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
-import { effectiveVoucherProductType } from "@/lib/voucher-product-type";
+import { redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 
 export default async function CartPaidPage({
   searchParams,
@@ -26,7 +27,13 @@ export default async function CartPaidPage({
     where: { id: purchaseId, cartSessionId: sid },
     include: {
       plan: true,
-      prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
+      prepaidCard: {
+        select: {
+          faceValueCents: true,
+          basePlan: { select: { sku: true } },
+          voucher: { select: { voucherProductType: true, code: true } },
+        },
+      },
       voucher: { select: { voucherProductType: true, code: true } },
     },
   });
@@ -38,8 +45,19 @@ export default async function CartPaidPage({
 
   const { accessToken } = await ensureRedemptionAccessToken(purchase);
   const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-  const base = voucher && effectiveVoucherProductType(voucher) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+  const base = voucher ? redeemPathForVoucher(voucher) : "/redeem";
   const redeemHref = redeemUrlWithAccess(base, purchase.id, accessToken);
+
+  const prepaid = purchase.prepaidCard;
+  const linkupCredits =
+    prepaid &&
+    isLinkupCreditCheckout({
+      voucher: prepaid.voucher,
+      faceValueCents: prepaid.faceValueCents,
+      basePlanSku: prepaid.basePlan?.sku,
+    })
+      ? creditsFromFaceValueCents(prepaid.faceValueCents)
+      : undefined;
 
   return (
     <div className="cart-flow-page">
@@ -54,6 +72,7 @@ export default async function CartPaidPage({
           market: purchase.plan.market,
         }}
         variant={variant}
+        linkupCredits={linkupCredits}
       />
     </div>
   );

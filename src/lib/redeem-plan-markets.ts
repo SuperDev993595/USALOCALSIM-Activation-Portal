@@ -8,8 +8,12 @@ export function planMarketsForRedeem(input: {
   networkSlug: string | null;
   cardMarket: string;
   threeUkExclusive: boolean;
+  exclusiveNetworkSlug?: string | null;
 }): string[] {
   if (input.threeUkExclusive) return ["uk"];
+  if (input.exclusiveNetworkSlug === "t_mobile" || input.exclusiveNetworkSlug === "linkup_att") {
+    return ["us"];
+  }
 
   if (redeemUsesTierStep() && isCoverageTier(input.tier)) {
     return [planMarketForTier(input.tier, input.cardMarket)];

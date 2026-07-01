@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { messageIfPinLooksLikePrepaidSerial } from "@/lib/prepaid-cart";
+import { redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 import { effectiveVoucherCreditCents } from "@/lib/voucher-credit";
 import {
   effectiveVoucherProductType,
@@ -127,10 +128,7 @@ export async function resolveVoucherEntry(pinInput: string): Promise<VoucherEntr
     });
   }
 
-  const redeemPath =
-    voucherProductType === "three_uk"
-      ? "/redeem/three-uk"
-      : "/redeem";
+  const redeemPath = redeemPathForVoucher(voucher);
 
   return {
     ok: true,

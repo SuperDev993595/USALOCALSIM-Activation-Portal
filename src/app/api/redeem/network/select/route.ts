@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getVerifiedCartSessionByRequest } from "@/lib/cart-session";
 import { prisma } from "@/lib/db";
+import { exclusiveNetworkSlugForVoucher } from "@/lib/exclusive-voucher-redeem";
 import {
   isGlobalNetworkSlug,
   networkRequiredForVoucher,
@@ -46,8 +47,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Voucher not found." }, { status: 404 });
   }
 
-  if (!networkRequiredForVoucher(voucher) && slug !== "three_uk") {
-    return NextResponse.json({ error: "Network selection is not required for this voucher." }, { status: 400 });
+  const lockedSlug = exclusiveNetworkSlugForVoucher(voucher);
+  if (!networkRequiredForVoucher(voucher)) {
+    if (!lockedSlug || slug !== lockedSlug) {
+      return NextResponse.json({ error: "Network selection is not required for this voucher." }, { status: 400 });
+    }
   }
 
   if (networkRequiredForVoucher(voucher) && !isGlobalNetworkSlug(slug)) {

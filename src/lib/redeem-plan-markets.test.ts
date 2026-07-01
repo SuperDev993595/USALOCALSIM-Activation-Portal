@@ -18,6 +18,18 @@ describe("planMarketsForRedeem", () => {
     ).toEqual(["us"]);
   });
 
+  it("returns us for exclusive Linkup voucher", () => {
+    expect(
+      planMarketsForRedeem({
+        tier: "",
+        networkSlug: "linkup_att",
+        cardMarket: "us",
+        threeUkExclusive: false,
+        exclusiveNetworkSlug: "linkup_att",
+      }),
+    ).toEqual(["us"]);
+  });
+
   it("returns global and uk for three_uk in briefing flow", () => {
     process.env.REDEEM_USE_TIER_STEP = "false";
     expect(

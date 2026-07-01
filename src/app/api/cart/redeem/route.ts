@@ -12,7 +12,7 @@ import {
   redeemPhoneNotVerifiedMessage,
 } from "@/lib/redeem-purchase-auth";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
-import { effectiveVoucherProductType } from "@/lib/voucher-product-type";
+import { redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 
 const bodySchema = z.object({
   purchaseId: z.string().min(1),
@@ -59,8 +59,7 @@ export async function POST(req: Request) {
   if (!isRedeemPhoneVerified(purchase)) {
     const accessForUrl = access || (await ensureRedemptionAccessToken(purchase)).accessToken;
     const voucherRow = purchase.prepaidCard?.voucher ?? purchase.voucher;
-    const base =
-      voucherRow && effectiveVoucherProductType(voucherRow) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+    const base = voucherRow ? redeemPathForVoucher(voucherRow) : "/redeem";
     return NextResponse.json(
       {
         error: redeemPhoneNotVerifiedMessage(),

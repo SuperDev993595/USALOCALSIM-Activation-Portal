@@ -5,6 +5,11 @@ import { AdminPageHeader } from "@/components/AdminPageChrome";
 import { AdminFeedbackBanner } from "@/components/AdminFeedbackBanner";
 import { ADMIN_REFRESH_EVENT } from "@/components/AdminPageRefreshButton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  VOUCHER_PRODUCT_TYPE,
+  VOUCHER_PRODUCT_TYPE_LABELS,
+  type VoucherProductType,
+} from "@/lib/voucher-product-type";
 
 type Plan = { id: string; name: string; planType: string; market: string; active?: boolean };
 
@@ -13,7 +18,7 @@ export default function AdminPrepaidImportPage() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [basePlanId, setBasePlanId] = useState("");
   const [upgradePlanId, setUpgradePlanId] = useState("");
-  const [voucherProductType, setVoucherProductType] = useState<"global" | "three_uk">("global");
+  const [voucherProductType, setVoucherProductType] = useState<VoucherProductType>(VOUCHER_PRODUCT_TYPE.GLOBAL);
   const [csvText, setCsvText] = useState("");
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -241,16 +246,23 @@ export default function AdminPrepaidImportPage() {
                 <select
                   id="prepaid-batch-type"
                   value={voucherProductType}
-                  onChange={(e) => setVoucherProductType(e.target.value as "global" | "three_uk")}
+                  onChange={(e) => setVoucherProductType(e.target.value as VoucherProductType)}
                   className="ui-select !mt-1 max-w-md rounded-none"
                 >
-                  <option value="global">Global — all networks at redeem</option>
-                  <option value="three_uk">Three UK exclusive</option>
+                  {Object.values(VOUCHER_PRODUCT_TYPE).map((type) => (
+                    <option key={type} value={type}>
+                      {VOUCHER_PRODUCT_TYPE_LABELS[type]}
+                    </option>
+                  ))}
                 </select>
                 <p className="mt-1.5 text-xs text-slate-500">
                   Override per row with a <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">voucherProductType</code> column (
-                  <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">global</code> or{" "}
-                  <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">three_uk</code>).
+                  {Object.values(VOUCHER_PRODUCT_TYPE).map((type) => (
+                    <code key={type} className="rounded bg-slate-100 px-1 font-mono text-[11px]">
+                      {type}
+                    </code>
+                  ))}
+                  ).
                 </p>
               </div>
             </div>

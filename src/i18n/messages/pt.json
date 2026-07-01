@@ -407,6 +407,41 @@
     "proceedActivation": "Proceed to activation",
     "alreadyRedeemedTitle": "Already activated",
     "alreadyRedeemedBody": "This purchase has already been linked to a voucher.",
+    "linkupCredit": {
+      "verifiedBannerTitle": "Cartão associado — pronto para pagamento",
+      "verifiedBannerBody": "Este cartão carregará {credits} Créditos após o pagamento e está registado no nosso sistema.",
+      "title": "Checkout seguro",
+      "subtitle": "Revise o perfil do seu cartão e conclua a ligação à rede.",
+      "orderSummaryHeading": "Resumo do pedido",
+      "planTypeLabel": "Tipo de plano",
+      "planTypeValue": "Prepaid Basic 30d",
+      "dataPackageLabel": "Pacote de dados",
+      "dataPackageValue": "{data} / {days} dias (SMS local e chamadas internacionais)",
+      "cardValueLabel": "Valor do cartão",
+      "cardValueCredits": "{credits} CRÉDITOS",
+      "cardValueNote": "Corresponde ao design do cartão físico",
+      "totalUsdLabel": "Total a pagar (USD)",
+      "paymentSectionNote": "O pagamento com cartão é processado de forma segura via Stripe ou Mercado Pago.",
+      "authorizeCta": "Autorizar pagamento e carregar créditos",
+      "usdComplianceNote": "Será cobrado em dólares americanos ($) no checkout, conforme exigido pelos processadores de pagamento.",
+      "paidTitle": "Créditos carregados com sucesso",
+      "paidSubtitle": "O seu cartão tem agora {credits} Créditos. Continue para o resgate para escolher o plano 12GB ou atualizar para 30GB / 50GB.",
+      "paidCreditsBannerTitle": "Pagamento concluído",
+      "paidCreditsBannerBody": "{credits} Créditos foram carregados no seu cartão e estão prontos para usar no resgate.",
+      "paidPlanHint": "Pacote de entrada: 12GB / 30 dias. Pode atualizar para 30GB ou 50GB ao resgatar com o PIN.",
+      "paidNextStep1": "Raspe o PIN e abra o portal LINKUP & AT&T",
+      "paidNextStep2": "Escolha 12GB (incluído) ou pague a diferença para 30GB / 50GB",
+      "paidNextStep3": "Verifique o número de telefone de serviço por SMS",
+      "configError": {
+        "title": "Problema de configuração do cartão",
+        "subtitle": "Este cartão LINKUP & AT&T não pode usar o checkout de créditos até estar configurado corretamente.",
+        "WRONG_FACE_VALUE": "Cartões LINKUP de entrada devem ter exatamente $30,00 (30 Créditos) no valor facial.",
+        "WRONG_BASE_PLAN": "Cartões LINKUP de entrada devem estar ligados ao plano base ATT-LIM-12GB (12GB / 30 dias).",
+        "MISSING_FACE_VALUE": "Este cartão não tem valor facial registado. Defina $30,00 antes do checkout.",
+        "hint": "Contacte o revendedor ou suporte. Necessário: tipo linkup_att, valor $30, plano base ATT-LIM-12GB.",
+        "backCart": "← Voltar a associar cartão"
+      }
+    },
     "redeemTitle": "Activate your card",
     "redeemSubtitle": "Enter the PIN from your physical card and your service start date. Your plan is fixed to what you already paid for — shown below.",
     "redeemYourPlanLabel": "Your plan",
@@ -841,6 +876,30 @@
     "planTypeBoth": "SIM físico · eSIM",
     "ctaActivate": "Ativar o seu voucher",
     "ctaHint": "No ecrã seguinte introduz o código da sua cartão. A cartão deve ter sido ativada na loja."
+  },
+  "basicExclusiveLanding": {
+    "linkup": {
+      "badgeLabel": "LINKUP & AT&T",
+      "title": "USA BASIC — LINKUP & AT&T",
+      "subtitle": "12GB · 30GB · 50GB — 30 dias",
+      "body": "Ative o seu voucher exclusivo LINKUP & AT&T USALOCALSIM. Introduza o PIN, verifique por SMS e escolha o plano. Atualize de 12GB para 30GB ou 50GB no resgate.",
+      "plansHeading": "Planos disponíveis",
+      "plansNote": "Cartões de entrada carregam 30 Créditos ($30) para o plano 12GB; pague a diferença para atualizar no resgate.",
+      "planMeta": "{data} · {days} dias",
+      "ctaActivate": "Ativar o seu cartão",
+      "ctaHint": "Raspe o PIN no painel interior e introduza-o no ecrã seguinte."
+    },
+    "tmobile": {
+      "badgeLabel": "T-MOBILE",
+      "title": "USA BASIC — T-Mobile",
+      "subtitle": "Planos de dados ilimitados nos EUA",
+      "body": "Ative o seu voucher exclusivo T-Mobile USALOCALSIM. Introduza o PIN, verifique por SMS e escolha o plano ilimitado.",
+      "plansHeading": "Planos disponíveis",
+      "plansNote": "Complementos opcionais (roaming Canadá/México, chamadas internacionais) disponíveis no resgate.",
+      "planMeta": "{data} · {days} dias",
+      "ctaActivate": "Ativar o seu cartão",
+      "ctaHint": "Raspe o PIN no painel interior e introduza-o no ecrã seguinte."
+    }
   },
   "voucherEntry": {
     "eyebrow": "USALOCALSIM · Resgatar",

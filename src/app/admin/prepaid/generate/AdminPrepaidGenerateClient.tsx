@@ -6,6 +6,12 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import type { PrepaidGeneratedCard } from "@/lib/prepaid-barcode-generate";
 import { prepaidRowsToCsv } from "@/lib/prepaid-barcode-generate";
+import { scratchPinPrefixForProductType } from "@/lib/scratch-pin-format";
+import {
+  VOUCHER_PRODUCT_TYPE,
+  VOUCHER_PRODUCT_TYPE_LABELS,
+  type VoucherProductType,
+} from "@/lib/voucher-product-type";
 
 type Gs1Field = { ai: string; label: string; value: string };
 
@@ -15,7 +21,7 @@ export function AdminPrepaidGenerateClient() {
   const [serialPrefix, setSerialPrefix] = useState("USALOCAL");
   const [serialStart, setSerialStart] = useState(1);
   const [retailMarket, setRetailMarket] = useState("us");
-  const [voucherProductType, setVoucherProductType] = useState<"global" | "three_uk">("global");
+  const [voucherProductType, setVoucherProductType] = useState<VoucherProductType>(VOUCHER_PRODUCT_TYPE.GLOBAL);
   const [faceValueCents, setFaceValueCents] = useState(5000);
   const [gtin, setGtin] = useState("");
   const [lot, setLot] = useState("LOT01");
@@ -324,15 +330,18 @@ export function AdminPrepaidGenerateClient() {
                     id="prepaid-gen-vtype"
                     className="ui-select !mt-1 rounded-none"
                     value={voucherProductType}
-                    onChange={(e) => setVoucherProductType(e.target.value as "global" | "three_uk")}
+                    onChange={(e) => setVoucherProductType(e.target.value as VoucherProductType)}
                   >
-                    <option value="global">Global (tier + network redeem)</option>
-                    <option value="three_uk">Three UK exclusive</option>
+                    {Object.values(VOUCHER_PRODUCT_TYPE).map((type) => (
+                      <option key={type} value={type}>
+                        {VOUCHER_PRODUCT_TYPE_LABELS[type]}
+                      </option>
+                    ))}
                   </select>
                   <p className="mt-1.5 text-xs text-slate-500">
                     Scratch PINs use prefix{" "}
                     <code className="rounded bg-slate-100 px-1 font-mono text-[11px]">
-                      {voucherProductType === "three_uk" ? "USLTUK-" : "USL-G-"}
+                      {scratchPinPrefixForProductType(voucherProductType)}
                     </code>{" "}
                     + random code (see <code className="font-mono text-[11px]">doc/scratch-pin-formats.md</code>).
                   </p>

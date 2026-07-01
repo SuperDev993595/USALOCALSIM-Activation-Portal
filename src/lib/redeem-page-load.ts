@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
+import { redeemPathForProductType, redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
 import { networkRequiredForVoucher } from "@/lib/redeem-network";
 import { redeemUsesTierStep } from "@/lib/redeem-config";
@@ -22,9 +23,31 @@ type LoadOpts = {
   purchaseId: string;
   access?: string;
   upgrade?: string;
-  /** When set, Three UK vouchers redirect here instead of /redeem. */
+  /** Canonical path for an exclusive voucher hub (e.g. `/redeem/three-uk`). */
+  exclusivePath?: string;
+  /** @deprecated Use `exclusivePath` */
   threeUkPath?: "/redeem/three-uk";
 };
+
+function resolveExclusivePath(opts: LoadOpts): string | undefined {
+  return opts.exclusivePath ?? opts.threeUkPath;
+}
+
+function redirectToCanonicalRedeem(
+  canonicalPath: string,
+  purchaseId: string,
+  access: string,
+  resumeAfterPaidUpgrade: boolean,
+): never {
+  redirect(
+    redeemUrlWithAccess(
+      canonicalPath,
+      purchaseId,
+      access,
+      resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined,
+    ),
+  );
+}
 
 /**
  * Authorize a Phase 2 redeem page: access token in URL, or cart session (mint token + redirect).
@@ -33,6 +56,7 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
   const purchaseId = opts.purchaseId.trim();
   const access = opts.access?.trim() ?? "";
   const resumeAfterPaidUpgrade = opts.upgrade?.trim().toLowerCase() === "paid";
+  const pageExclusivePath = resolveExclusivePath(opts);
   const now = new Date();
 
   let purchase = access
@@ -78,13 +102,7 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
 
     const { accessToken } = await ensureRedemptionAccessToken(cartPurchase);
     const voucher = cartPurchase.prepaidCard?.voucher ?? cartPurchase.voucher;
-    const productType = voucher ? effectiveVoucherProductType(voucher) : "global";
-    const base =
-      productType === "three_uk" && opts.threeUkPath
-        ? opts.threeUkPath
-        : productType === "three_uk"
-          ? "/redeem/three-uk"
-          : "/redeem";
+    const base = voucher ? redeemPathForVoucher(voucher) : "/redeem";
     redirect(
       redeemUrlWithAccess(base, cartPurchase.id, accessToken, resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined),
     );
@@ -92,16 +110,14 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
 
   const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
   const productType = voucher ? effectiveVoucherProductType(voucher) : "global";
+  const canonicalPath = redeemPathForProductType(productType);
 
-  // Canonical paths: Three UK vouchers belong on /redeem/three-uk; global on /redeem.
-  // Do not redirect when already on the correct page (threeUkPath set = rendering /redeem/three-uk).
-  if (productType === "three_uk" && !opts.threeUkPath) {
-    redirect(
-      redeemUrlWithAccess("/redeem/three-uk", purchase.id, access, resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined),
-    );
-  }
-  if (productType !== "three_uk" && opts.threeUkPath) {
-    redirect(redeemUrlWithAccess("/redeem", purchase.id, access, resumeAfterPaidUpgrade ? { upgrade: "paid" } : undefined));
+  if (pageExclusivePath) {
+    if (canonicalPath !== pageExclusivePath) {
+      redirectToCanonicalRedeem(canonicalPath, purchase.id, access, resumeAfterPaidUpgrade);
+    }
+  } else if (canonicalPath !== "/redeem") {
+    redirectToCanonicalRedeem(canonicalPath, purchase.id, access, resumeAfterPaidUpgrade);
   }
 
   const showNetwork = voucher ? networkRequiredForVoucher(voucher) : true;
@@ -112,7 +128,7 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
     accessToken: access,
     redemptionPhoneVerified: purchase.redemptionPhoneVerifiedAt != null,
     showTierStep: useTier,
-    /** Tier flow: BASIC picks network on configure step; PRO/ULTRA auto-assign carrier. Legacy briefing uses manual network step. */
+    /** Tier flow: BASIC picks network on configure step; legacy briefing uses manual network step. */
     showNetworkStep: showNetwork && !useTier,
     initialCoverageTier: purchase.redemptionCoverageTier,
     initialNetworkSlug: purchase.redemptionNetworkSlug,

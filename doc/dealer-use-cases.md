@@ -336,7 +336,7 @@ Dealer does **not** mark carrier active — that is **admin** `/admin` queue.
 
 ---
 
-## 8. Batch types (Global vs Three UK)
+## 8. Batch types (Global · Three UK · T-Mobile · Linkup)
 
 Dealer scan activates **whatever card is in DB** — batch type is set at **admin generate/import**:
 
@@ -344,8 +344,12 @@ Dealer scan activates **whatever card is in DB** — batch type is set at **admi
 |----------------------|----------------------|-----------------|
 | `global` (default) | `/redeem` wizard | Tier → network → catalog |
 | `three_uk` | `/redeem/three-uk` | UK exclusive `3UK-EX-*` only |
+| `t_mobile` | `/redeem/t-mobile` | T-Mobile BASIC unlimited SKUs only |
+| `linkup_att` | `/redeem/linkup-att` | LINKUP `ATT-LIM-12GB` / `30GB` / `50GB` only |
 
-Prefix inference (`3UK-`, `USLTUK-`, etc.) applies at **import**, not at scan time.
+**LINKUP entry cards (retail + D2C):** must use **$30.00 face value** and base plan **`ATT-LIM-12GB`** for Phase 1 credit checkout. Import/generate rejects misconfigured `linkup_att` batches.
+
+Prefix inference (`USLTM-`, `USLATT-`, `USLTUK-`, etc.) applies at **import**, not at scan time.
 
 ---
 

@@ -45,6 +45,8 @@ export async function createMercadoPagoCartPreference(input: {
   payAmountCents: number;
   retailMarket: string;
   planName: string;
+  lineItemTitle?: string;
+  lineItemDescription?: string;
 }): Promise<{ ok: true; initPoint: string; preferenceId: string } | { ok: false; error: string }> {
   const token = getMercadoPagoAccessToken();
   if (!token) {
@@ -59,8 +61,8 @@ export async function createMercadoPagoCartPreference(input: {
   const body = {
     items: [
       {
-        title: "USALOCALSIM prepaid credit",
-        description: input.planName,
+        title: input.lineItemTitle ?? "USALOCALSIM prepaid credit",
+        description: input.lineItemDescription ?? input.planName,
         quantity: 1,
         currency_id: currencyId,
         unit_price: unitPrice,

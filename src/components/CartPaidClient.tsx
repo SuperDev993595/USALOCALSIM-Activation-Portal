@@ -29,14 +29,18 @@ export function CartPaidClient({
   invoiceHref,
   plan,
   variant,
+  linkupCredits,
 }: {
   purchaseId: string; // used by server page for lookup; not shown in UI
   redeemHref: string;
   invoiceHref: string;
   plan: CartCheckoutPlanSummary;
   variant: "ready" | "redeemed";
+  /** When set, show LINKUP credit-loaded confirmation (feedback 2026-07-01). */
+  linkupCredits?: number;
 }) {
   const t = useTranslations("cart");
+  const tLinkup = useTranslations("cart.linkupCredit");
 
   if (variant === "redeemed") {
     return (
@@ -67,13 +71,28 @@ export function CartPaidClient({
             <SuccessCheckIcon />
             <div className="min-w-0 text-center sm:text-left">
               <p className="cart-flow-eyebrow">{t("phase1NavStep4")}</p>
-              <h1 className="cart-flow-title">{t("paidTitle")}</h1>
-              <p className="cart-flow-subtitle">{t("paidCompleteSubtitle")}</p>
+              <h1 className="cart-flow-title">
+                {linkupCredits != null ? tLinkup("paidTitle") : t("paidTitle")}
+              </h1>
+              <p className="cart-flow-subtitle">
+                {linkupCredits != null
+                  ? tLinkup("paidSubtitle", { credits: linkupCredits })
+                  : t("paidCompleteSubtitle")}
+              </p>
             </div>
           </div>
         </header>
 
         <div className="cart-flow-body">
+          {linkupCredits != null ? (
+            <div className="cart-credit-checkout-banner mb-2" role="status">
+              <p className="cart-credit-checkout-banner-title">{tLinkup("paidCreditsBannerTitle")}</p>
+              <p className="cart-credit-checkout-banner-body">
+                {tLinkup("paidCreditsBannerBody", { credits: linkupCredits })}
+              </p>
+            </div>
+          ) : null}
+
           <section className="cart-flow-block" aria-labelledby="cart-paid-summary">
             <h2 id="cart-paid-summary" className="cart-flow-block-title">
               {t("registerPaymentHeading")}
@@ -91,7 +110,9 @@ export function CartPaidClient({
                     {t("registerPackDurationDays", { days: plan.durationDays })}
                   </span>
                 </div>
-                <p className="cart-flow-plan-hint">{t("paidPlanReadOnlyHint")}</p>
+                <p className="cart-flow-plan-hint">
+                  {linkupCredits != null ? tLinkup("paidPlanHint") : t("paidPlanReadOnlyHint")}
+                </p>
               </div>
             </div>
           </section>
@@ -101,10 +122,13 @@ export function CartPaidClient({
               {t("paidNextHeading")}
             </h2>
             <ol className="cart-flow-next-steps">
-              {PAID_NEXT_STEP_KEYS.map((key, idx) => (
+              {(linkupCredits != null
+                ? (["paidNextStep1", "paidNextStep2", "paidNextStep3"] as const)
+                : PAID_NEXT_STEP_KEYS
+              ).map((key, idx) => (
                 <li key={key} className="cart-flow-next-step">
                   <span className="cart-flow-next-step-num">{idx + 1}</span>
-                  <span>{t(key)}</span>
+                  <span>{linkupCredits != null ? tLinkup(key) : t(key)}</span>
                 </li>
               ))}
             </ol>

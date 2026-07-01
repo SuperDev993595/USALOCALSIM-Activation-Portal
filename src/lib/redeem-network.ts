@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { GLOBAL_NETWORK_SLUGS, type GlobalNetworkSlug } from "@/lib/network-catalog";import {
+import { exclusiveNetworkSlugForProductType } from "@/lib/exclusive-voucher-redeem";
+import { GLOBAL_NETWORK_SLUGS, type GlobalNetworkSlug } from "@/lib/network-catalog";
+import {
   VOUCHER_PRODUCT_TYPE,
   effectiveVoucherProductType,
 } from "@/lib/voucher-product-type";
@@ -19,10 +21,9 @@ export async function resolveNetworkForRedeem(input: {
   overrideSlug?: string | null;
 }): Promise<{ slug: string; id: string } | null> {
   const productType = effectiveVoucherProductType(input.voucher);
+  const lockedSlug = exclusiveNetworkSlugForProductType(productType);
   const slug =
-    productType === VOUCHER_PRODUCT_TYPE.THREE_UK
-      ? "three_uk"
-      : (input.overrideSlug?.trim() || input.purchaseNetworkSlug?.trim() || "");
+    lockedSlug ?? (input.overrideSlug?.trim() || input.purchaseNetworkSlug?.trim() || "");
 
   if (!slug) return null;
   if (productType === VOUCHER_PRODUCT_TYPE.GLOBAL && !isGlobalNetworkSlug(slug)) {

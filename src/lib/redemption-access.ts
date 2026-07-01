@@ -25,7 +25,7 @@ export async function ensureRedemptionAccessToken(purchase: {
 }
 
 export function redeemUrlWithAccess(
-  basePath: "/redeem" | "/redeem/three-uk",
+  basePath: string,
   purchaseId: string,
   accessToken: string,
   extra?: { upgrade?: "paid" },

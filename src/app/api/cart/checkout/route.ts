@@ -9,6 +9,11 @@ import {
   STRIPE_PREPAID_CARD_METADATA_KEY,
 } from "@/lib/stripe-cart-flow";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
+import { cartCheckoutLineItem } from "@/lib/cart-checkout-product";
+import {
+  isLinkupExclusiveVoucher,
+  validateLinkupEntryBundle,
+} from "@/lib/linkup-exclusive-prepaid";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -77,6 +82,25 @@ export async function POST(req: Request) {
     );
   }
 
+  if (isLinkupExclusiveVoucher(prepaid.voucher)) {
+    const bundle = validateLinkupEntryBundle({
+      faceValueCents: prepaid.faceValueCents,
+      basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+    });
+    if (!bundle.ok) {
+      return NextResponse.json(
+        { error: "This LINKUP card is not configured for the $30 / 12GB entry bundle.", code: bundle.code },
+        { status: 400 },
+      );
+    }
+    if (plan.id !== prepaid.basePlanId) {
+      return NextResponse.json(
+        { error: "LINKUP entry cards must use the bundled 12GB / 30-day base plan at checkout." },
+        { status: 400 },
+      );
+    }
+  }
+
   if (prepaid.faceValueCents > 0 && body.payAmountCents !== prepaid.faceValueCents) {
     return NextResponse.json(
       {
@@ -103,11 +127,12 @@ export async function POST(req: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  const stripeProduct = {
-    name: "Bundled data pack",
-    description:
-      "Payment for the data pack bundled with your physical card (e.g. $50). One line item — not a separate catalog plan; redemption after PIN handles options and upgrades.",
-  };
+  const stripeProduct = cartCheckoutLineItem({
+    voucher: prepaid.voucher,
+    payAmountCents: body.payAmountCents,
+    faceValueCents: prepaid.faceValueCents,
+    basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+  });
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",

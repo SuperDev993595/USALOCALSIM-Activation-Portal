@@ -223,6 +223,22 @@ export async function seedDemoPrepaidCards(
       faceValueCents: DEFAULT_PREPAID_VOUCHER_FACE_VALUE_CENTS,
     },
     {
+      label: "T-Mobile exclusive — direct redeem test",
+      serial: "USALOCALTM001",
+      pin: "USLTM-DEMO0001",
+      voucherProductType: "t_mobile",
+      retailMarket: "us",
+      faceValueCents: 3900,
+    },
+    {
+      label: "LINKUP & AT&T exclusive — direct redeem test",
+      serial: "USALOCALATT001",
+      pin: "USLATT-DEMO0001",
+      voucherProductType: "linkup_att",
+      retailMarket: "us",
+      faceValueCents: 3000,
+    },
+    {
       label: "Global — dealer POS / redeem demo",
       serial: cartSerial,
       pin: "USL-G-DEMO0002",
@@ -236,5 +252,5 @@ export async function seedDemoPrepaidCards(
   for (const card of cards) {
     await seedOneDemoCard(prisma, card, opts.basePlanId, opts.upgradePlanId ?? null);
   }
-  console.log("  Enter scratch PIN at /redeem/enter — Global → /redeem, Three UK → /redeem/three-uk");
+  console.log("  Enter scratch PIN at /redeem/enter — Global → /redeem, Three UK → /redeem/three-uk, T-Mobile → /redeem/t-mobile, Linkup → /redeem/linkup-att");
 }

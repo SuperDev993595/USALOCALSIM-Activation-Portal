@@ -4,6 +4,9 @@ import { requireAdmin } from "@/lib/auth-server";
 import { generatePrepaidBatch } from "@/lib/prepaid-barcode-generate";
 import { appBaseUrlFromEnv } from "@/lib/barcode-image";
 import { parseGs1BarcodeV1, composeGs1BarcodeV1 } from "@/lib/gs1-128";
+import { voucherProductTypeSchema } from "@/lib/voucher-product-type-schema";
+import { VOUCHER_PRODUCT_TYPE } from "@/lib/voucher-product-type";
+import { LINKUP_ENTRY_FACE_VALUE_CENTS } from "@/lib/linkup-exclusive-prepaid";
 
 const bodySchema = z.object({
   mode: z.enum(["test", "gs1"]),
@@ -17,7 +20,7 @@ const bodySchema = z.object({
   expiryYymmdd: z.string().optional(),
   qrUseFullUrl: z.boolean().optional(),
   qrTarget: z.enum(["redeem_enter", "cart_serial"]).optional(),
-  voucherProductType: z.enum(["global", "three_uk"]).optional(),
+  voucherProductType: voucherProductTypeSchema.optional(),
 });
 
 export async function POST(req: Request) {
@@ -31,6 +34,16 @@ export async function POST(req: Request) {
     body = bodySchema.parse(await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  const productType = body.voucherProductType ?? VOUCHER_PRODUCT_TYPE.GLOBAL;
+  if (productType === VOUCHER_PRODUCT_TYPE.LINKUP_ATT && body.faceValueCents !== LINKUP_ENTRY_FACE_VALUE_CENTS) {
+    return NextResponse.json(
+      {
+        error: `LINKUP & AT&T exclusive cards must use face value $${(LINKUP_ENTRY_FACE_VALUE_CENTS / 100).toFixed(2)} (${LINKUP_ENTRY_FACE_VALUE_CENTS} cents).`,
+      },
+      { status: 400 },
+    );
   }
 
   const { rows, errors } = generatePrepaidBatch(

@@ -26,6 +26,7 @@ function selections(overrides: Partial<RedeemWizardSelections> = {}): RedeemWiza
     network,
     ultraEsimOnly: false,
     threeUkExclusive: false,
+    exclusiveNetworkSlug: null,
     planMarket: "us",
     planMarkets: ["us"],
     ...overrides,
@@ -242,10 +243,31 @@ describe("validateRedeemPlanForSelections", () => {
       },
       selections: selections({
         threeUkExclusive: true,
+        exclusiveNetworkSlug: "three_uk",
         planMarket: "uk",
+        planMarkets: ["uk"],
         network: { slug: "three_uk", id: "net-3uk" },
       }),
     });
     expect(err?.error).toContain("Three UK exclusive");
+  });
+
+  it("requires us linkup_att plan for Linkup exclusive voucher", () => {
+    const err = validateRedeemPlanForSelections({
+      plan: {
+        market: "us",
+        coverageTier: "basic",
+        networkId: "x",
+        network: { slug: "t_mobile" },
+        planType: "esim",
+      },
+      selections: selections({
+        exclusiveNetworkSlug: "linkup_att",
+        planMarket: "us",
+        planMarkets: ["us"],
+        network: { slug: "linkup_att", id: "net-lu" },
+      }),
+    });
+    expect(err?.error).toContain("exclusive voucher");
   });
 });

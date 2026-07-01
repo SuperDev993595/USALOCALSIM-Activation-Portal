@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
-import { effectiveVoucherProductType } from "@/lib/voucher-product-type";
+import { redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 
 export default async function CartRedeemPage({
   searchParams,
@@ -38,7 +38,7 @@ export default async function CartRedeemPage({
       redirect("/cart?resume=invalid");
     }
     const voucherRow = purchase.prepaidCard?.voucher ?? purchase.voucher;
-    const base = voucherRow && effectiveVoucherProductType(voucherRow) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+    const base = voucherRow ? redeemPathForVoucher(voucherRow) : "/redeem";
     redirect(redeemUrlWithAccess(base, purchase.id, access.trim()));
   }
 
@@ -64,6 +64,6 @@ export default async function CartRedeemPage({
 
   const { accessToken } = await ensureRedemptionAccessToken(purchase);
   const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
-  const base = voucher && effectiveVoucherProductType(voucher) === "three_uk" ? "/redeem/three-uk" : "/redeem";
+  const base = voucher ? redeemPathForVoucher(voucher) : "/redeem";
   redirect(redeemUrlWithAccess(base, purchase.id, accessToken));
 }

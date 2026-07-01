@@ -3,7 +3,7 @@ import { isCoverageTier, tierRequiresEsimOnly, COVERAGE_TIER, isBasicTierNetwork
 import { planMarketsForRedeem, planMatchesRedeemMarkets } from "@/lib/redeem-plan-markets";
 import { networkRequiredForVoucher, resolveNetworkForRedeem } from "@/lib/redeem-network";
 import { REDEMPTION_FULFILLMENT_TYPES } from "@/lib/redemption-fulfillment";
-import { isThreeUkExclusiveVoucher } from "@/lib/three-uk-redeem";
+import { exclusiveNetworkSlugForVoucher } from "@/lib/exclusive-voucher-redeem";
 
 export type RedeemSelectionError = {
   error: string;
@@ -27,6 +27,8 @@ export type RedeemWizardSelections = {
   network: { slug: string; id: string } | null;
   ultraEsimOnly: boolean;
   threeUkExclusive: boolean;
+  /** Locked carrier for exclusive voucher batches (Three UK, T-Mobile, Linkup). */
+  exclusiveNetworkSlug: string | null;
   /** Primary market (first allowed); kept for logging and legacy callers. */
   planMarket: string;
   planMarkets: string[];
@@ -38,7 +40,8 @@ export async function validateRedeemWizardSelections(
   opts?: { coverageTier?: string; networkSlug?: string | null },
 ): Promise<({ ok: true } & RedeemWizardSelections) | ({ ok: false } & RedeemSelectionError)> {
   const tier = (opts?.coverageTier ?? purchase.redemptionCoverageTier)?.trim().toLowerCase() ?? "";
-  const threeUkExclusive = isThreeUkExclusiveVoucher(voucher);
+  const exclusiveNetworkSlug = exclusiveNetworkSlugForVoucher(voucher);
+  const threeUkExclusive = exclusiveNetworkSlug === "three_uk";
 
   if (networkRequiredForVoucher(voucher) && redeemUsesTierStep() && !isCoverageTier(tier)) {
     return {
@@ -77,11 +80,21 @@ export async function validateRedeemWizardSelections(
     networkSlug: network?.slug ?? effectiveNetworkSlug,
     cardMarket,
     threeUkExclusive,
+    exclusiveNetworkSlug,
   });
   const planMarket = planMarkets[0] ?? "us";
   const ultraEsimOnly = isCoverageTier(tier) && tierRequiresEsimOnly(tier);
 
-  return { ok: true, tier, network, ultraEsimOnly, threeUkExclusive, planMarket, planMarkets };
+  return {
+    ok: true,
+    tier,
+    network,
+    ultraEsimOnly,
+    threeUkExclusive,
+    exclusiveNetworkSlug,
+    planMarket,
+    planMarkets,
+  };
 }
 
 export function validateRedeemPlanForSelections(input: {
@@ -101,6 +114,17 @@ export function validateRedeemPlanForSelections(input: {
   if (threeUkExclusive) {
     if (plan.market !== "uk" || plan.network?.slug !== "three_uk") {
       return { error: "This plan is not available for Three UK exclusive vouchers.", status: 400 };
+    }
+    return null;
+  }
+
+  const exclusiveSlug = selections.exclusiveNetworkSlug;
+  if (exclusiveSlug === "t_mobile" || exclusiveSlug === "linkup_att") {
+    if (plan.market !== "us" || plan.network?.slug !== exclusiveSlug) {
+      return {
+        error: "This plan is not available for this exclusive voucher.",
+        status: 400,
+      };
     }
     return null;
   }

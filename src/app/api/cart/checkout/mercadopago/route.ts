@@ -5,6 +5,11 @@ import { isCartMercadoPagoEnabled } from "@/lib/cart-mercadopago-feature";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
 import { createMercadoPagoCartPreference } from "@/lib/mercadopago-cart";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
+import { cartCheckoutLineItem } from "@/lib/cart-checkout-product";
+import {
+  isLinkupExclusiveVoucher,
+  validateLinkupEntryBundle,
+} from "@/lib/linkup-exclusive-prepaid";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -67,6 +72,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Selected plan does not match this card's market." }, { status: 400 });
   }
 
+  if (isLinkupExclusiveVoucher(prepaid.voucher)) {
+    const bundle = validateLinkupEntryBundle({
+      faceValueCents: prepaid.faceValueCents,
+      basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+    });
+    if (!bundle.ok) {
+      return NextResponse.json(
+        { error: "This LINKUP card is not configured for the $30 / 12GB entry bundle.", code: bundle.code },
+        { status: 400 },
+      );
+    }
+    if (plan.id !== prepaid.basePlanId) {
+      return NextResponse.json(
+        { error: "LINKUP entry cards must use the bundled 12GB / 30-day base plan at checkout." },
+        { status: 400 },
+      );
+    }
+  }
+
   if (prepaid.faceValueCents > 0 && body.payAmountCents !== prepaid.faceValueCents) {
     return NextResponse.json(
       {
@@ -91,6 +115,13 @@ export async function POST(req: Request) {
     data: { expiresAt: newCartSessionExpiry() },
   });
 
+  const lineItem = cartCheckoutLineItem({
+    voucher: prepaid.voucher,
+    payAmountCents: body.payAmountCents,
+    faceValueCents: prepaid.faceValueCents,
+    basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+  });
+
   const pref = await createMercadoPagoCartPreference({
     cartSessionId: cartSession.id,
     planId: plan.id,
@@ -100,6 +131,8 @@ export async function POST(req: Request) {
     payAmountCents: body.payAmountCents,
     retailMarket: prepaid.retailMarket,
     planName: plan.name,
+    lineItemTitle: lineItem.name,
+    lineItemDescription: lineItem.description,
   });
 
   if (!pref.ok) {

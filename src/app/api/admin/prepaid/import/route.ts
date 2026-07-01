@@ -7,12 +7,19 @@ import { getRequestClientMeta } from "@/lib/request-meta";
 import { parsePrepaidImportText } from "@/lib/prepaid-import-parse";
 import { pinLast4 } from "@/lib/voucher-pin";
 import { resolvePrepaidImportProductType } from "@/lib/voucher-product-type";
+import { voucherProductTypeSchema } from "@/lib/voucher-product-type-schema";
+import { VOUCHER_PRODUCT_TYPE } from "@/lib/voucher-product-type";
+import {
+  LINKUP_ENTRY_FACE_VALUE_CENTS,
+  LINKUP_ENTRY_PLAN_SKU,
+  validateLinkupEntryBundle,
+} from "@/lib/linkup-exclusive-prepaid";
 
 const bodySchema = z.object({
   text: z.string().min(1),
   basePlanId: z.string().min(1),
   upgradePlanId: z.string().optional(),
-  voucherProductType: z.enum(["global", "three_uk"]).optional(),
+  voucherProductType: voucherProductTypeSchema.optional(),
 });
 
 export async function POST(req: Request) {
@@ -40,6 +47,23 @@ export async function POST(req: Request) {
     const up = await prisma.plan.findUnique({ where: { id: body.upgradePlanId } });
     if (!up) {
       return NextResponse.json({ error: "upgradePlanId not found." }, { status: 404 });
+    }
+  }
+
+  const defaultProductType = body.voucherProductType ?? VOUCHER_PRODUCT_TYPE.GLOBAL;
+  if (defaultProductType === VOUCHER_PRODUCT_TYPE.LINKUP_ATT) {
+    const bundle = validateLinkupEntryBundle({
+      faceValueCents: LINKUP_ENTRY_FACE_VALUE_CENTS,
+      basePlanSku: basePlan.sku,
+    });
+    if (!bundle.ok) {
+      return NextResponse.json(
+        {
+          error: `LINKUP exclusive import requires base plan SKU ${LINKUP_ENTRY_PLAN_SKU} (got ${basePlan.sku ?? "none"}).`,
+          code: bundle.code,
+        },
+        { status: 400 },
+      );
     }
   }
 
@@ -87,6 +111,18 @@ export async function POST(req: Request) {
           pin: pinNorm,
         });
 
+        if (productType === VOUCHER_PRODUCT_TYPE.LINKUP_ATT) {
+          const bundle = validateLinkupEntryBundle({
+            faceValueCents: row.faceValueCents,
+            basePlanSku: basePlan.sku,
+          });
+          if (!bundle.ok) {
+            const err = new Error(`LINKUP_BUNDLE_${bundle.code}`);
+            err.name = "LINKUP_BUNDLE_INVALID";
+            throw err;
+          }
+        }
+
         const voucher = await tx.voucher.create({
           data: {
             code: pinNorm,
@@ -114,7 +150,13 @@ export async function POST(req: Request) {
       });
       created++;
     } catch (e) {
-      rowErrors.push(`Serial ${row.serial}: ${e instanceof Error ? e.message : "create failed"}`);
+      const msg =
+        e instanceof Error && e.name === "LINKUP_BUNDLE_INVALID"
+          ? `LINKUP entry bundle invalid (${e.message.replace("LINKUP_BUNDLE_", "")})`
+          : e instanceof Error
+            ? e.message
+            : "create failed";
+      rowErrors.push(`Serial ${row.serial}: ${msg}`);
       skipped++;
     }
   }

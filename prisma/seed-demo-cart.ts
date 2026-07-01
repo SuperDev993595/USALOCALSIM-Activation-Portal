@@ -10,6 +10,9 @@ type CartCardSeed = {
   faceValueCents: number;
   /** unpaid — QR → plans → Stripe checkout; stripe_paid — redeem without Stripe */
   state: "unpaid" | "stripe_paid";
+  voucherProductType?: VoucherProductType;
+  /** Override bundled plan (e.g. ATT-LIM-12GB for Linkup credit cards). */
+  basePlanId?: string;
 };
 
 function pinLast4(raw: string): string {
@@ -197,19 +200,21 @@ async function seedOneCartCard(
   basePlanId: string,
   upgradePlanId: string | null,
 ): Promise<void> {
+  const effectiveBasePlanId = card.basePlanId ?? basePlanId;
+  const voucherProductType = card.voucherProductType ?? "global";
   const { prepaidCardId, voucherId } = await upsertCartPrepaidCard(
     prisma,
     card,
-    basePlanId,
+    effectiveBasePlanId,
     upgradePlanId,
-    "global",
+    voucherProductType,
   );
 
   if (card.state === "stripe_paid") {
     await authorizeStripePaidCart(prisma, {
       prepaidCardId,
       voucherId,
-      planId: basePlanId,
+      planId: effectiveBasePlanId,
       faceValueCents: card.faceValueCents,
       serial: card.serial,
     });
@@ -237,6 +242,10 @@ export async function seedDemoCartCards(
   opts: { basePlanId: string; upgradePlanId?: string | null },
 ): Promise<void> {
   const checkoutSerial = process.env.CART_DEMO_SERIAL?.trim() || "USALOCARTCHK01";
+  const linkupPlan = await prisma.plan.findFirst({
+    where: { sku: "ATT-LIM-12GB", planType: "physical_sim", active: true },
+    select: { id: true },
+  });
 
   const cards: CartCardSeed[] = [
     {
@@ -252,6 +261,15 @@ export async function seedDemoCartCards(
       pin: "USL-G-CART0002",
       faceValueCents: 5000,
       state: "stripe_paid",
+    },
+    {
+      label: "Linkup credit cart — $30 / 12GB (credit checkout UI)",
+      serial: "USALOCARTATT01",
+      pin: "USLATT-CART0001",
+      faceValueCents: 3000,
+      state: "unpaid",
+      voucherProductType: "linkup_att",
+      basePlanId: linkupPlan?.id,
     },
   ];
 

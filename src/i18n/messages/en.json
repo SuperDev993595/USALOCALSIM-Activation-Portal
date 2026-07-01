@@ -417,6 +417,41 @@
     "viewInvoice": "View / print invoice",
     "alreadyRedeemedTitle": "Already activated",
     "alreadyRedeemedBody": "This purchase has already been linked to a voucher.",
+    "linkupCredit": {
+      "verifiedBannerTitle": "Card linked — ready for payment",
+      "verifiedBannerBody": "This card will load {credits} Credits after payment and is registered in our system.",
+      "title": "Secure checkout",
+      "subtitle": "Review your card profile and complete your network connection.",
+      "orderSummaryHeading": "Order summary",
+      "planTypeLabel": "Plan type",
+      "planTypeValue": "Prepaid Basic 30d",
+      "dataPackageLabel": "Data package",
+      "dataPackageValue": "{data} / {days} Days (SMS local & international calls)",
+      "cardValueLabel": "Card value",
+      "cardValueCredits": "{credits} CREDITS",
+      "cardValueNote": "Matches the physical card design",
+      "totalUsdLabel": "Total to pay (USD)",
+      "paymentSectionNote": "Card payment is processed securely via Stripe or Mercado Pago.",
+      "authorizeCta": "Authorize payment & load credits",
+      "usdComplianceNote": "You will be charged in US dollars ($) at checkout for payment processor compliance.",
+      "paidTitle": "Credits loaded successfully",
+      "paidSubtitle": "Your card now holds {credits} Credits. Continue to redemption to choose your 12GB plan or upgrade to 30GB / 50GB.",
+      "paidCreditsBannerTitle": "Payment complete",
+      "paidCreditsBannerBody": "{credits} Credits are now loaded on your card and ready to use at redemption.",
+      "paidPlanHint": "Entry bundle: 12GB / 30 days. You may upgrade to 30GB or 50GB when you redeem with your scratch PIN.",
+      "paidNextStep1": "Scratch your PIN and open the LINKUP & AT&T redeem portal",
+      "paidNextStep2": "Choose 12GB (included) or pay the difference to upgrade to 30GB / 50GB",
+      "paidNextStep3": "Verify your service phone number by SMS",
+      "configError": {
+        "title": "Card configuration issue",
+        "subtitle": "This LINKUP & AT&T card cannot use the credit checkout until it is set up correctly.",
+        "WRONG_FACE_VALUE": "LINKUP entry cards must be sold with exactly $30.00 (30 Credits) on the card face.",
+        "WRONG_BASE_PLAN": "LINKUP entry cards must be linked to the ATT-LIM-12GB (12GB / 30 days) base plan.",
+        "MISSING_FACE_VALUE": "This card has no face value on file. Set face value to $30.00 before checkout.",
+        "hint": "Contact your dealer or support to correct the batch import. Required: voucher type linkup_att, $30 face value, base plan ATT-LIM-12GB.",
+        "backCart": "← Back to link card"
+      }
+    },
     "redeemTitle": "Activate your card",
     "redeemSubtitle": "Enter the PIN from your physical card and your service start date. Your plan is fixed to what you already paid for — shown below.",
     "redeemYourPlanLabel": "Your plan",
@@ -868,6 +903,30 @@
     "planTypeBoth": "Physical SIM · eSIM",
     "ctaActivate": "Activate your voucher",
     "ctaHint": "You will enter the scratch code from your card on the next screen. The card must be activated by the shop where you bought it."
+  },
+  "basicExclusiveLanding": {
+    "linkup": {
+      "badgeLabel": "LINKUP & AT&T",
+      "title": "USA BASIC — LINKUP & AT&T",
+      "subtitle": "12GB · 30GB · 50GB — 30 days",
+      "body": "Activate your LINKUP & AT&T exclusive USALOCALSIM voucher. Enter your scratch PIN, verify by SMS, and choose your data plan. Upgrade from 12GB to 30GB or 50GB at redemption.",
+      "plansHeading": "Available plans",
+      "plansNote": "Entry cards load 30 Credits ($30) for the 12GB plan; pay the difference to upgrade at redemption.",
+      "planMeta": "{data} · {days} days",
+      "ctaActivate": "Activate your card",
+      "ctaHint": "Scratch your PIN from the inside panel, then enter it on the next screen."
+    },
+    "tmobile": {
+      "badgeLabel": "T-MOBILE",
+      "title": "USA BASIC — T-Mobile",
+      "subtitle": "Unlimited USA data plans",
+      "body": "Activate your T-Mobile exclusive USALOCALSIM voucher. Enter your scratch PIN, verify by SMS, and choose your unlimited plan.",
+      "plansHeading": "Available plans",
+      "plansNote": "Optional add-ons (Canada/Mexico roaming, international calling) are available at redemption.",
+      "planMeta": "{data} · {days} days",
+      "ctaActivate": "Activate your card",
+      "ctaHint": "Scratch your PIN from the inside panel, then enter it on the next screen."
+    }
   },
   "voucherEntry": {
     "eyebrow": "USALOCALSIM · Redeem",

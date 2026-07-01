@@ -33,6 +33,17 @@ Run `npx prisma db seed` to load BASIC, PRO (Three UK), ULTRA (Orange), and brie
 
 `https://<your-domain>/redeem/three-uk` — Three UK exclusive vouchers skip tier/network and auto-select `three_uk`.
 
+## USA BASIC exclusive marketing URLs (feedback 2026-07-01)
+
+| Batch | URL | Behavior |
+|-------|-----|----------|
+| **T-Mobile exclusive** | `/redeem/t-mobile` | T-Mobile BASIC plans only; tier/network skipped |
+| **LINKUP & AT&T exclusive** | `/redeem/linkup-att` | 12GB / 30GB / 50GB only; upgrade at redeem |
+
+Scratch PIN prefixes: `USLTM-` (T-Mobile), `USLATT-` / `USLLU-` (Linkup). See `doc/scratch-pin-formats.md`.
+
+**LINKUP entry bundle (D2C cart):** `linkup_att` + **$30 face value** + base plan **`ATT-LIM-12GB`** → credit checkout at `/cart/plans`. Enforced in admin import/generate and checkout APIs.
+
 ## Deploy note
 
 Tier flow is **on by default**. Set `REDEEM_USE_TIER_STEP=false` on Vercel only if you intentionally want the legacy four-logo flow.

@@ -8,6 +8,8 @@ const PIN_BODY_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 const DEFAULT_GLOBAL_SCRATCH_PREFIX = "USL-G-";
 const DEFAULT_THREE_UK_SCRATCH_PREFIX = "USLTUK-";
+const DEFAULT_T_MOBILE_SCRATCH_PREFIX = "USLTM-";
+const DEFAULT_LINKUP_ATT_SCRATCH_PREFIX = "USLATT-";
 
 function firstPrefixFromEnv(envKey: string, fallback: string): string {
   const raw = process.env[envKey]?.trim();
@@ -18,10 +20,16 @@ function firstPrefixFromEnv(envKey: string, fallback: string): string {
 
 /** Prefix printed on scratch panel for card generation (first entry from env list). */
 export function scratchPinPrefixForProductType(type: VoucherProductType): string {
-  if (type === VOUCHER_PRODUCT_TYPE.THREE_UK) {
-    return firstPrefixFromEnv("VOUCHER_PREFIX_THREE_UK", DEFAULT_THREE_UK_SCRATCH_PREFIX);
+  switch (type) {
+    case VOUCHER_PRODUCT_TYPE.THREE_UK:
+      return firstPrefixFromEnv("VOUCHER_PREFIX_THREE_UK", DEFAULT_THREE_UK_SCRATCH_PREFIX);
+    case VOUCHER_PRODUCT_TYPE.T_MOBILE:
+      return firstPrefixFromEnv("VOUCHER_PREFIX_T_MOBILE", DEFAULT_T_MOBILE_SCRATCH_PREFIX);
+    case VOUCHER_PRODUCT_TYPE.LINKUP_ATT:
+      return firstPrefixFromEnv("VOUCHER_PREFIX_LINKUP_ATT", DEFAULT_LINKUP_ATT_SCRATCH_PREFIX);
+    default:
+      return firstPrefixFromEnv("VOUCHER_PREFIX_GLOBAL", DEFAULT_GLOBAL_SCRATCH_PREFIX);
   }
-  return firstPrefixFromEnv("VOUCHER_PREFIX_GLOBAL", DEFAULT_GLOBAL_SCRATCH_PREFIX);
 }
 
 export function generateScratchPinBody(length = 8): string {
@@ -33,7 +41,7 @@ export function generateScratchPinBody(length = 8): string {
   return out;
 }
 
-/** Full scratch PIN: type prefix + random body (feedback: two distinct scratch formats). */
+/** Full scratch PIN: type prefix + random body (feedback: distinct scratch formats per batch). */
 export function generateScratchPinForProductType(
   type: VoucherProductType,
   bodyLength = 8,

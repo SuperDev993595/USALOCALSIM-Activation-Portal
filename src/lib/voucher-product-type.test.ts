@@ -9,6 +9,8 @@ import {
 describe("inferVoucherProductTypeFromCode", () => {
   afterEach(() => {
     delete process.env.VOUCHER_PREFIX_THREE_UK;
+    delete process.env.VOUCHER_PREFIX_T_MOBILE;
+    delete process.env.VOUCHER_PREFIX_LINKUP_ATT;
   });
 
   it("returns global for empty code", () => {
@@ -18,6 +20,15 @@ describe("inferVoucherProductTypeFromCode", () => {
   it("detects Three UK from default prefix", () => {
     expect(inferVoucherProductTypeFromCode("3UK-DEMO123")).toBe(VOUCHER_PRODUCT_TYPE.THREE_UK);
     expect(inferVoucherProductTypeFromCode("usltuk-batch1")).toBe(VOUCHER_PRODUCT_TYPE.THREE_UK);
+  });
+
+  it("detects T-Mobile from default prefix", () => {
+    expect(inferVoucherProductTypeFromCode("USLTM-DEMO0001")).toBe(VOUCHER_PRODUCT_TYPE.T_MOBILE);
+  });
+
+  it("detects Linkup from default prefix", () => {
+    expect(inferVoucherProductTypeFromCode("USLATT-DEMO0001")).toBe(VOUCHER_PRODUCT_TYPE.LINKUP_ATT);
+    expect(inferVoucherProductTypeFromCode("USLLU-BATCH1")).toBe(VOUCHER_PRODUCT_TYPE.LINKUP_ATT);
   });
 
   it("returns global for unrelated prefix", () => {
@@ -33,11 +44,11 @@ describe("resolvePrepaidImportProductType", () => {
   it("prefers explicit row type", () => {
     expect(
       resolvePrepaidImportProductType({
-        rowType: "three_uk",
+        rowType: "t_mobile",
         serial: "USALOCAL001",
         pin: "SCRATCH001",
       }),
-    ).toBe(VOUCHER_PRODUCT_TYPE.THREE_UK);
+    ).toBe(VOUCHER_PRODUCT_TYPE.T_MOBILE);
   });
 
   it("infers three_uk from serial when row type omitted", () => {
@@ -60,21 +71,21 @@ describe("resolvePrepaidImportProductType", () => {
 });
 
 describe("effectiveVoucherProductType", () => {
-  it("honours stored three_uk", () => {
+  it("honours stored exclusive types", () => {
     expect(
       effectiveVoucherProductType({
-        voucherProductType: "three_uk",
+        voucherProductType: "linkup_att",
         code: "ANY",
       }),
-    ).toBe(VOUCHER_PRODUCT_TYPE.THREE_UK);
+    ).toBe(VOUCHER_PRODUCT_TYPE.LINKUP_ATT);
   });
 
   it("re-infers global stored type from code prefix", () => {
     expect(
       effectiveVoucherProductType({
         voucherProductType: "global",
-        code: "3UK-STORED-GLOBAL",
+        code: "USLTM-STORED-GLOBAL",
       }),
-    ).toBe(VOUCHER_PRODUCT_TYPE.THREE_UK);
+    ).toBe(VOUCHER_PRODUCT_TYPE.T_MOBILE);
   });
 });
