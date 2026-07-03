@@ -111,15 +111,38 @@ function CartStepBadge({
 export function CartPhase1StepNav({
   currentStep,
   embedded = false,
+  variant = "full",
 }: {
   currentStep: CartPhase1Step;
   /** Inside main panel (no extra outer card). */
   embedded?: boolean;
+  /** Minimal one-line progress for checkout screens. */
+  variant?: "full" | "compact";
 }) {
   const t = useTranslations("cart");
   const steps = NAV_KEYS.map((key, idx) => ({ key, step: (idx + 1) as CartPhase1Step }));
   const hasActiveStep = steps.some((s) => s.step === currentStep);
   const pulseOn = useActiveStepPulse(hasActiveStep);
+  const currentLabel = NAV_KEYS[currentStep - 1];
+
+  if (variant === "compact") {
+    return (
+      <nav
+        aria-label={t("phase1NavAria")}
+        className={
+          embedded
+            ? "cart-phase1-nav cart-phase1-nav--embedded cart-phase1-nav--compact"
+            : "cart-phase1-nav cart-phase1-nav--compact"
+        }
+      >
+        <p className="cart-phase1-nav-compact-line">
+          {t("phase1Progress", { current: currentStep, total: CART_PHASE1_TOTAL_STEPS })}
+          <span aria-hidden> · </span>
+          <span className="cart-phase1-nav-compact-step">{t(currentLabel)}</span>
+        </p>
+      </nav>
+    );
+  }
 
   return (
     <nav

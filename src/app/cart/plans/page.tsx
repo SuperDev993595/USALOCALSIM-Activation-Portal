@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
-import { isLinkupCreditCheckout } from "@/lib/cart-checkout-variant";
 import {
   isLinkupExclusiveVoucher,
   validateLinkupEntryBundle,

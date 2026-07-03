@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CartNotice } from "@/components/CartNotice";
 import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
-import { NetworkMark } from "@/components/NetworkMark";
 import type { CartPlanRow } from "@/components/CartRegistrationAndPayment";
 import { creditsFromFaceValueCents, formatLinkupDataAllowanceDisplay } from "@/lib/cart-checkout-variant";
 import {
@@ -21,15 +20,6 @@ function CheckIcon({ className }: { className?: string }) {
   return (
     <svg aria-hidden className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
       <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }
@@ -111,7 +101,7 @@ export function CartLinkupCreditCheckout({
   return (
     <div className={CART_FLOW_CLASS}>
       <div className={`${CART_PANEL_CLASS} cart-flow-panel--checkout cart-flow-panel--linkup-credit`}>
-        <CartPhase1StepNav currentStep={2} embedded />
+        <CartPhase1StepNav currentStep={2} embedded variant="compact" />
 
         <div className="cart-credit-checkout-banner" role="status">
           <CheckIcon className="cart-credit-checkout-banner-icon" />
@@ -123,10 +113,7 @@ export function CartLinkupCreditCheckout({
           </div>
         </div>
 
-        <header className="cart-flow-header cart-flow-header--accent">
-          <div className="mb-3 flex justify-center">
-            <NetworkMark slug="linkup_att" className="max-h-10" />
-          </div>
+        <header className="cart-flow-header cart-flow-header--plain">
           <h1 className="cart-flow-title">{t("title")}</h1>
           <p className="cart-flow-subtitle">{t("subtitle")}</p>
         </header>
@@ -156,7 +143,6 @@ export function CartLinkupCreditCheckout({
                   <span className="cart-credit-checkout-credits">
                     {t("cardValueCredits", { credits: creditCount })}
                   </span>
-                  <span className="cart-credit-checkout-credits-note">{t("cardValueNote")}</span>
                 </dd>
               </div>
               <div className="cart-credit-checkout-summary-row cart-credit-checkout-summary-row--total">
@@ -166,52 +152,38 @@ export function CartLinkupCreditCheckout({
             </dl>
           </section>
 
-          <div className="cart-flow-divider" role="presentation" />
-
-          <section className="cart-flow-block" aria-labelledby="cart-linkup-details">
-            <h2 id="cart-linkup-details" className="cart-flow-block-title">
-              {tCart("registerDetailsHeading")}
-            </h2>
-            <div className="cart-flow-fields-row">
-              <div className="cart-flow-field">
-                <label className="cart-flow-field-label" htmlFor="cart-linkup-name">
-                  {tCart("customerNameLabel")}
-                </label>
-                <input
-                  id="cart-linkup-name"
-                  type="text"
-                  autoComplete="name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className={CART_TEXT_INPUT_CLASS}
-                />
-              </div>
-              <div className="cart-flow-field">
-                <label className="cart-flow-field-label" htmlFor="cart-linkup-email">
-                  {tCart("emailLabel")}
-                </label>
-                <input
-                  id="cart-linkup-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={CART_TEXT_INPUT_CLASS}
-                />
-              </div>
+          <div className="cart-flow-fields-row">
+            <div className="cart-flow-field">
+              <label className="cart-flow-field-label" htmlFor="cart-linkup-name">
+                {tCart("customerNameLabel")}
+              </label>
+              <input
+                id="cart-linkup-name"
+                type="text"
+                autoComplete="name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className={CART_TEXT_INPUT_CLASS}
+              />
             </div>
-          </section>
+            <div className="cart-flow-field">
+              <label className="cart-flow-field-label" htmlFor="cart-linkup-email">
+                {tCart("emailLabel")}
+              </label>
+              <input
+                id="cart-linkup-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={CART_TEXT_INPUT_CLASS}
+              />
+            </div>
+          </div>
 
           {error ? <CartNotice variant="error">{error}</CartNotice> : null}
 
-          <div className="cart-flow-divider" role="presentation" />
-
           <div className="cart-flow-pay-block">
-            <p className="cart-credit-checkout-payment-note">{t("paymentSectionNote")}</p>
-            <div className="cart-flow-pay-trust">
-              <LockIcon className="h-4 w-4 shrink-0 text-[#00104E]/70" />
-              <span>{tCart("registerSecurePayHint")}</span>
-            </div>
             <button
               type="button"
               className={CART_PRIMARY_BUTTON_CLASS}

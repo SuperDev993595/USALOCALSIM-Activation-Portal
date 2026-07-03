@@ -13,8 +13,8 @@ export function CartLinkupPrepaidConfigError({ code }: { code: LinkupEntryBundle
   return (
     <div className={CART_FLOW_CLASS}>
       <div className={`${CART_PANEL_CLASS} cart-flow-panel--checkout`}>
-        <CartPhase1StepNav currentStep={2} embedded />
-        <header className="cart-flow-header cart-flow-header--accent">
+        <CartPhase1StepNav currentStep={2} embedded variant="compact" />
+        <header className="cart-flow-header cart-flow-header--plain">
           <h1 className="cart-flow-title">{t("title")}</h1>
           <p className="cart-flow-subtitle">{t("subtitle")}</p>
         </header>

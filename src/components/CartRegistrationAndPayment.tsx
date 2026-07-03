@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CartNotice } from "@/components/CartNotice";
-import { CartPackIncludes } from "@/components/CartPackIncludes";
 import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
 import {
   CART_FLOW_CLASS,
@@ -56,15 +55,6 @@ function parseUsdInputToCents(raw: string): number | null {
 
 function formatUsdDisplay(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
-}
-
-function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
 }
 
 /** Prepaid cart: name, email, USD pay amount, then Stripe / Mercado Pago. */
@@ -158,128 +148,83 @@ export function CartRegistrationAndPayment({
   return (
     <div className={CART_FLOW_CLASS}>
       <div className={`${CART_PANEL_CLASS} cart-flow-panel--checkout`}>
-        <CartPhase1StepNav currentStep={2} embedded />
+        <CartPhase1StepNav currentStep={2} embedded variant="compact" />
 
-        <header className="cart-flow-header cart-flow-header--accent">
-          <p className="cart-flow-eyebrow">{t("phase1NavStep2")}</p>
+        <header className="cart-flow-header cart-flow-header--plain">
           <h1 className="cart-flow-title">{t("registerPayTitle")}</h1>
           <p className="cart-flow-subtitle">{t("registerPaySubtitle")}</p>
         </header>
 
         <div className="cart-flow-body">
-          <section className="cart-flow-block" aria-labelledby="cart-register-details">
-            <h2 id="cart-register-details" className="cart-flow-block-title">
-              {t("registerDetailsHeading")}
-            </h2>
-            <div className="cart-flow-fields-row">
-              <div className="cart-flow-field">
-                <label className="cart-flow-field-label" htmlFor="cart-name">
-                  {t("customerNameLabel")}
-                </label>
-                <input
-                  id="cart-name"
-                  type="text"
-                  autoComplete="name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className={CART_TEXT_INPUT_CLASS}
-                />
-              </div>
-              <div className="cart-flow-field">
-                <label className="cart-flow-field-label" htmlFor="cart-email">
-                  {t("emailLabel")}
-                </label>
-                <input
-                  id="cart-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={CART_TEXT_INPUT_CLASS}
-                />
-              </div>
-            </div>
-          </section>
-
           {selectedPlan ? (
-            <>
-              <div className="cart-flow-divider" role="presentation" />
-              <section className="cart-flow-block" aria-labelledby="cart-register-payment">
-                <h2 id="cart-register-payment" className="cart-flow-block-title">
-                  {t("registerPaymentHeading")}
-                </h2>
-
-                <div className="cart-flow-plan-strip">
-                  <div className="cart-flow-plan-strip-info">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="cart-flow-market-badge">{selectedPlan.market.toUpperCase()}</span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        {t("prepaidCreditDueLabel")}
-                      </span>
-                    </div>
-                    <p className="cart-flow-plan-name">{selectedPlan.name}</p>
-                    <div className="cart-flow-pills">
-                      <span className="cart-flow-pill">{selectedPlan.dataAllowance}</span>
-                      <span className="cart-flow-pill">
-                        {t("registerPackDurationDays", { days: selectedPlan.durationDays })}
-                      </span>
-                    </div>
+            <section className="cart-flow-order-compact" aria-label={t("registerPaymentHeading")}>
+              <div className="cart-flow-order-compact-main">
+                <p className="cart-flow-plan-name">{selectedPlan.name}</p>
+                <p className="cart-flow-order-compact-meta">
+                  {selectedPlan.dataAllowance}
+                  <span aria-hidden> · </span>
+                  {t("registerPackDurationDays", { days: selectedPlan.durationDays })}
+                </p>
+              </div>
+              {amountLocked ? (
+                <p className="cart-flow-order-compact-total">{formatUsdDisplay(displayCents)}</p>
+              ) : (
+                <div className="cart-flow-field cart-flow-order-compact-amount">
+                  <label className="cart-flow-field-label" htmlFor="cart-pay-usd">
+                    {t("cartPayAmountLabel")}
+                  </label>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">
+                      $
+                    </span>
+                    <input
+                      id="cart-pay-usd"
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="transaction-amount"
+                      value={payDollars}
+                      onChange={(e) => setPayDollars(e.target.value)}
+                      className={`${CART_TEXT_INPUT_CLASS} py-2 pl-7 pr-3 font-semibold tabular-nums`}
+                      placeholder={DEFAULT_BUNDLED_PACK_PAY_DOLLARS}
+                    />
                   </div>
-
-                  {amountLocked ? (
-                    <div className="cart-flow-plan-price-box">
-                      <div>
-                        <p className="cart-flow-plan-price-label">{t("cartPayAmountLabel")}</p>
-                        <p className="cart-flow-plan-hint mt-0.5">
-                          {t("cartPayAmountLockedHint", { amount: (lockPayAmountCents! / 100).toFixed(2) })}
-                        </p>
-                      </div>
-                      <span className="cart-flow-plan-price-value">{formatUsdDisplay(displayCents)}</span>
-                    </div>
-                  ) : (
-                    <div className="cart-flow-field">
-                      <label className="cart-flow-field-label" htmlFor="cart-pay-usd">
-                        {t("cartPayAmountLabel")}
-                      </label>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">
-                          $
-                        </span>
-                        <input
-                          id="cart-pay-usd"
-                          type="text"
-                          inputMode="decimal"
-                          autoComplete="transaction-amount"
-                          value={payDollars}
-                          onChange={(e) => setPayDollars(e.target.value)}
-                          className={`${CART_TEXT_INPUT_CLASS} py-2.5 pl-7 pr-3 font-semibold tabular-nums`}
-                          placeholder={DEFAULT_BUNDLED_PACK_PAY_DOLLARS}
-                          aria-describedby="cart-pay-hint"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {!amountLocked ? (
-                    <p className="cart-flow-plan-hint" id="cart-pay-hint">
-                      {t("prepaidCreditDueHint")}
-                    </p>
-                  ) : null}
-
-                  <CartPackIncludes />
                 </div>
-              </section>
-            </>
+              )}
+            </section>
           ) : null}
+
+          <div className="cart-flow-fields-row">
+            <div className="cart-flow-field">
+              <label className="cart-flow-field-label" htmlFor="cart-name">
+                {t("customerNameLabel")}
+              </label>
+              <input
+                id="cart-name"
+                type="text"
+                autoComplete="name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className={CART_TEXT_INPUT_CLASS}
+              />
+            </div>
+            <div className="cart-flow-field">
+              <label className="cart-flow-field-label" htmlFor="cart-email">
+                {t("emailLabel")}
+              </label>
+              <input
+                id="cart-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={CART_TEXT_INPUT_CLASS}
+              />
+            </div>
+          </div>
 
           {error ? <CartNotice variant="error">{error}</CartNotice> : null}
 
-          <div className="cart-flow-divider" role="presentation" />
           <div className="cart-flow-pay-block">
-            <div className="cart-flow-pay-trust">
-              <LockIcon className="h-4 w-4 shrink-0 text-[#00104E]/70" />
-              <span>{t("registerSecurePayHint")}</span>
-            </div>
             <button
               type="button"
               className={CART_PRIMARY_BUTTON_CLASS}
@@ -298,7 +243,7 @@ export function CartRegistrationAndPayment({
                 {loading === "mercadopago" ? t("paying") : t("payWithMercadoPago")}
               </button>
             ) : null}
-            <p className="cart-flow-pay-methods-note">{t("registerPayMethodsNote")}</p>
+            <p className="cart-flow-pay-methods-note">{t("registerSecurePayHint")}</p>
           </div>
         </div>
 
