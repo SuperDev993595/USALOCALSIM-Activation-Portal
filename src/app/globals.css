@@ -2401,6 +2401,157 @@
   text-decoration: underline;
 }
 
+/* Consumer voucher purchase receipt (feedback 2026-07-06) */
+.voucher-receipt-wrap {
+  color: #111;
+}
+
+.voucher-receipt-toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.voucher-receipt-back-btn {
+  @apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50;
+}
+
+.voucher-receipt-print-btn {
+  @apply rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800;
+}
+
+.voucher-receipt {
+  border: 1px solid #d4d4d8;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1.75rem 1.75rem 1.5rem;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.voucher-receipt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.voucher-receipt-logo {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #00104e;
+}
+
+.voucher-receipt-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.25rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.voucher-receipt-status--paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.voucher-receipt-status--pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.voucher-receipt-meta {
+  margin-top: 1.25rem;
+}
+
+.voucher-receipt-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e4e4e7;
+}
+
+.voucher-receipt-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #52525b;
+}
+
+.voucher-receipt-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.voucher-receipt-label {
+  color: #52525b;
+}
+
+.voucher-receipt-value {
+  font-weight: 600;
+  text-align: right;
+  word-break: break-word;
+}
+
+.voucher-receipt-total {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid #111;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.voucher-receipt-total-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.voucher-receipt-total-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #00104e;
+}
+
+.voucher-receipt-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.voucher-receipt-phase2-btn {
+  @apply inline-flex items-center justify-center rounded-lg bg-[#00104E] px-4 py-2 text-sm font-semibold text-white no-underline transition hover:bg-[#001a7a];
+}
+
+.voucher-receipt-support {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #d4d4d8;
+  font-size: 0.8125rem;
+  color: #52525b;
+  text-align: center;
+}
+
+.voucher-receipt-support-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 @media print {
   body {
     background: #fff !important;
@@ -2427,5 +2578,11 @@
 
   .invoice-receipt-section + .invoice-receipt-section {
     border-top-color: #000;
+  }
+
+  .voucher-receipt {
+    border: none;
+    border-radius: 0;
+    padding: 0;
   }
 }

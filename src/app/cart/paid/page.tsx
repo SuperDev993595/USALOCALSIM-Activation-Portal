@@ -47,6 +47,7 @@ export default async function CartPaidPage({
   const voucher = purchase.prepaidCard?.voucher ?? purchase.voucher;
   const base = voucher ? redeemPathForVoucher(voucher) : "/redeem";
   const redeemHref = redeemUrlWithAccess(base, purchase.id, accessToken);
+  const receiptHref = `/receipt/${purchase.id}?access=${encodeURIComponent(accessToken)}`;
 
   const prepaid = purchase.prepaidCard;
   const linkupCredits =
@@ -65,6 +66,7 @@ export default async function CartPaidPage({
         purchaseId={purchase.id}
         redeemHref={redeemHref}
         invoiceHref={`/invoice/${purchase.id}`}
+        receiptHref={receiptHref}
         plan={{
           name: purchase.plan.name,
           dataAllowance: purchase.plan.dataAllowance,

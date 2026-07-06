@@ -28,6 +28,7 @@ function SuccessCheckIcon() {
 export function CartPaidClient({
   redeemHref,
   invoiceHref,
+  receiptHref,
   plan,
   variant,
   linkupCredits,
@@ -36,6 +37,8 @@ export function CartPaidClient({
   purchaseId: string; // used by server page for lookup; not shown in UI
   redeemHref: string;
   invoiceHref: string;
+  /** Consumer purchase receipt (feedback 2026-07-06). */
+  receiptHref?: string;
   plan: CartCheckoutPlanSummary;
   variant: "ready" | "redeemed";
   /** When set, show LINKUP credit-loaded confirmation (feedback 2026-07-01). */
@@ -153,8 +156,13 @@ export function CartPaidClient({
           </Link>
 
           <p className="cart-flow-footer mt-4 text-center">
-            <Link href={invoiceHref} className="cart-flow-footer-link" target="_blank" rel="noopener noreferrer">
-              {t("viewInvoice")}
+            <Link
+              href={linkupCredits != null && receiptHref ? receiptHref : invoiceHref}
+              className="cart-flow-footer-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {linkupCredits != null && receiptHref ? tLinkup("downloadReceipt") : t("viewInvoice")}
             </Link>
           </p>
         </div>

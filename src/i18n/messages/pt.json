@@ -451,6 +451,7 @@
       "paidNextStep1": "Raspe o PIN e abra o portal LINKUP & AT&T",
       "paidNextStep2": "Escolha 12GB (incluído) ou pague a diferença para 30GB / 50GB",
       "paidNextStep3": "Verifique o número de telefone de serviço por SMS",
+      "downloadReceipt": "Descarregar recibo / Guardar como PDF",
       "configError": {
         "title": "Problema de configuração do cartão",
         "subtitle": "Este cartão LINKUP & AT&T não pode usar o checkout de créditos até estar configurado corretamente.",
@@ -943,5 +944,24 @@
     "print": "Imprimir fatura",
     "back": "← Voltar",
     "supportPrefix": "Dúvidas sobre esta compra?"
+  },
+  "receipt": {
+    "documentLabel": "Recibo de compra",
+    "back": "← Voltar",
+    "downloadPdf": "Descarregar recibo / Guardar como PDF",
+    "statusPaid": "PAGO",
+    "statusPending": "PENDENTE",
+    "invoiceId": "ID da fatura",
+    "date": "Data",
+    "billTo": "Faturar a",
+    "receiptDetails": "Detalhes do recibo",
+    "product": "Produto",
+    "value": "Valor",
+    "voucherUsage": "Utilização do voucher",
+    "serialReference": "Referência do número de série do cartão",
+    "paymentMethod": "Método de pagamento",
+    "totalCharged": "Total cobrado",
+    "goPhase2": "Ir para a Fase 2: Resgate de SIM / eSIM",
+    "supportQuestion": "Dúvidas sobre esta compra? Contacte-nos em:"
   }
 }
