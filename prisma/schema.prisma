@@ -169,13 +169,17 @@ model PrepaidCard {
 
 // Cart session for physical-card checkout. phoneE164/verifiedAt set only for legacy SMS Phase-1 paths.
 model CartSession {
-  id                 String         @id @default(cuid())
-  phoneE164        String?
-  verifiedAt       DateTime?
-  expiresAt        DateTime
-  createdAt        DateTime       @default(now())
-  purchases        CartPurchase[]
-  claimedPrepaidCard PrepaidCard?
+  id                   String         @id @default(cuid())
+  phoneE164            String?
+  verifiedAt           DateTime?
+  expiresAt            DateTime
+  createdAt            DateTime       @default(now())
+  /// Phase 1 LINKUP checkout handoff (feedback 2026-07-06).
+  checkoutCustomerName String?
+  checkoutEmail        String?
+  checkoutPreparedAt   DateTime?
+  purchases            CartPurchase[]
+  claimedPrepaidCard   PrepaidCard?
 
   @@index([phoneE164])
   @@map("ShopSession")

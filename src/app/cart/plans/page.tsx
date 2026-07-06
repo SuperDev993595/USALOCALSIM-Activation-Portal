@@ -2,14 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
-import {
-  isLinkupExclusiveVoucher,
-  validateLinkupEntryBundle,
-} from "@/lib/linkup-exclusive-prepaid";
-import { CartLinkupCreditCheckout } from "@/components/CartLinkupCreditCheckout";
-import { CartLinkupPrepaidConfigError } from "@/components/CartLinkupPrepaidConfigError";
 import { CartRegistrationAndPayment } from "@/components/CartRegistrationAndPayment";
 import { getPrepaidPaidRedirect } from "@/lib/prepaid-paid-redirect";
+import { isLinkupExclusiveVoucher } from "@/lib/linkup-exclusive-prepaid";
 
 export default async function CartPlansPage() {
   const cookieStore = await cookies();
@@ -53,23 +48,7 @@ export default async function CartPlansPage() {
   }
 
   if (isLinkupExclusiveVoucher(prepaid.voucher)) {
-    const bundleCheck = validateLinkupEntryBundle({
-      faceValueCents: prepaid.faceValueCents,
-      basePlanSku: prepaid.basePlan.sku,
-    });
-    if (!bundleCheck.ok) {
-      return (
-        <div className="cart-flow-page">
-          <CartLinkupPrepaidConfigError code={bundleCheck.code} />
-        </div>
-      );
-    }
-
-    return (
-      <div className="cart-flow-page">
-        <CartLinkupCreditCheckout plan={prepaid.basePlan} faceValueCents={prepaid.faceValueCents} />
-      </div>
-    );
+    redirect("/cart/checkout");
   }
 
   const plans = [prepaid.basePlan];

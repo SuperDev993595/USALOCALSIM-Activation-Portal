@@ -92,6 +92,7 @@ export function CartPhoneVerifyClient({
   }
 
   const showManualSerialForm = !prepaidSerialFromQr?.trim() || needSerialBanner;
+  const isFallbackSerial = showManualSerialForm && (needSerialBanner || !prepaidSerialFromQr?.trim());
   const autoLinking =
     Boolean(prepaidSerialFromQr?.trim()) &&
     !needSerialBanner &&
@@ -112,8 +113,12 @@ export function CartPhoneVerifyClient({
 
         <header className="cart-flow-header cart-flow-header--accent">
           <p className="cart-flow-eyebrow">{t("phase1NavStep1")}</p>
-          <h1 className="cart-flow-title">{t("linkCardTitle")}</h1>
-          <p className="cart-flow-subtitle">{t("linkCardSubtitle")}</p>
+          <h1 className="cart-flow-title">
+            {isFallbackSerial ? t("linkCardTitleFallback") : t("linkCardTitle")}
+          </h1>
+          <p className="cart-flow-subtitle">
+            {isFallbackSerial ? t("linkCardSubtitleFallback") : t("linkCardSubtitle")}
+          </p>
           <div className="cart-flow-steps-hint mt-4" aria-hidden>
             {stepHints.map(({ key, active }) => (
               <span key={key} className={`cart-flow-steps-hint-item ${active ? "cart-flow-steps-hint-item--active" : ""}`}>
@@ -165,7 +170,9 @@ export function CartPhoneVerifyClient({
               <h2 id="cart-serial-heading" className="cart-flow-block-title">
                 {t("phase1SerialHeading")}
               </h2>
-              <p className="text-sm leading-relaxed text-slate-600">{t("phase1SerialInstructions")}</p>
+              <p className="text-sm leading-relaxed text-slate-600">
+                {isFallbackSerial ? t("phase1SerialInstructionsFallback") : t("phase1SerialInstructions")}
+              </p>
               <div className="cart-flow-field">
                 <label className="cart-flow-field-label" htmlFor="cart-serial">
                   {t("phase1SerialLabel")}

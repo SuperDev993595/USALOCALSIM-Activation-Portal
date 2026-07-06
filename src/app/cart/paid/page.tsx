@@ -73,6 +73,7 @@ export default async function CartPaidPage({
         }}
         variant={variant}
         linkupCredits={linkupCredits}
+        linkupFaceValueCents={prepaid?.faceValueCents}
       />
     </div>
   );

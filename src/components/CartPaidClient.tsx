@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { CartCheckoutPlanSummary } from "@/components/CartRedeemClient";
 import { CartNotice } from "@/components/CartNotice";
 import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
+import { LinkupWalletBalanceCard } from "@/components/cart/linkup/LinkupWalletBalanceCard";
 import {
   CART_FLOW_CLASS,
   CART_PANEL_CLASS,
@@ -30,6 +31,7 @@ export function CartPaidClient({
   plan,
   variant,
   linkupCredits,
+  linkupFaceValueCents,
 }: {
   purchaseId: string; // used by server page for lookup; not shown in UI
   redeemHref: string;
@@ -38,6 +40,7 @@ export function CartPaidClient({
   variant: "ready" | "redeemed";
   /** When set, show LINKUP credit-loaded confirmation (feedback 2026-07-01). */
   linkupCredits?: number;
+  linkupFaceValueCents?: number;
 }) {
   const t = useTranslations("cart");
   const tLinkup = useTranslations("cart.linkupCredit");
@@ -93,6 +96,14 @@ export function CartPaidClient({
             </div>
           ) : null}
 
+          {linkupCredits != null ? (
+            <>
+              <LinkupWalletBalanceCard faceValueCents={linkupFaceValueCents ?? linkupCredits * 100} />
+              <CartNotice variant="info">{tLinkup("paidPhase2Note")}</CartNotice>
+            </>
+          ) : null}
+
+          {linkupCredits == null ? (
           <section className="cart-flow-block" aria-labelledby="cart-paid-summary">
             <h2 id="cart-paid-summary" className="cart-flow-block-title">
               {t("registerPaymentHeading")}
@@ -116,7 +127,9 @@ export function CartPaidClient({
               </div>
             </div>
           </section>
+          ) : null}
 
+          {linkupCredits == null ? (
           <section className="cart-flow-block" aria-labelledby="cart-paid-next">
             <h2 id="cart-paid-next" className="cart-flow-block-title">
               {t("paidNextHeading")}
@@ -133,9 +146,10 @@ export function CartPaidClient({
               ))}
             </ol>
           </section>
+          ) : null}
 
           <Link href={redeemHref} className={`${CART_PRIMARY_BUTTON_CLASS} text-center`}>
-            {t("proceedActivation")}
+            {linkupCredits != null ? t("proceedPhase2") : t("proceedActivation")}
           </Link>
 
           <p className="cart-flow-footer mt-4 text-center">

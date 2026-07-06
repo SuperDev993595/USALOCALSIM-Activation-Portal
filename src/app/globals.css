@@ -850,6 +850,22 @@
     @apply pt-1;
   }
 
+  .public-site--cart .cart-linkup-payment-options {
+    @apply flex flex-col gap-3;
+  }
+
+  .public-site--cart .cart-linkup-payment-options button {
+    @apply flex min-h-12 flex-col items-center justify-center gap-0.5 py-3;
+  }
+
+  .public-site--cart .cart-linkup-payment-coming-soon {
+    @apply text-xs font-normal text-slate-500;
+  }
+
+  .public-site--cart .cart-linkup-wallet-balance {
+    @apply rounded-xl border border-slate-200/90 bg-slate-50/80 px-4 py-4;
+  }
+
   .public-site--cart .cart-flow-secure-hint {
     @apply pt-1 text-center text-xs leading-relaxed text-slate-500;
   }

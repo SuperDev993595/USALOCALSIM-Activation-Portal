@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
+import { resolveCartCheckoutCustomer } from "@/lib/cart-checkout-customer";
 import {
   STRIPE_CART_CHECKOUT_FLOW,
   STRIPE_CART_SESSION_METADATA_KEY,
@@ -17,8 +18,8 @@ import {
 
 const bodySchema = z.object({
   planId: z.string().min(1),
-  email: z.string().email(),
-  customerName: z.string().min(2).max(120),
+  email: z.string().email().optional(),
+  customerName: z.string().min(2).max(120).optional(),
   /** Customer-entered USD cents; prepaid cart does not validate against voucher credit (plan is chosen at redemption). */
   payAmountCents: z.number().int().positive(),
 });
@@ -41,10 +42,12 @@ export async function POST(req: Request) {
     body = bodySchema.parse(await req.json());
   } catch {
     return NextResponse.json(
-      { error: "Invalid request: planId, name, email, and payAmountCents required." },
+      { error: "Invalid request: planId and payAmountCents required." },
       { status: 400 },
     );
   }
+
+  const { email, customerName } = resolveCartCheckoutCustomer(cartSession, body);
 
   const plan = await prisma.plan.findFirst({
     where: { id: body.planId, planType: "physical_sim" },
@@ -99,6 +102,12 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    if (!cartSession.checkoutPreparedAt) {
+      return NextResponse.json(
+        { error: "Complete secure checkout before choosing a payment method.", code: "CHECKOUT_NOT_PREPARED" },
+        { status: 400 },
+      );
+    }
   }
 
   if (prepaid.faceValueCents > 0 && body.payAmountCents !== prepaid.faceValueCents) {
@@ -115,8 +124,8 @@ export async function POST(req: Request) {
     where: { id: prepaid.voucherId },
     data: {
       declaredPayCents: body.payAmountCents,
-      customerName: body.customerName.trim(),
-      customerEmail: body.email.trim(),
+      customerName,
+      ...(email ? { customerEmail: email } : {}),
     },
   });
 
@@ -126,6 +135,7 @@ export async function POST(req: Request) {
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const linkupFlow = isLinkupExclusiveVoucher(prepaid.voucher);
 
   const stripeProduct = cartCheckoutLineItem({
     voucher: prepaid.voucher,
@@ -137,7 +147,7 @@ export async function POST(req: Request) {
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "payment",
     payment_method_types: ["card"],
-    customer_email: body.email,
+    ...(email ? { customer_email: email } : {}),
     line_items: [
       {
         price_data: {
@@ -149,13 +159,13 @@ export async function POST(req: Request) {
       },
     ],
     success_url: `${appUrl}/cart/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/cart/plans`,
+    cancel_url: linkupFlow ? `${appUrl}/cart/payment` : `${appUrl}/cart/plans`,
     metadata: {
       flow: STRIPE_CART_CHECKOUT_FLOW,
       [STRIPE_CART_SESSION_METADATA_KEY]: cartSession.id,
       planId: plan.id,
-      customerName: body.customerName.trim(),
-      customerEmail: body.email.trim(),
+      customerName,
+      ...(email ? { customerEmail: email } : {}),
       declaredPayAmountCents: String(body.payAmountCents),
       ...(prepaid ? { [STRIPE_PREPAID_CARD_METADATA_KEY]: prepaid.id } : {}),
     },
