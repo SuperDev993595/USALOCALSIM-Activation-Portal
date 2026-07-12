@@ -866,6 +866,82 @@
     @apply rounded-xl border border-slate-200/90 bg-slate-50/80 px-4 py-4;
   }
 
+  .public-site--cart .cart-global-tier-badge {
+    @apply mb-4 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm;
+  }
+
+  .public-site--cart .cart-global-tier-badge__title {
+    @apply text-base font-bold tracking-wide;
+  }
+
+  .public-site--cart .cart-global-tier-badge__subtitle {
+    @apply text-xs font-medium uppercase tracking-wide opacity-90;
+  }
+
+  .public-site--cart .cart-global-tier-badge__modality {
+    @apply ml-auto rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide;
+  }
+
+  .public-site--cart .cart-global-tier-badge--basic {
+    @apply border-emerald-600/30 bg-emerald-50 text-emerald-950;
+  }
+
+  .public-site--cart .cart-global-tier-badge--basic .cart-global-tier-badge__modality {
+    @apply bg-emerald-600/15 text-emerald-800;
+  }
+
+  .public-site--cart .cart-global-tier-badge--pro {
+    @apply border-sky-600/30 bg-sky-50 text-sky-950;
+  }
+
+  .public-site--cart .cart-global-tier-badge--pro .cart-global-tier-badge__modality {
+    @apply bg-sky-600/15 text-sky-800;
+  }
+
+  .public-site--cart .cart-global-tier-badge--ultra {
+    @apply border-red-600/30 bg-red-50 text-red-950;
+  }
+
+  .public-site--cart .cart-global-tier-badge--ultra .cart-global-tier-badge__modality {
+    @apply bg-red-600/15 text-red-800;
+  }
+
+  .public-site--cart .cart-flow-panel--global-basic {
+    @apply border-emerald-600/10;
+  }
+
+  .public-site--cart .cart-flow-panel--global-pro {
+    @apply border-sky-600/10;
+  }
+
+  .public-site--cart .cart-flow-panel--global-ultra {
+    @apply border-red-600/10;
+  }
+
+  .public-site--cart .cart-flow-panel--three-uk-credit {
+    @apply border-sky-600/15;
+  }
+
+  .public-site--cart .cart-flow-panel--three-uk-credit .cart-credit-checkout-banner {
+    @apply border-sky-600/25 bg-sky-50/90;
+  }
+
+  .public-site--cart .cart-flow-panel--orange-credit {
+    @apply border-orange-500/20;
+  }
+
+  .public-site--cart .cart-flow-panel--orange-credit .cart-credit-checkout-banner {
+    @apply border-orange-500/30 bg-orange-50/90;
+  }
+
+  .public-site--cart .cart-flow-panel--basic-usa-credit {
+    @apply border-emerald-600/15;
+  }
+
+  .public-site--cart .cart-flow-panel--basic-usa-credit .cart-credit-checkout-banner {
+    @apply border-emerald-600/25 bg-emerald-50/90;
+  }
+
   .public-site--cart .cart-flow-secure-hint {
     @apply pt-1 text-center text-xs leading-relaxed text-slate-500;
   }

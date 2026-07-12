@@ -7,7 +7,8 @@ import {
 export function isThreeUkExclusiveVoucher(voucher: {
   voucherProductType: string;
   code: string;
-}): boolean {
+} | null | undefined): boolean {
+  if (!voucher) return false;
   return effectiveVoucherProductType(voucher) === VOUCHER_PRODUCT_TYPE.THREE_UK;
 }
 

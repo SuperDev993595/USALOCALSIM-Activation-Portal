@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { CartPaidClient } from "@/components/CartPaidClient";
-import { creditsFromFaceValueCents, isLinkupCreditCheckout } from "@/lib/cart-checkout-variant";
+import { creditsFromFaceValueCents, isCreditCheckout } from "@/lib/cart-checkout-variant";
+import { resolveCreditCheckoutProfile } from "@/lib/credit-checkout-profile";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
 import { redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 
@@ -30,7 +31,7 @@ export default async function CartPaidPage({
       prepaidCard: {
         select: {
           faceValueCents: true,
-          basePlan: { select: { sku: true } },
+          basePlan: { select: { sku: true, coverageTier: true } },
           voucher: { select: { voucherProductType: true, code: true } },
         },
       },
@@ -50,13 +51,23 @@ export default async function CartPaidPage({
   const receiptHref = `/receipt/${purchase.id}?access=${encodeURIComponent(accessToken)}`;
 
   const prepaid = purchase.prepaidCard;
-  const linkupCredits =
+  const creditProfile =
     prepaid &&
-    isLinkupCreditCheckout({
+    isCreditCheckout({
       voucher: prepaid.voucher,
       faceValueCents: prepaid.faceValueCents,
       basePlanSku: prepaid.basePlan?.sku,
+      basePlanCoverageTier: prepaid.basePlan?.coverageTier,
     })
+      ? resolveCreditCheckoutProfile({
+          voucher: prepaid.voucher,
+          faceValueCents: prepaid.faceValueCents,
+          basePlanSku: prepaid.basePlan?.sku,
+          basePlanCoverageTier: prepaid.basePlan?.coverageTier,
+        })
+      : null;
+  const creditCredits =
+    creditProfile?.usesCreditsDisplay && prepaid
       ? creditsFromFaceValueCents(prepaid.faceValueCents)
       : undefined;
 
@@ -74,8 +85,9 @@ export default async function CartPaidPage({
           market: purchase.plan.market,
         }}
         variant={variant}
-        linkupCredits={linkupCredits}
-        linkupFaceValueCents={prepaid?.faceValueCents}
+        creditProfileId={creditProfile?.id}
+        creditCredits={creditCredits}
+        creditFaceValueCents={prepaid?.faceValueCents}
       />
     </div>
   );

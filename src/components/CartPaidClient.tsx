@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import type { CartCheckoutPlanSummary } from "@/components/CartRedeemClient";
 import { CartNotice } from "@/components/CartNotice";
 import { CartPhase1StepNav } from "@/components/CartPhase1StepNav";
-import { LinkupWalletBalanceCard } from "@/components/cart/linkup/LinkupWalletBalanceCard";
+import { CreditWalletBalanceCard } from "@/components/cart/credit/CreditWalletBalanceCard";
+import { creditCheckoutProfileById, type CreditCheckoutProfileId } from "@/lib/credit-checkout-profile";
 import {
   CART_FLOW_CLASS,
   CART_PANEL_CLASS,
@@ -31,22 +32,33 @@ export function CartPaidClient({
   receiptHref,
   plan,
   variant,
+  creditProfileId,
+  creditCredits,
+  creditFaceValueCents,
+  /** @deprecated Use creditProfileId + creditCredits */
   linkupCredits,
+  /** @deprecated Use creditFaceValueCents */
   linkupFaceValueCents,
 }: {
-  purchaseId: string; // used by server page for lookup; not shown in UI
+  purchaseId: string;
   redeemHref: string;
   invoiceHref: string;
-  /** Consumer purchase receipt (feedback 2026-07-06). */
   receiptHref?: string;
   plan: CartCheckoutPlanSummary;
   variant: "ready" | "redeemed";
-  /** When set, show LINKUP credit-loaded confirmation (feedback 2026-07-01). */
+  creditProfileId?: CreditCheckoutProfileId;
+  creditCredits?: number;
+  creditFaceValueCents?: number;
   linkupCredits?: number;
   linkupFaceValueCents?: number;
 }) {
   const t = useTranslations("cart");
-  const tLinkup = useTranslations("cart.linkupCredit");
+  const profileId = creditProfileId ?? (linkupCredits != null ? "linkup_att" : undefined);
+  const profile = profileId ? creditCheckoutProfileById(profileId) : null;
+  const tCredit = useTranslations(profile?.i18nNamespace ?? "cart.linkupCredit");
+  const credits = creditCredits ?? linkupCredits;
+  const faceValueCents = creditFaceValueCents ?? linkupFaceValueCents;
+  const isCreditPaid = profileId != null;
 
   if (variant === "redeemed") {
     return (
@@ -78,11 +90,13 @@ export function CartPaidClient({
             <div className="min-w-0 text-center sm:text-left">
               <p className="cart-flow-eyebrow">{t("phase1NavStep4")}</p>
               <h1 className="cart-flow-title">
-                {linkupCredits != null ? tLinkup("paidTitle") : t("paidTitle")}
+                {isCreditPaid ? tCredit("paidTitle") : t("paidTitle")}
               </h1>
               <p className="cart-flow-subtitle">
-                {linkupCredits != null
-                  ? tLinkup("paidSubtitle", { credits: linkupCredits })
+                {isCreditPaid
+                  ? credits != null
+                    ? tCredit("paidSubtitle", { credits })
+                    : tCredit("paidSubtitle")
                   : t("paidCompleteSubtitle")}
               </p>
             </div>
@@ -90,79 +104,79 @@ export function CartPaidClient({
         </header>
 
         <div className="cart-flow-body">
-          {linkupCredits != null ? (
+          {isCreditPaid ? (
             <div className="cart-credit-checkout-banner mb-2" role="status">
-              <p className="cart-credit-checkout-banner-title">{tLinkup("paidCreditsBannerTitle")}</p>
+              <p className="cart-credit-checkout-banner-title">{tCredit("paidCreditsBannerTitle")}</p>
               <p className="cart-credit-checkout-banner-body">
-                {tLinkup("paidCreditsBannerBody", { credits: linkupCredits })}
+                {credits != null
+                  ? tCredit("paidCreditsBannerBody", { credits })
+                  : tCredit("paidCreditsBannerBody")}
               </p>
             </div>
           ) : null}
 
-          {linkupCredits != null ? (
+          {isCreditPaid && profileId ? (
             <>
-              <LinkupWalletBalanceCard faceValueCents={linkupFaceValueCents ?? linkupCredits * 100} />
-              <CartNotice variant="info">{tLinkup("paidPhase2Note")}</CartNotice>
+              <CreditWalletBalanceCard
+                profileId={profileId}
+                faceValueCents={faceValueCents ?? (credits != null ? credits * 100 : 0)}
+              />
+              <CartNotice variant="info">{tCredit("paidPhase2Note")}</CartNotice>
             </>
           ) : null}
 
-          {linkupCredits == null ? (
-          <section className="cart-flow-block" aria-labelledby="cart-paid-summary">
-            <h2 id="cart-paid-summary" className="cart-flow-block-title">
-              {t("registerPaymentHeading")}
-            </h2>
-            <div className="cart-flow-plan-strip">
-              <div className="cart-flow-plan-strip-info">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="cart-flow-market-badge">{plan.market.toUpperCase()}</span>
-                  <span className="cart-flow-pill cart-flow-pill--success">{t("paidWalletLoadedBadge")}</span>
+          {!isCreditPaid ? (
+            <section className="cart-flow-block" aria-labelledby="cart-paid-summary">
+              <h2 id="cart-paid-summary" className="cart-flow-block-title">
+                {t("registerPaymentHeading")}
+              </h2>
+              <div className="cart-flow-plan-strip">
+                <div className="cart-flow-plan-strip-info">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="cart-flow-market-badge">{plan.market.toUpperCase()}</span>
+                    <span className="cart-flow-pill cart-flow-pill--success">{t("paidWalletLoadedBadge")}</span>
+                  </div>
+                  <p className="cart-flow-plan-name">{plan.name}</p>
+                  <div className="cart-flow-pills">
+                    <span className="cart-flow-pill">{plan.dataAllowance}</span>
+                    <span className="cart-flow-pill">
+                      {t("registerPackDurationDays", { days: plan.durationDays })}
+                    </span>
+                  </div>
+                  <p className="cart-flow-plan-hint">{t("paidPlanReadOnlyHint")}</p>
                 </div>
-                <p className="cart-flow-plan-name">{plan.name}</p>
-                <div className="cart-flow-pills">
-                  <span className="cart-flow-pill">{plan.dataAllowance}</span>
-                  <span className="cart-flow-pill">
-                    {t("registerPackDurationDays", { days: plan.durationDays })}
-                  </span>
-                </div>
-                <p className="cart-flow-plan-hint">
-                  {linkupCredits != null ? tLinkup("paidPlanHint") : t("paidPlanReadOnlyHint")}
-                </p>
               </div>
-            </div>
-          </section>
+            </section>
           ) : null}
 
-          {linkupCredits == null ? (
-          <section className="cart-flow-block" aria-labelledby="cart-paid-next">
-            <h2 id="cart-paid-next" className="cart-flow-block-title">
-              {t("paidNextHeading")}
-            </h2>
-            <ol className="cart-flow-next-steps">
-              {(linkupCredits != null
-                ? (["paidNextStep1", "paidNextStep2", "paidNextStep3"] as const)
-                : PAID_NEXT_STEP_KEYS
-              ).map((key, idx) => (
-                <li key={key} className="cart-flow-next-step">
-                  <span className="cart-flow-next-step-num">{idx + 1}</span>
-                  <span>{linkupCredits != null ? tLinkup(key) : t(key)}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          {!isCreditPaid ? (
+            <section className="cart-flow-block" aria-labelledby="cart-paid-next">
+              <h2 id="cart-paid-next" className="cart-flow-block-title">
+                {t("paidNextHeading")}
+              </h2>
+              <ol className="cart-flow-next-steps">
+                {PAID_NEXT_STEP_KEYS.map((key, idx) => (
+                  <li key={key} className="cart-flow-next-step">
+                    <span className="cart-flow-next-step-num">{idx + 1}</span>
+                    <span>{t(key)}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
           ) : null}
 
           <Link href={redeemHref} className={`${CART_PRIMARY_BUTTON_CLASS} text-center`}>
-            {linkupCredits != null ? t("proceedPhase2") : t("proceedActivation")}
+            {isCreditPaid ? t("proceedPhase2") : t("proceedActivation")}
           </Link>
 
           <p className="cart-flow-footer mt-4 text-center">
             <Link
-              href={linkupCredits != null && receiptHref ? receiptHref : invoiceHref}
+              href={isCreditPaid && receiptHref ? receiptHref : invoiceHref}
               className="cart-flow-footer-link"
               target="_blank"
               rel="noopener noreferrer"
             >
-              {linkupCredits != null && receiptHref ? tLinkup("downloadReceipt") : t("viewInvoice")}
+              {isCreditPaid && receiptHref ? tCredit("downloadReceipt") : t("viewInvoice")}
             </Link>
           </p>
         </div>

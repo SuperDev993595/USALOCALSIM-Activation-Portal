@@ -1,3 +1,4 @@
+import { isCreditCheckoutEligible, resolveCreditCheckoutProfile } from "@/lib/credit-checkout-profile";
 import {
   isLinkupExclusiveVoucher,
   validateLinkupEntryBundle,
@@ -10,14 +11,20 @@ export {
   validateLinkupEntryBundle,
 } from "@/lib/linkup-exclusive-prepaid";
 
+export function isCreditCheckout(input: {
+  voucher: { voucherProductType: string; code: string } | null | undefined;
+  faceValueCents: number;
+  basePlanSku: string | null | undefined;
+  basePlanCoverageTier?: string | null | undefined;
+}): boolean {
+  return isCreditCheckoutEligible(input);
+}
+
 export function isLinkupCreditCheckout(input: {
   voucher: { voucherProductType: string; code: string } | null | undefined;
   faceValueCents: number;
   basePlanSku: string | null | undefined;
 }): boolean {
-  if (!isLinkupExclusiveVoucher(input.voucher)) return false;
-  return validateLinkupEntryBundle({
-    faceValueCents: input.faceValueCents,
-    basePlanSku: input.basePlanSku,
-  }).ok;
+  const profile = resolveCreditCheckoutProfile(input);
+  return profile?.id === "linkup_att";
 }

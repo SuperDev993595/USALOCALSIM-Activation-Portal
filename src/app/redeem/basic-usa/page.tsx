@@ -1,15 +1,14 @@
 import { RedeemPageBackground } from "@/components/RedeemPageBackground";
 import { RedeepPhase2Client } from "@/components/RedeepPhase2Client";
-import { OrangeLanding } from "@/components/OrangeLanding";
+import { BasicUsaLanding } from "@/components/BasicUsaLanding";
 import { loadRedeemWizardPageContext } from "@/lib/redeem-page-load";
-import { listOrangePublicPlans } from "@/lib/orange-public-plans";
 
 /**
- * Orange exclusive hub (injectable marketing URL):
- * - /redeem/orange — public ULTRA eSIM plans + activate CTA
- * - /redeem/orange?purchaseId=…&access=… — redeem wizard (tier/network skipped, eSIM only)
+ * Basic USA combined hub (T-Mobile + LinkUP on one voucher):
+ * - /redeem/basic-usa — public entry plans + activate CTA
+ * - /redeem/basic-usa?purchaseId=…&access=… — redeem wizard (network pick at configure)
  */
-export default async function RedeemOrangePage({
+export default async function RedeemBasicUsaPage({
   searchParams,
 }: {
   searchParams: {
@@ -23,10 +22,9 @@ export default async function RedeemOrangePage({
   const upgrade = Array.isArray(searchParams.upgrade) ? searchParams.upgrade[0] : searchParams.upgrade;
 
   if (!purchaseId?.trim()) {
-    const plans = await listOrangePublicPlans();
     return (
       <RedeemPageBackground>
-        <OrangeLanding plans={plans} />
+        <BasicUsaLanding />
       </RedeemPageBackground>
     );
   }
@@ -35,14 +33,14 @@ export default async function RedeemOrangePage({
     purchaseId: purchaseId.trim(),
     access: access?.trim(),
     upgrade,
-    exclusivePath: "/redeem/orange",
+    exclusivePath: "/redeem/basic-usa",
   });
 
   return (
     <RedeemPageBackground>
       <div className="flex w-full flex-col items-center gap-4">
-        <p className="rounded-full border border-orange-400/35 bg-orange-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-orange-200">
-          ORANGE · ULTRA eSIM
+        <p className="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
+          BASIC USA · T-MOBILE + LINKUP
         </p>
         <RedeepPhase2Client
           purchaseId={ctx.purchaseId}
@@ -50,10 +48,8 @@ export default async function RedeemOrangePage({
           resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
           skipPinStep
-          autoNetworkSlug="orange"
-          initialNetworkSlug="orange"
-          initialCoverageTier="ultra"
-          skipFulfillmentStep
+          initialCoverageTier="basic"
+          basicNetworkPick
         />
       </div>
     </RedeemPageBackground>

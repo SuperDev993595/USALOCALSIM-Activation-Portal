@@ -13,6 +13,17 @@ describe("cartCheckoutLineItem", () => {
     expect(item.description).toContain("$30.00");
   });
 
+  it("uses T-Mobile branding for valid entry bundle", () => {
+    const item = cartCheckoutLineItem({
+      voucher: { voucherProductType: "t_mobile", code: "USLTM-DEMO" },
+      payAmountCents: 3900,
+      faceValueCents: 3900,
+      basePlanSku: "TM-UNL-10D",
+    });
+    expect(item.name).toContain("T-Mobile Unlimited");
+    expect(item.description).toContain("$39.00");
+  });
+
   it("uses generic bundled pack copy for global cards", () => {
     const item = cartCheckoutLineItem({
       voucher: { voucherProductType: "global", code: "USL-G-DEMO" },

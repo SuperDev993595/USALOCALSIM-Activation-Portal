@@ -11,6 +11,7 @@ describe("inferVoucherProductTypeFromCode", () => {
     delete process.env.VOUCHER_PREFIX_THREE_UK;
     delete process.env.VOUCHER_PREFIX_T_MOBILE;
     delete process.env.VOUCHER_PREFIX_LINKUP_ATT;
+    delete process.env.VOUCHER_PREFIX_ORANGE;
   });
 
   it("returns global for empty code", () => {
@@ -29,6 +30,10 @@ describe("inferVoucherProductTypeFromCode", () => {
   it("detects Linkup from default prefix", () => {
     expect(inferVoucherProductTypeFromCode("USLATT-DEMO0001")).toBe(VOUCHER_PRODUCT_TYPE.LINKUP_ATT);
     expect(inferVoucherProductTypeFromCode("USLLU-BATCH1")).toBe(VOUCHER_PRODUCT_TYPE.LINKUP_ATT);
+  });
+
+  it("detects Orange from default prefix", () => {
+    expect(inferVoucherProductTypeFromCode("USLORG-DEMO0001")).toBe(VOUCHER_PRODUCT_TYPE.ORANGE);
   });
 
   it("returns global for unrelated prefix", () => {

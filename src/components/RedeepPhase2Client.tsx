@@ -129,6 +129,8 @@ export function RedeepPhase2Client({
   initialCoverageTier = null,
   /** Three UK: after SMS go straight to plan selection (SIM step only if needed at checkout). */
   skipFulfillmentStep = false,
+  /** Basic USA combined: pick T-Mobile or LinkUP at configure (no tier step). */
+  basicNetworkPick = false,
 }: {
   purchaseId?: string | null;
   accessToken?: string | null;
@@ -149,6 +151,7 @@ export function RedeepPhase2Client({
   initialNetworkSlug?: string | null;
   initialCoverageTier?: string | null;
   skipFulfillmentStep?: boolean;
+  basicNetworkPick?: boolean;
 }) {
   const t = useTranslations("redeemWizard");
   const router = useRouter();
@@ -225,7 +228,7 @@ export function RedeepPhase2Client({
   const showConfigInNav = showConfigColumn;
   const isBasicTier =
     isCoverageTier(selectedCoverageTier) && selectedCoverageTier === COVERAGE_TIER.BASIC;
-  const basicTierNetworkPick = showTierStep && isBasicTier;
+  const basicTierNetworkPick = (showTierStep && isBasicTier) || basicNetworkPick;
   const networkSelectionRequired = showNetworkStep || basicTierNetworkPick;
   const navStepsList = useMemo(
     () => navSteps(stepMap, showConfigInNav),

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
 import { CartRegistrationAndPayment } from "@/components/CartRegistrationAndPayment";
 import { getPrepaidPaidRedirect } from "@/lib/prepaid-paid-redirect";
-import { isLinkupExclusiveVoucher } from "@/lib/linkup-exclusive-prepaid";
+import { cartPhase1PathForPrepaid } from "@/lib/cart-phase1-route";
 
 export default async function CartPlansPage() {
   const cookieStore = await cookies();
@@ -33,6 +33,7 @@ export default async function CartPlansPage() {
           durationDays: true,
           priceCents: true,
           market: true,
+          coverageTier: true,
         },
       },
     },
@@ -47,8 +48,9 @@ export default async function CartPlansPage() {
     redirect(paidRedirect.redirectPath);
   }
 
-  if (isLinkupExclusiveVoucher(prepaid.voucher)) {
-    redirect("/cart/checkout");
+  const creditCheckoutPath = cartPhase1PathForPrepaid(prepaid);
+  if (creditCheckoutPath !== "/cart/plans") {
+    redirect(creditCheckoutPath);
   }
 
   const plans = [prepaid.basePlan];

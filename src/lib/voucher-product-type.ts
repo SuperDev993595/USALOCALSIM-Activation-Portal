@@ -4,6 +4,8 @@ export const VOUCHER_PRODUCT_TYPE = {
   THREE_UK: "three_uk",
   T_MOBILE: "t_mobile",
   LINKUP_ATT: "linkup_att",
+  ORANGE: "orange",
+  BASIC_USA: "basic_usa",
 } as const;
 
 export type VoucherProductType = (typeof VOUCHER_PRODUCT_TYPE)[keyof typeof VOUCHER_PRODUCT_TYPE];
@@ -15,6 +17,8 @@ export const VOUCHER_PRODUCT_TYPE_LABELS: Record<VoucherProductType, string> = {
   [VOUCHER_PRODUCT_TYPE.THREE_UK]: "Three UK exclusive",
   [VOUCHER_PRODUCT_TYPE.T_MOBILE]: "T-Mobile exclusive (USA BASIC)",
   [VOUCHER_PRODUCT_TYPE.LINKUP_ATT]: "LINKUP & AT&T exclusive (USA BASIC)",
+  [VOUCHER_PRODUCT_TYPE.ORANGE]: "Orange exclusive (ULTRA eSIM · 200+ countries)",
+  [VOUCHER_PRODUCT_TYPE.BASIC_USA]: "Basic USA (T-Mobile + LinkUP combined)",
 };
 
 export const RETAILER_NOT_ACTIVATED_MESSAGE =
@@ -37,6 +41,16 @@ const LINKUP_ATT_PREFIXES = (process.env.VOUCHER_PREFIX_LINKUP_ATT ?? "USLATT-,U
   .map((s) => s.trim().toUpperCase())
   .filter(Boolean);
 
+const ORANGE_PREFIXES = (process.env.VOUCHER_PREFIX_ORANGE ?? "USLORG-,USL-ORG-")
+  .split(",")
+  .map((s) => s.trim().toUpperCase())
+  .filter(Boolean);
+
+const BASIC_USA_PREFIXES = (process.env.VOUCHER_PREFIX_BASIC_USA ?? "USLUSA-,USL-BUSA-")
+  .split(",")
+  .map((s) => s.trim().toUpperCase())
+  .filter(Boolean);
+
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
 }
@@ -53,7 +67,9 @@ export function isVoucherProductType(value: string): value is VoucherProductType
     value === VOUCHER_PRODUCT_TYPE.GLOBAL ||
     value === VOUCHER_PRODUCT_TYPE.THREE_UK ||
     value === VOUCHER_PRODUCT_TYPE.T_MOBILE ||
-    value === VOUCHER_PRODUCT_TYPE.LINKUP_ATT
+    value === VOUCHER_PRODUCT_TYPE.LINKUP_ATT ||
+    value === VOUCHER_PRODUCT_TYPE.ORANGE ||
+    value === VOUCHER_PRODUCT_TYPE.BASIC_USA
   );
 }
 
@@ -64,6 +80,8 @@ export function inferVoucherProductTypeFromCode(code: string): VoucherProductTyp
   if (codeStartsWithAny(n, THREE_UK_PREFIXES)) return VOUCHER_PRODUCT_TYPE.THREE_UK;
   if (codeStartsWithAny(n, T_MOBILE_PREFIXES)) return VOUCHER_PRODUCT_TYPE.T_MOBILE;
   if (codeStartsWithAny(n, LINKUP_ATT_PREFIXES)) return VOUCHER_PRODUCT_TYPE.LINKUP_ATT;
+  if (codeStartsWithAny(n, ORANGE_PREFIXES)) return VOUCHER_PRODUCT_TYPE.ORANGE;
+  if (codeStartsWithAny(n, BASIC_USA_PREFIXES)) return VOUCHER_PRODUCT_TYPE.BASIC_USA;
   return VOUCHER_PRODUCT_TYPE.GLOBAL;
 }
 

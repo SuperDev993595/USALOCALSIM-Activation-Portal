@@ -6,10 +6,7 @@ import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/car
 import { createMercadoPagoCartPreference } from "@/lib/mercadopago-cart";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 import { cartCheckoutLineItem } from "@/lib/cart-checkout-product";
-import {
-  isLinkupExclusiveVoucher,
-  validateLinkupEntryBundle,
-} from "@/lib/linkup-exclusive-prepaid";
+import { resolveCreditCheckoutProfile } from "@/lib/credit-checkout-profile";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -72,20 +69,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Selected plan does not match this card's market." }, { status: 400 });
   }
 
-  if (isLinkupExclusiveVoucher(prepaid.voucher)) {
-    const bundle = validateLinkupEntryBundle({
+  const creditProfile = resolveCreditCheckoutProfile({
+    voucher: prepaid.voucher,
+    faceValueCents: prepaid.faceValueCents,
+    basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+    basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
+  });
+
+  if (creditProfile) {
+    const bundle = creditProfile.validateEntryBundle({
       faceValueCents: prepaid.faceValueCents,
       basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+      basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
     });
     if (!bundle.ok) {
       return NextResponse.json(
-        { error: "This LINKUP card is not configured for the $30 / 12GB entry bundle.", code: bundle.code },
+        { error: "This card is not configured for the entry bundle.", code: bundle.code },
         { status: 400 },
       );
     }
     if (plan.id !== prepaid.basePlanId) {
       return NextResponse.json(
-        { error: "LINKUP entry cards must use the bundled 12GB / 30-day base plan at checkout." },
+        { error: "Entry cards must use the bundled base plan at checkout." },
         { status: 400 },
       );
     }
@@ -120,6 +125,7 @@ export async function POST(req: Request) {
     payAmountCents: body.payAmountCents,
     faceValueCents: prepaid.faceValueCents,
     basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+    basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
   });
 
   const pref = await createMercadoPagoCartPreference({

@@ -246,6 +246,27 @@ export async function seedDemoCartCards(
     where: { sku: "ATT-LIM-12GB", planType: "physical_sim", active: true },
     select: { id: true },
   });
+  const orangePlan = await prisma.plan.findFirst({
+    where: { sku: "ULT-ORG-WLD-20GB-31D", planType: "esim", active: true },
+    select: { id: true },
+  });
+  const threeUkPlan = await prisma.plan.findFirst({
+    where: { sku: "3UK-EX-40GB-30D", planType: "physical_sim", active: true },
+    select: { id: true },
+  });
+  const tmobilePlan = await prisma.plan.findFirst({
+    where: { sku: "TM-UNL-10D", planType: "physical_sim", active: true },
+    select: { id: true },
+  });
+  const globalBasicPlan = tmobilePlan;
+  const globalProPlan = await prisma.plan.findFirst({
+    where: { sku: "PRO-3UK-40GB-30D", planType: "physical_sim", active: true },
+    select: { id: true },
+  });
+  const globalUltraPlan = await prisma.plan.findFirst({
+    where: { sku: "ULT-ORG-EU-100GB-31D", planType: "esim", active: true },
+    select: { id: true },
+  });
 
   const cards: CartCardSeed[] = [
     {
@@ -269,6 +290,78 @@ export async function seedDemoCartCards(
       faceValueCents: 3000,
       state: "unpaid",
       voucherProductType: "linkup_att",
+      basePlanId: linkupPlan?.id,
+    },
+    {
+      label: "T-Mobile credit cart — $39 / 10-day unlimited (credit checkout UI)",
+      serial: "USALOCARTTM01",
+      pin: "USLTM-CART0001",
+      faceValueCents: 3900,
+      state: "unpaid",
+      voucherProductType: "t_mobile",
+      basePlanId: tmobilePlan?.id,
+    },
+    {
+      label: "Three UK exclusive — 40GB / 30 days (credit checkout UI)",
+      serial: "USALOCART3UK01",
+      pin: "USLTUK-CART0001",
+      faceValueCents: 2268,
+      state: "unpaid",
+      voucherProductType: "three_uk",
+      basePlanId: threeUkPlan?.id,
+    },
+    {
+      label: "Orange exclusive — World 20GB eSIM (credit checkout UI)",
+      serial: "USALOCARTORG01",
+      pin: "USLORG-CART0001",
+      faceValueCents: 2599,
+      state: "unpaid",
+      voucherProductType: "orange",
+      basePlanId: orangePlan?.id,
+    },
+    {
+      label: "Global BASIC — tier checkout ($39 / T-Mobile entry)",
+      serial: "USALOCARTGLO01",
+      pin: "USL-G-CART0003",
+      faceValueCents: 3900,
+      state: "unpaid",
+      voucherProductType: "global",
+      basePlanId: globalBasicPlan?.id,
+    },
+    {
+      label: "Global PRO — tier checkout (Three UK entry)",
+      serial: "USALOCARTGLO02",
+      pin: "USL-G-CART0004",
+      faceValueCents: 2268,
+      state: "unpaid",
+      voucherProductType: "global",
+      basePlanId: globalProPlan?.id,
+    },
+    {
+      label: "Global ULTRA — tier checkout (Orange eSIM entry)",
+      serial: "USALOCARTGLO03",
+      pin: "USL-G-CART0005",
+      faceValueCents: 3199,
+      state: "unpaid",
+      voucherProductType: "global",
+      basePlanId: globalUltraPlan?.id,
+    },
+    {
+      label: "Basic USA combined — T-Mobile entry ($39 / credit checkout UI)",
+      serial: "USALOCARTUSA01",
+      pin: "USLUSA-CART0001",
+      faceValueCents: 3900,
+      state: "unpaid",
+      voucherProductType: "basic_usa",
+      basePlanId: tmobilePlan?.id,
+    },
+    {
+      label: "Basic USA combined — Linkup entry ($30 / credit checkout UI)",
+      serial: "USALOCARTUSA02",
+      pin: "USLUSA-CART0002",
+      faceValueCents: 3000,
+      state: "unpaid",
+      voucherProductType: "basic_usa",
       basePlanId: linkupPlan?.id,
     },
   ];

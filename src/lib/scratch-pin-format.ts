@@ -10,6 +10,8 @@ const DEFAULT_GLOBAL_SCRATCH_PREFIX = "USL-G-";
 const DEFAULT_THREE_UK_SCRATCH_PREFIX = "USLTUK-";
 const DEFAULT_T_MOBILE_SCRATCH_PREFIX = "USLTM-";
 const DEFAULT_LINKUP_ATT_SCRATCH_PREFIX = "USLATT-";
+const DEFAULT_ORANGE_SCRATCH_PREFIX = "USLORG-";
+const DEFAULT_BASIC_USA_SCRATCH_PREFIX = "USLUSA-";
 
 function firstPrefixFromEnv(envKey: string, fallback: string): string {
   const raw = process.env[envKey]?.trim();
@@ -27,6 +29,10 @@ export function scratchPinPrefixForProductType(type: VoucherProductType): string
       return firstPrefixFromEnv("VOUCHER_PREFIX_T_MOBILE", DEFAULT_T_MOBILE_SCRATCH_PREFIX);
     case VOUCHER_PRODUCT_TYPE.LINKUP_ATT:
       return firstPrefixFromEnv("VOUCHER_PREFIX_LINKUP_ATT", DEFAULT_LINKUP_ATT_SCRATCH_PREFIX);
+    case VOUCHER_PRODUCT_TYPE.ORANGE:
+      return firstPrefixFromEnv("VOUCHER_PREFIX_ORANGE", DEFAULT_ORANGE_SCRATCH_PREFIX);
+    case VOUCHER_PRODUCT_TYPE.BASIC_USA:
+      return firstPrefixFromEnv("VOUCHER_PREFIX_BASIC_USA", DEFAULT_BASIC_USA_SCRATCH_PREFIX);
     default:
       return firstPrefixFromEnv("VOUCHER_PREFIX_GLOBAL", DEFAULT_GLOBAL_SCRATCH_PREFIX);
   }

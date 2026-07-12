@@ -57,6 +57,7 @@ export function CartPhoneVerifyClient({
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
           redirect?: string;
+          checkoutPath?: string;
           alreadyPaid?: boolean;
         };
         if (!res.ok) {
@@ -69,12 +70,17 @@ export function CartPhoneVerifyClient({
           router.refresh();
           return;
         }
-        goPlans();
+        const nextPath =
+          typeof data.checkoutPath === "string" && data.checkoutPath.startsWith("/cart")
+            ? data.checkoutPath
+            : "/cart/plans";
+        router.push(nextPath);
+        router.refresh();
       } finally {
         setLoading(false);
       }
     },
-    [goPlans, t],
+    [router, t],
   );
 
   useEffect(() => {

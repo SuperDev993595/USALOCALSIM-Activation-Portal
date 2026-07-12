@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, recordFailedAttempt, getRateLimitKey } from "@/lib/rate-limit";
 import { CART_SESSION_COOKIE, cartSessionCookieOptions, readCookieFromRequest } from "@/lib/cart-session";
+import { cartPhase1PathForSession } from "@/lib/cart-phase1-route";
 import { ensureCartSessionWithPrepaidSerial } from "@/lib/cart-phase1-session";
 import { getPrepaidPaidRedirectBySerial } from "@/lib/prepaid-paid-redirect";
 import { normalizePrepaidSerial } from "@/lib/prepaid-cart";
@@ -35,6 +36,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
+  const checkoutPath = paidRedirect ? null : await cartPhase1PathForSession(result.sessionId);
+
   const res = NextResponse.json({
     ok: true,
     ...(paidRedirect
@@ -43,7 +46,9 @@ export async function POST(req: Request) {
           redirect: paidRedirect.redirectPath,
           purchaseId: paidRedirect.purchaseId,
         }
-      : {}),
+      : checkoutPath
+        ? { checkoutPath }
+        : {}),
   });
   res.cookies.set(CART_SESSION_COOKIE, result.sessionId, cartSessionCookieOptions());
   return res;

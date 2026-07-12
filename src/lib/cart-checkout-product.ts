@@ -1,4 +1,4 @@
-import { creditsFromFaceValueCents, isLinkupCreditCheckout } from "@/lib/cart-checkout-variant";
+import { resolveCreditCheckoutProfile } from "@/lib/credit-checkout-profile";
 
 type VoucherSlice = { voucherProductType: string; code: string } | null | undefined;
 
@@ -7,19 +7,20 @@ export function cartCheckoutLineItem(input: {
   payAmountCents: number;
   faceValueCents: number;
   basePlanSku?: string | null;
+  basePlanCoverageTier?: string | null;
 }): { name: string; description: string } {
-  if (
-    isLinkupCreditCheckout({
-      voucher: input.voucher,
+  const profile = resolveCreditCheckoutProfile({
+    voucher: input.voucher,
+    faceValueCents: input.faceValueCents,
+    basePlanSku: input.basePlanSku,
+    basePlanCoverageTier: input.basePlanCoverageTier,
+  });
+  if (profile) {
+    return profile.stripeLineItem({
+      payAmountCents: input.payAmountCents,
       faceValueCents: input.faceValueCents,
-      basePlanSku: input.basePlanSku,
-    })
-  ) {    const credits = creditsFromFaceValueCents(input.faceValueCents || input.payAmountCents);
-    const usd = (input.payAmountCents / 100).toFixed(2);
-    return {
-      name: `LINKUP & AT&T — ${credits} Credits`,
-      description: `Load ${credits} credits on your physical card ($${usd} USD at checkout). Redeem for 12GB, 30GB, or 50GB plans with your scratch PIN.`,
-    };
+      coverageTier: profile.coverageTier,
+    });
   }
 
   return {

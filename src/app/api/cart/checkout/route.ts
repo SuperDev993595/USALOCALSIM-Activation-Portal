@@ -11,10 +11,7 @@ import {
 } from "@/lib/stripe-cart-flow";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 import { cartCheckoutLineItem } from "@/lib/cart-checkout-product";
-import {
-  isLinkupExclusiveVoucher,
-  validateLinkupEntryBundle,
-} from "@/lib/linkup-exclusive-prepaid";
+import { resolveCreditCheckoutProfile } from "@/lib/credit-checkout-profile";
 
 const bodySchema = z.object({
   planId: z.string().min(1),
@@ -49,13 +46,6 @@ export async function POST(req: Request) {
 
   const { email, customerName } = resolveCartCheckoutCustomer(cartSession, body);
 
-  const plan = await prisma.plan.findFirst({
-    where: { id: body.planId, planType: "physical_sim" },
-  });
-  if (!plan) {
-    return NextResponse.json({ error: "Plan not found." }, { status: 404 });
-  }
-
   const prepaid = await loadPrepaidCardClaimedBySession(cartSession.id);
   if (!prepaid) {
     return NextResponse.json(
@@ -65,6 +55,16 @@ export async function POST(req: Request) {
       },
       { status: 400 },
     );
+  }
+
+  const plan = await prisma.plan.findFirst({
+    where: { id: body.planId },
+  });
+  if (!plan) {
+    return NextResponse.json({ error: "Plan not found." }, { status: 404 });
+  }
+  if (plan.planType !== "physical_sim" && plan.id !== prepaid.basePlanId) {
+    return NextResponse.json({ error: "Plan not found." }, { status: 404 });
   }
   if (prepaid.voucher.paymentStatus) {
     return NextResponse.json(
@@ -85,20 +85,31 @@ export async function POST(req: Request) {
     );
   }
 
-  if (isLinkupExclusiveVoucher(prepaid.voucher)) {
-    const bundle = validateLinkupEntryBundle({
+  const creditProfile = resolveCreditCheckoutProfile({
+    voucher: prepaid.voucher,
+    faceValueCents: prepaid.faceValueCents,
+    basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+    basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
+  });
+
+  if (creditProfile) {
+    const bundle = creditProfile.validateEntryBundle({
       faceValueCents: prepaid.faceValueCents,
       basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+      basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
     });
     if (!bundle.ok) {
       return NextResponse.json(
-        { error: "This LINKUP card is not configured for the $30 / 12GB entry bundle.", code: bundle.code },
+        {
+          error: "This voucher card is not configured correctly for checkout.",
+          code: bundle.code,
+        },
         { status: 400 },
       );
     }
     if (plan.id !== prepaid.basePlanId) {
       return NextResponse.json(
-        { error: "LINKUP entry cards must use the bundled 12GB / 30-day base plan at checkout." },
+        { error: "Entry cards must use the bundled base plan at checkout." },
         { status: 400 },
       );
     }
@@ -135,13 +146,14 @@ export async function POST(req: Request) {
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const linkupFlow = isLinkupExclusiveVoucher(prepaid.voucher);
+  const creditFlow = creditProfile != null;
 
   const stripeProduct = cartCheckoutLineItem({
     voucher: prepaid.voucher,
     payAmountCents: body.payAmountCents,
     faceValueCents: prepaid.faceValueCents,
     basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+    basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
   });
 
   const checkoutSession = await stripe.checkout.sessions.create({
@@ -159,7 +171,7 @@ export async function POST(req: Request) {
       },
     ],
     success_url: `${appUrl}/cart/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: linkupFlow ? `${appUrl}/cart/payment` : `${appUrl}/cart/plans`,
+    cancel_url: creditFlow ? `${appUrl}/cart/payment` : `${appUrl}/cart/plans`,
     metadata: {
       flow: STRIPE_CART_CHECKOUT_FLOW,
       [STRIPE_CART_SESSION_METADATA_KEY]: cartSession.id,

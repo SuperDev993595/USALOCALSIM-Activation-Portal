@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { CART_GUEST_CUSTOMER_NAME } from "@/lib/cart-checkout-customer";
 import { getVerifiedCartSessionByRequest, newCartSessionExpiry } from "@/lib/cart-session";
-import { loadLinkupCartCheckout } from "@/lib/linkup-cart-checkout-load";
+import { resolveCreditCheckoutProfile } from "@/lib/credit-checkout-profile";
+import { loadCreditCartCheckout } from "@/lib/credit-cart-checkout-load";
 import { loadPrepaidCardClaimedBySession } from "@/lib/prepaid-cart";
 
 const bodySchema = z.object({
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
   }
 
-  const loaded = await loadLinkupCartCheckout(cartSession.id);
+  const loaded = await loadCreditCartCheckout(cartSession.id);
   if (!loaded.ok) {
     if (loaded.reason === "paid") {
       return NextResponse.json({ error: "This card is already paid.", code: "ALREADY_PAID" }, { status: 409 });

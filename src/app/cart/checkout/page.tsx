@@ -1,26 +1,26 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { CartLinkupPrepaidConfigError } from "@/components/CartLinkupPrepaidConfigError";
-import { LinkupCheckoutSummary } from "@/components/cart/linkup/LinkupCheckoutSummary";
+import { CartCreditPrepaidConfigError } from "@/components/CartCreditPrepaidConfigError";
+import { CreditCheckoutSummary } from "@/components/cart/credit/CreditCheckoutSummary";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
-import { loadLinkupCartCheckout } from "@/lib/linkup-cart-checkout-load";
+import { loadCreditCartCheckout } from "@/lib/credit-cart-checkout-load";
 
 export default async function CartCheckoutPage() {
   const cookieStore = await cookies();
   const sid = cookieStore.get(CART_SESSION_COOKIE)?.value;
-  const loaded = await loadLinkupCartCheckout(sid);
+  const loaded = await loadCreditCartCheckout(sid);
 
   if (!loaded.ok) {
     if (loaded.reason === "paid" && loaded.redirect) {
       redirect(loaded.redirect);
     }
-    if (loaded.reason === "not_linkup") {
+    if (loaded.reason === "not_credit_checkout") {
       redirect("/cart/plans");
     }
     if (loaded.reason === "config_error") {
       return (
         <div className="cart-flow-page">
-          <CartLinkupPrepaidConfigError code={loaded.code} />
+          <CartCreditPrepaidConfigError profileId={loaded.profileId} code={loaded.code} />
         </div>
       );
     }
@@ -29,10 +29,13 @@ export default async function CartCheckoutPage() {
 
   return (
     <div className="cart-flow-page">
-      <LinkupCheckoutSummary
+      <CreditCheckoutSummary
+        profileId={loaded.profileId}
         plan={loaded.plan}
         faceValueCents={loaded.faceValueCents}
         initialEmail={loaded.checkoutEmail}
+        coverageTier={loaded.coverageTier}
+        cssModifierClass={loaded.cssModifierClass}
       />
     </div>
   );
