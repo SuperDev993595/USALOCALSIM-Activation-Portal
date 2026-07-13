@@ -1,12 +1,25 @@
 import type { CartPurchase, Plan, PrepaidCard, Voucher } from "@prisma/client";
+import { isCreditCheckout } from "@/lib/cart-checkout-variant";
+import type { CoverageTier } from "@/lib/coverage-tier";
+import { isCoverageTier } from "@/lib/coverage-tier";
+import {
+  resolveCreditCheckoutProfile,
+  type CreditCheckoutProfileId,
+} from "@/lib/credit-checkout-profile";
+import { creditsFromFaceValueCents } from "@/lib/linkup-exclusive-prepaid";
 import {
   displayTransactionId,
   formatInvoiceDate,
+  invoiceUrl,
   isSyntheticPosEmail,
   marketCurrencySymbol,
 } from "@/lib/invoice";
-import { creditsFromFaceValueCents } from "@/lib/linkup-exclusive-prepaid";
 import { PREPAID_PAYMENT_SOURCES } from "@/lib/prepaid-payment-source";
+import {
+  receiptProductLabel,
+  receiptValueReference,
+  receiptVoucherUsage,
+} from "@/lib/voucher-receipt-copy";
 
 const NA = "NA";
 
@@ -32,9 +45,17 @@ export type PurchaseForVoucherReceipt = CartPurchase & {
   prepaidCard:
     | (Pick<PrepaidCard, "faceValueCents" | "serial" | "barcodePayload" | "retailMarket"> & {
         voucher: Pick<Voucher, "voucherProductType" | "code"> | null;
+        basePlan?: Pick<Plan, "sku" | "coverageTier"> | null;
       })
     | null;
   voucher: Pick<Voucher, "voucherProductType" | "code"> | null;
+};
+
+export type CreditCheckoutPurchaseInput = {
+  voucher: { voucherProductType: string; code: string };
+  faceValueCents: number;
+  basePlanSku: string | null | undefined;
+  basePlanCoverageTier?: string | null | undefined;
 };
 
 function distributorName(): string {
@@ -64,6 +85,52 @@ function formatChargedTotal(cents: number, market: string): string {
   return `$${(cents / 100).toFixed(2)} USD`;
 }
 
+export function creditCheckoutInputFromPurchase(
+  purchase: PurchaseForVoucherReceipt,
+): CreditCheckoutPurchaseInput | null {
+  const prepaid = purchase.prepaidCard;
+  const voucher = prepaid?.voucher ?? purchase.voucher;
+  if (!prepaid || !voucher) return null;
+
+  return {
+    voucher,
+    faceValueCents: prepaid.faceValueCents,
+    basePlanSku: prepaid.basePlan?.sku ?? purchase.plan.sku,
+    basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? purchase.plan.coverageTier,
+  };
+}
+
+export function isCreditCheckoutPurchase(purchase: PurchaseForVoucherReceipt): boolean {
+  const input = creditCheckoutInputFromPurchase(purchase);
+  return input != null && isCreditCheckout(input);
+}
+
+export function creditCheckoutProfileIdForPurchase(
+  purchase: PurchaseForVoucherReceipt,
+): CreditCheckoutProfileId | null {
+  const input = creditCheckoutInputFromPurchase(purchase);
+  if (!input) return null;
+  return resolveCreditCheckoutProfile(input)?.id ?? null;
+}
+
+export function receiptUrl(purchaseId: string, accessToken?: string): string {
+  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "") || "http://localhost:3000";
+  const path = `/receipt/${encodeURIComponent(purchaseId)}`;
+  if (!accessToken?.trim()) return `${base}${path}`;
+  return `${base}${path}?access=${encodeURIComponent(accessToken.trim())}`;
+}
+
+export function cartPurchasePaidEmailDocumentUrls(
+  purchaseId: string,
+  accessToken: string,
+  creditCheckout: boolean,
+): { receiptUrl?: string; invoiceUrl?: string } {
+  if (creditCheckout) {
+    return { receiptUrl: receiptUrl(purchaseId, accessToken) };
+  }
+  return { invoiceUrl: invoiceUrl(purchaseId, accessToken) };
+}
+
 export function buildVoucherReceiptData(
   purchase: PurchaseForVoucherReceipt,
   redeemHref: string,
@@ -71,6 +138,12 @@ export function buildVoucherReceiptData(
   const market = purchase.prepaidCard?.retailMarket ?? purchase.plan.market;
   const faceValueCents = purchase.prepaidCard?.faceValueCents ?? purchase.amountPaidCents;
   const credits = creditsFromFaceValueCents(faceValueCents);
+  const creditInput = creditCheckoutInputFromPurchase(purchase);
+  const profile = creditInput ? resolveCreditCheckoutProfile(creditInput) : null;
+  const profileId = profile?.id ?? null;
+  const planTier = purchase.plan.coverageTier;
+  const coverageTier: CoverageTier | undefined =
+    profile?.coverageTier ?? (planTier && isCoverageTier(planTier) ? planTier : undefined);
 
   const serial =
     purchase.prepaidCard?.serial?.trim() ||
@@ -86,18 +159,16 @@ export function buildVoucherReceiptData(
       ? purchase.customerName?.trim() || "Guest Customer"
       : "Guest Customer / Authorized Reseller";
 
-  const usdValue = `$${(faceValueCents / 100).toFixed(2)} USD`;
-
   return {
     distributor: distributorName(),
     invoiceId: `#US-${displayTransactionId(purchase)}`,
     date: formatInvoiceDate(purchase.createdAt, market),
     status: purchase.status === "authorized" || purchase.status === "redeemed" ? "PAID" : "PENDING",
     billTo,
-    product: "USALOCALSIM Pre-Paid Voucher",
+    product: receiptProductLabel(profileId),
     credits,
-    valueReference: `${credits} CREDITS = ${usdValue}`,
-    voucherUsage: "Valid for USA Pre-Paid Bundle (AT&T & LINKUP MOBILE)",
+    valueReference: receiptValueReference(profileId, faceValueCents, credits),
+    voucherUsage: receiptVoucherUsage(profileId, purchase.plan, coverageTier),
     serialReference: serial,
     paymentMethod: receiptPaymentMethod(purchase.paymentSource),
     totalCharged,

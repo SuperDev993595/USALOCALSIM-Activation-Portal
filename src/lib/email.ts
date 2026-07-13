@@ -252,6 +252,8 @@ export async function sendCartPurchasePaidEmail(opts: {
   resumeUrl: string;
   /** PIN + date only — no SMS step (keep this link private). */
   directRedeemUrl?: string;
+  /** Consumer purchase receipt (credit checkout). Preferred over invoice when set. */
+  receiptUrl?: string;
   invoiceUrl?: string;
   amountPaidCents?: number;
   transactionId?: string;
@@ -259,7 +261,19 @@ export async function sendCartPurchasePaidEmail(opts: {
 }): Promise<{ ok: boolean; error?: string }> {
   const subject = `USALOCALSIM — payment received (${opts.planName})`;
   const direct = opts.directRedeemUrl?.trim();
+  const receipt = opts.receiptUrl?.trim();
   const invoice = opts.invoiceUrl?.trim();
+  const documentUrl = receipt || invoice;
+  const documentText = receipt
+    ? `View or print your purchase receipt:\n${receipt}\n\n`
+    : invoice
+      ? `View or print your invoice:\n${invoice}\n\n`
+      : "";
+  const documentHtml = documentUrl
+    ? receipt
+      ? `<p><a href="${escapeHtml(receipt)}">View or print your purchase receipt</a></p>`
+      : `<p><a href="${escapeHtml(invoice!)}">View or print your invoice</a></p>`
+    : "";
   const amountFormatted =
     opts.amountPaidCents != null
       ? formatPaidAmountForEmail(opts.amountPaidCents, opts.amountMarket ?? "us")
@@ -275,7 +289,7 @@ export async function sendCartPurchasePaidEmail(opts: {
     txnLine +
     `\n` +
     `Next step: enter the PIN from your physical card and your service start date.\n\n` +
-    (invoice ? `View or print your invoice:\n${invoice}\n\n` : "") +
+    documentText +
     (direct
       ? `Open this link on any device to continue (no SMS code on this step — PIN only):\n${direct}\n\n`
       : "") +
@@ -292,9 +306,7 @@ export async function sendCartPurchasePaidEmail(opts: {
       ? `<p><strong>Transaction ID:</strong> ${escapeHtml(opts.transactionId.trim())}</p>`
       : "") +
     `<p>Next step: enter the PIN from your physical card and your service start date.</p>` +
-    (invoice
-      ? `<p><a href="${escapeHtml(invoice)}">View or print invoice</a></p>`
-      : "") +
+    documentHtml +
     (direct
       ? `<p><a href="${escapeHtml(direct)}">Open activation (PIN only, no SMS)</a></p>` +
         `<p style="font-size:12px;color:#555">Anyone with this link can use your paid activation step — treat it like cash.</p>`

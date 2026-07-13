@@ -1,6 +1,11 @@
 import { prisma } from "./db";
 import { sendCartPurchasePaidEmail } from "./email";
-import { displayTransactionId, invoiceUrl } from "./invoice";
+import { displayTransactionId } from "./invoice";
+import { isCreditCheckout } from "./cart-checkout-variant";
+import {
+  cartPurchasePaidEmailDocumentUrls,
+  type CreditCheckoutPurchaseInput,
+} from "./voucher-receipt";
 import { getMercadoPagoAccessToken } from "./mercadopago-config";
 import { authorizePrepaidAfterPayment } from "./prepaid-authorize";
 import { PREPAID_PAYMENT_SOURCES } from "./prepaid-payment-source";
@@ -310,8 +315,15 @@ async function sendPaidEmailIfNeeded(
     where: { id: purchaseId },
     include: {
       resumeToken: true,
-      prepaidCard: { select: { retailMarket: true } },
-      plan: { select: { market: true } },
+      plan: { select: { sku: true, coverageTier: true, market: true, name: true } },
+      prepaidCard: {
+        select: {
+          retailMarket: true,
+          faceValueCents: true,
+          voucher: { select: { voucherProductType: true, code: true } },
+          basePlan: { select: { sku: true, coverageTier: true } },
+        },
+      },
     },
   });
   if (!purchase?.redemptionAccessToken || !purchase.resumeToken) return;
@@ -322,12 +334,29 @@ async function sendPaidEmailIfNeeded(
   const isSynthetic = /^reconcile\+/i.test(meta.customerEmail) && /@usalocalsim\.com$/i.test(meta.customerEmail);
   if (isSynthetic) return;
 
+  const prepaid = purchase.prepaidCard;
+  let creditInput: CreditCheckoutPurchaseInput | null = null;
+  if (prepaid?.voucher) {
+    creditInput = {
+      voucher: prepaid.voucher,
+      faceValueCents: prepaid.faceValueCents,
+      basePlanSku: prepaid.basePlan?.sku ?? purchase.plan.sku,
+      basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? purchase.plan.coverageTier,
+    };
+  }
+  const creditCheckout = creditInput != null && isCreditCheckout(creditInput);
+  const documentUrls = cartPurchasePaidEmailDocumentUrls(
+    purchase.id,
+    purchase.redemptionAccessToken,
+    creditCheckout,
+  );
+
   await sendCartPurchasePaidEmail({
     to: meta.customerEmail,
     planName,
     resumeUrl,
     directRedeemUrl,
-    invoiceUrl: invoiceUrl(purchase.id, purchase.redemptionAccessToken),
+    ...documentUrls,
     amountPaidCents: purchase.amountPaidCents,
     transactionId: displayTransactionId(purchase),
     amountMarket: purchase.prepaidCard?.retailMarket ?? purchase.plan.market,

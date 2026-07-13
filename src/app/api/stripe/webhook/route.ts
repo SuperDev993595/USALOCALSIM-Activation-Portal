@@ -12,7 +12,12 @@ import {
 } from "@/lib/stripe-cart-flow";
 import { generateOpaqueResumeToken, newResumeTokenExpiresAt } from "@/lib/cart-resume";
 import { sendCartPurchasePaidEmail } from "@/lib/email";
-import { displayTransactionId, invoiceUrl } from "@/lib/invoice";
+import { displayTransactionId } from "@/lib/invoice";
+import { isCreditCheckout } from "@/lib/cart-checkout-variant";
+import {
+  cartPurchasePaidEmailDocumentUrls,
+  type CreditCheckoutPurchaseInput,
+} from "@/lib/voucher-receipt";
 import { authorizePrepaidAfterPayment } from "@/lib/prepaid-authorize";
 import { PREPAID_PAYMENT_SOURCES } from "@/lib/prepaid-payment-source";
 import { normalizePhoneE164 } from "@/lib/phone-e164";
@@ -77,7 +82,14 @@ export async function POST(req: Request) {
 
     const cartSession = await prisma.cartSession.findUnique({
       where: { id: cartSessionId },
-      include: { claimedPrepaidCard: true },
+      include: {
+        claimedPrepaidCard: {
+          include: {
+            voucher: { select: { voucherProductType: true, code: true } },
+            basePlan: { select: { sku: true, coverageTier: true } },
+          },
+        },
+      },
     });
     if (!cartSession) {
       await prisma.auditLog.create({
@@ -214,12 +226,29 @@ export async function POST(req: Request) {
     const directRedeemUrl = `${appBase}/redeem?purchaseId=${encodeURIComponent(createdPurchase.id)}&access=${encodeURIComponent(redemptionAccessToken)}`;
     const isSyntheticReconcileEmail = /^reconcile\+/i.test(email) && /@usalocalsim\.com$/i.test(email);
     if (!isSyntheticReconcileEmail) {
+      const prepaid = cartSession.claimedPrepaidCard;
+      let creditInput: CreditCheckoutPurchaseInput | null = null;
+      if (prepaid?.voucher) {
+        creditInput = {
+          voucher: prepaid.voucher,
+          faceValueCents: prepaid.faceValueCents,
+          basePlanSku: prepaid.basePlan?.sku ?? plan.sku,
+          basePlanCoverageTier: prepaid.basePlan?.coverageTier ?? plan.coverageTier,
+        };
+      }
+      const creditCheckout = creditInput != null && isCreditCheckout(creditInput);
+      const documentUrls = cartPurchasePaidEmailDocumentUrls(
+        createdPurchase.id,
+        redemptionAccessToken,
+        creditCheckout,
+      );
+
       const mail = await sendCartPurchasePaidEmail({
         to: email,
         planName: plan.name,
         resumeUrl,
         directRedeemUrl,
-        invoiceUrl: invoiceUrl(createdPurchase.id, redemptionAccessToken),
+        ...documentUrls,
         amountPaidCents: paidCents,
         transactionId: displayTransactionId({
           id: createdPurchase.id,

@@ -12,6 +12,7 @@ const purchaseInclude = {
       barcodePayload: true,
       retailMarket: true,
       voucher: { select: { voucherProductType: true, code: true } },
+      basePlan: { select: { sku: true, coverageTier: true } },
     },
   },
   voucher: { select: { voucherProductType: true, code: true } },
