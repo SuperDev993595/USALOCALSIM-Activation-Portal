@@ -345,7 +345,7 @@
     "linkCardTitle": "Link your Pre-Paid Voucher Card",
     "linkCardTitleFallback": "Link your Pre-Paid Voucher Card",
     "linkCardSubtitle": "Scan the QR code on your card to continue. If the link opened correctly, we will link your card automatically.",
-    "linkCardSubtitleFallback": "Oops! It looks like your camera couldn't read the QR code correctly. No worries—you can proceed to checkout by typing the Serial Number found on the back of your voucher package below.",
+    "linkCardSubtitleFallback": "Oops! It looks like your camera couldn't read the QR code correctly. No worries—you can easily proceed to your checkout cart by simply typing the Serial Number found on the back of your voucher package below.",
     "phase1SerialHeading": "Card serial number",
     "phase1SerialInstructions": "Enter the serial number from the back of your voucher package (same value encoded in the QR).",
     "phase1SerialInstructionsFallback": "Type the Serial Number from the back of your voucher package below.",

@@ -263,6 +263,7 @@ export async function sendCartPurchasePaidEmail(opts: {
   const direct = opts.directRedeemUrl?.trim();
   const receipt = opts.receiptUrl?.trim();
   const invoice = opts.invoiceUrl?.trim();
+  const isCreditCheckoutReceipt = Boolean(receipt);
   const documentUrl = receipt || invoice;
   const documentText = receipt
     ? `View or print your purchase receipt:\n${receipt}\n\n`
@@ -282,13 +283,19 @@ export async function sendCartPurchasePaidEmail(opts: {
   const txnLine = opts.transactionId?.trim()
     ? `Transaction ID: ${opts.transactionId.trim()}\n`
     : "";
+  const purchaseLine = isCreditCheckoutReceipt
+    ? `Voucher funding: ${opts.planName}\n`
+    : `Plan: ${opts.planName}\n`;
+  const nextStepText = isCreditCheckoutReceipt
+    ? "Next step: enter the PIN from your physical card and continue to Phase 2 redemption.\n\n"
+    : "Next step: enter the PIN from your physical card and your service start date.\n\n";
   const text =
     `Thank you for your purchase.\n\n` +
-    `Plan: ${opts.planName}\n` +
+    purchaseLine +
     amountLine +
     txnLine +
     `\n` +
-    `Next step: enter the PIN from your physical card and your service start date.\n\n` +
+    nextStepText +
     documentText +
     (direct
       ? `Open this link on any device to continue (no SMS code on this step — PIN only):\n${direct}\n\n`
@@ -298,14 +305,18 @@ export async function sendCartPurchasePaidEmail(opts: {
     `These links expire in 30 days. If you did not make this purchase, contact support.\n`;
   const html =
     `<p>Thank you for your purchase.</p>` +
-    `<p><strong>Plan:</strong> ${escapeHtml(opts.planName)}</p>` +
+    `<p><strong>${isCreditCheckoutReceipt ? "Voucher funding" : "Plan"}:</strong> ${escapeHtml(opts.planName)}</p>` +
     (amountFormatted
       ? `<p><strong>Amount paid:</strong> ${escapeHtml(amountFormatted)}</p>`
       : "") +
     (opts.transactionId?.trim()
       ? `<p><strong>Transaction ID:</strong> ${escapeHtml(opts.transactionId.trim())}</p>`
       : "") +
-    `<p>Next step: enter the PIN from your physical card and your service start date.</p>` +
+    `<p>${
+      isCreditCheckoutReceipt
+        ? "Next step: enter the PIN from your physical card and continue to Phase 2 redemption."
+        : "Next step: enter the PIN from your physical card and your service start date."
+    }</p>` +
     documentHtml +
     (direct
       ? `<p><a href="${escapeHtml(direct)}">Open activation (PIN only, no SMS)</a></p>` +

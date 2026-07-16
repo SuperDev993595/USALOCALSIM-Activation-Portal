@@ -36,7 +36,7 @@ export function receiptVoucherUsage(
 
   switch (profileId) {
     case "linkup_att":
-      return `Valid for USA Pre-Paid Bundle (${data} for ${days} days — AT&T & LINKUP MOBILE)`;
+      return "Valid for USA Pre-Paid Bundle (AT&T & LINKUP MOBILE)";
     case "t_mobile":
       return `Valid to redeem your T-Mobile Unlimited USA bundle (${data} for ${days} days) — eSIM or physical SIM`;
     case "basic_usa":
