@@ -49,6 +49,9 @@ export default async function RedeemLinkupAttPage({
           accessToken={ctx.accessToken}
           resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
+          requireCpf={ctx.requireCpf}
+          initialCustomerName={ctx.initialCustomerName}
+          initialCustomerEmail={ctx.initialCustomerEmail}
           skipPinStep
           autoNetworkSlug="linkup_att"
           initialNetworkSlug="linkup_att"

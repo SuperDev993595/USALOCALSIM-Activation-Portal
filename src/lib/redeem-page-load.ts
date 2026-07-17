@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { CART_SESSION_COOKIE } from "@/lib/cart-session";
+import { isSyntheticPosEmail } from "@/lib/invoice";
 import { redeemPathForProductType, redeemPathForVoucher } from "@/lib/exclusive-voucher-redeem";
 import { ensureRedemptionAccessToken, redeemUrlWithAccess } from "@/lib/redemption-access";
 import { networkRequiredForVoucher } from "@/lib/redeem-network";
@@ -12,6 +13,10 @@ export type RedeemWizardPageContext = {
   purchaseId: string;
   accessToken: string;
   redemptionPhoneVerified: boolean;
+  /** CPF required when prepaid card retailMarket is br (feedback 2026-07-17). */
+  requireCpf: boolean;
+  initialCustomerName: string | null;
+  initialCustomerEmail: string | null;
   showTierStep: boolean;
   showNetworkStep: boolean;
   initialCoverageTier: string | null;
@@ -74,7 +79,14 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
           redemptionCoverageTier: true,
           redemptionAccessToken: true,
           redemptionAccessExpiresAt: true,
-          prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
+          customerName: true,
+          customerEmail: true,
+          prepaidCard: {
+            select: {
+              retailMarket: true,
+              voucher: { select: { voucherProductType: true, code: true } },
+            },
+          },
           voucher: { select: { voucherProductType: true, code: true } },
         },
       })
@@ -94,7 +106,14 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
         redemptionCoverageTier: true,
         redemptionAccessToken: true,
         redemptionAccessExpiresAt: true,
-        prepaidCard: { select: { voucher: { select: { voucherProductType: true, code: true } } } },
+        customerName: true,
+        customerEmail: true,
+        prepaidCard: {
+          select: {
+            retailMarket: true,
+            voucher: { select: { voucherProductType: true, code: true } },
+          },
+        },
         voucher: { select: { voucherProductType: true, code: true } },
       },
     });
@@ -122,11 +141,21 @@ export async function loadRedeemWizardPageContext(opts: LoadOpts): Promise<Redee
 
   const showNetwork = voucher ? networkRequiredForVoucher(voucher) : true;
   const useTier = showNetwork && redeemUsesTierStep();
+  const retailMarket = purchase.prepaidCard?.retailMarket?.trim().toLowerCase() ?? "";
+  const guestEmail =
+    purchase.customerEmail &&
+    !isSyntheticPosEmail(purchase.customerEmail) &&
+    !/^reconcile\+/i.test(purchase.customerEmail)
+      ? purchase.customerEmail
+      : null;
 
   return {
     purchaseId: purchase.id,
     accessToken: access,
     redemptionPhoneVerified: purchase.redemptionPhoneVerifiedAt != null,
+    requireCpf: retailMarket === "br",
+    initialCustomerName: purchase.customerName?.trim() || null,
+    initialCustomerEmail: guestEmail,
     showTierStep: useTier,
     /** Tier flow: BASIC picks network on configure step; legacy briefing uses manual network step. */
     showNetworkStep: showNetwork && !useTier,

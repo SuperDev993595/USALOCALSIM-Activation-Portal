@@ -24,6 +24,8 @@ import {
   redeemFlowRequiresEsimDeviceIds,
 } from "@/lib/redeem-esim-device";
 import { buildRedeemWizardStepMap } from "@/lib/redeem-wizard-steps";
+import { formatCpfDisplay } from "@/lib/cpf";
+import { validateRedeemIdentity } from "@/lib/redeem-identity";
 import {
   DEFAULT_SHIPPING_METHOD_ID,
   resolveShippingMethod,
@@ -120,6 +122,9 @@ export function RedeepPhase2Client({
   accessToken: accessTokenProp,
   resumeAfterPaidUpgrade = false,
   redemptionPhoneVerifiedInitial = false,
+  requireCpf = false,
+  initialCustomerName = null,
+  initialCustomerEmail = null,
   initialWizardStep: initialWizardStepProp,
   skipPinStep = false,
   showTierStep = false,
@@ -138,6 +143,10 @@ export function RedeepPhase2Client({
   resumeAfterPaidUpgrade?: boolean;
   /** Server: Phase 2 redeemer phone already verified on this purchase. */
   redemptionPhoneVerifiedInitial?: boolean;
+  /** Brazilian market cards require CPF at registration. */
+  requireCpf?: boolean;
+  initialCustomerName?: string | null;
+  initialCustomerEmail?: string | null;
   /** Override first wizard step (e.g. Three UK entry after voucher code on /redeem/enter). */
   initialWizardStep?: number;
   /** PIN already validated on /redeem/enter — start at SMS step. */
@@ -219,6 +228,9 @@ export function RedeepPhase2Client({
   });
 
   const [redeemPhone, setRedeemPhone] = useState("");
+  const [redeemFullName, setRedeemFullName] = useState(initialCustomerName?.trim() || "");
+  const [redeemEmail, setRedeemEmail] = useState(initialCustomerEmail?.trim() || "");
+  const [redeemCpf, setRedeemCpf] = useState("");
   const [redeemOtpCode, setRedeemOtpCode] = useState("");
   const [redeemOtpUiStep, setRedeemOtpUiStep] = useState<"phone" | "code">("phone");
   const [setupHighlight, setSetupHighlight] = useState<SetupHighlight>(null);
@@ -741,6 +753,30 @@ export function RedeepPhase2Client({
   async function sendRedeemSms() {
     if (!purchaseId.trim()) return;
     setError(null);
+    const identity = validateRedeemIdentity({
+      fullName: redeemFullName,
+      email: redeemEmail,
+      cpf: redeemCpf,
+      requireCpf,
+    });
+    if (!identity.ok) {
+      setError(
+        identity.field === "name"
+          ? t("nameRequired")
+          : identity.field === "email"
+            ? t("emailRequired")
+            : identity.field === "cpf"
+              ? identity.error.includes("valid CPF") && !redeemCpf.trim()
+                ? t("cpfRequired")
+                : t("cpfInvalid")
+              : identity.error,
+      );
+      return;
+    }
+    if (!redeemPhone.trim()) {
+      setError(t("errors.sms"));
+      return;
+    }
     setLoading("sms");
     try {
       const res = await fetch("/api/redeem/phone/send", {
@@ -775,6 +811,9 @@ export function RedeepPhase2Client({
           purchaseId,
           phone: redeemPhone,
           code: redeemOtpCode,
+          fullName: redeemFullName,
+          email: redeemEmail,
+          ...(redeemCpf.trim() ? { cpf: redeemCpf } : {}),
           ...(accessToken.trim() ? { accessToken: accessToken.trim() } : {}),
         }),
       });
@@ -1157,6 +1196,52 @@ export function RedeepPhase2Client({
             <div className="mt-5 space-y-4">
               {redeemOtpUiStep === "phone" ? (
                 <>
+                  <div className="space-y-2.5">
+                    <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-name-input">
+                      {t("fullNameLabel")}
+                    </label>
+                    <input
+                      id="redeem-name-input"
+                      value={redeemFullName}
+                      onChange={(e) => setRedeemFullName(e.target.value)}
+                      disabled={loading !== null}
+                      className={redeepPanelInputClass}
+                      placeholder={t("fullNamePlaceholder")}
+                      autoComplete="name"
+                    />
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-email-input">
+                      {t("emailLabel")}
+                    </label>
+                    <input
+                      id="redeem-email-input"
+                      type="email"
+                      value={redeemEmail}
+                      onChange={(e) => setRedeemEmail(e.target.value)}
+                      disabled={loading !== null}
+                      className={redeepPanelInputClass}
+                      placeholder={t("emailPlaceholder")}
+                      autoComplete="email"
+                    />
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-cpf-input">
+                      {t("cpfLabel")}
+                      {requireCpf ? " *" : ""}
+                    </label>
+                    <input
+                      id="redeem-cpf-input"
+                      value={redeemCpf}
+                      onChange={(e) => setRedeemCpf(formatCpfDisplay(e.target.value))}
+                      disabled={loading !== null}
+                      className={redeepPanelInputClass}
+                      placeholder={t("cpfPlaceholder")}
+                      inputMode="numeric"
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-slate-400">{requireCpf ? t("cpfHint") : t("cpfOptionalHint")}</p>
+                  </div>
                   <div className="space-y-2.5">
                     <label className="block text-sm font-medium text-slate-200" htmlFor="redeem-phone-input">
                       {t("phoneLabel")}

@@ -11,6 +11,9 @@ const bodySchema = z.object({
   phone: z.string().min(5),
   code: z.string().min(4),
   accessToken: z.string().optional(),
+  fullName: z.string().min(1),
+  email: z.string().min(3),
+  cpf: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -51,11 +54,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid phone number." }, { status: 400 });
   }
 
+  const retailMarket = purchase.prepaidCard?.retailMarket?.trim().toLowerCase() ?? "";
+  const requireCpf = retailMarket === "br";
+
   const result = await verifyRedeemPhoneOtpAndBindPurchase({
     purchaseId: purchase.id,
     voucherId: voucher.id,
     phoneE164,
     rawCode: body.code,
+    identity: {
+      fullName: body.fullName,
+      email: body.email,
+      cpf: body.cpf,
+      requireCpf,
+    },
   });
   if (!result.ok) {
     await recordFailedAttempt(ipKey);

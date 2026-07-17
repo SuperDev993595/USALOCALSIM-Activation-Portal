@@ -47,6 +47,9 @@ export default async function RedeemBasicUsaPage({
           accessToken={ctx.accessToken}
           resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
+          requireCpf={ctx.requireCpf}
+          initialCustomerName={ctx.initialCustomerName}
+          initialCustomerEmail={ctx.initialCustomerEmail}
           skipPinStep
           initialCoverageTier="basic"
           basicNetworkPick

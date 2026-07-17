@@ -49,6 +49,9 @@ export default async function RedeemThreeUkPage({
           accessToken={ctx.accessToken}
           resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
+          requireCpf={ctx.requireCpf}
+          initialCustomerName={ctx.initialCustomerName}
+          initialCustomerEmail={ctx.initialCustomerEmail}
           skipPinStep
           autoNetworkSlug="three_uk"
           initialNetworkSlug="three_uk"

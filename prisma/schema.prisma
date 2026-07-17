@@ -118,6 +118,8 @@ model Voucher {
   customerName       String?
   customerEmail      String?
   customerPhone      String?
+  /// Brazilian CPF digits only (11), collected at Phase 2 registration (feedback 2026-07-17).
+  customerCpf        String?
   /// Set true after Phase 2 redeemer SMS OTP (service line). Phase 1 payment does not use SMS.
   isVerified         Boolean  @default(false)
   paymentStatus      Boolean  @default(false)
@@ -222,6 +224,8 @@ model CartPurchase {
   amountPaidCents  Int
   customerName     String?
   customerEmail    String
+  /// Brazilian CPF digits only (11), collected at Phase 2 registration (feedback 2026-07-17).
+  customerCpf      String?
   status             String // "authorized" | "redeemed"
   voucherId        String?     @unique
   voucher          Voucher?    @relation(fields: [voucherId], references: [id])

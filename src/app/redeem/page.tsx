@@ -34,6 +34,9 @@ export default async function RedeemPage({
           accessToken={ctx.accessToken}
           resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
+          requireCpf={ctx.requireCpf}
+          initialCustomerName={ctx.initialCustomerName}
+          initialCustomerEmail={ctx.initialCustomerEmail}
           showTierStep={ctx.showTierStep}
           showNetworkStep={ctx.showNetworkStep}
           skipPinStep

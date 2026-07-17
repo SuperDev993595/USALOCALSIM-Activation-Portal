@@ -49,6 +49,9 @@ export default async function RedeemTmobilePage({
           accessToken={ctx.accessToken}
           resumeAfterPaidUpgrade={ctx.resumeAfterPaidUpgrade}
           redemptionPhoneVerifiedInitial={ctx.redemptionPhoneVerified}
+          requireCpf={ctx.requireCpf}
+          initialCustomerName={ctx.initialCustomerName}
+          initialCustomerEmail={ctx.initialCustomerEmail}
           skipPinStep
           autoNetworkSlug="t_mobile"
           initialNetworkSlug="t_mobile"
