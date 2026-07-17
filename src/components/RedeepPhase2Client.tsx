@@ -14,7 +14,7 @@ import {
 } from "@/lib/redeem-shipping-address";
 import { RedeemStepNav } from "@/components/RedeemStepNav";
 import type { TmobileAddonOption } from "@/components/RedeemTmobileAddons";
-import { COVERAGE_TIER, COVERAGE_TIER_ORDER, isCoverageTier, networkSlugForTier, tierRequiresEsimOnly, tierRequiresManualNetworkPick, type CoverageTier } from "@/lib/coverage-tier";
+import { COVERAGE_TIER, isCoverageTier, networkSlugForTier, tierRequiresEsimOnly, tierRequiresManualNetworkPick, type CoverageTier } from "@/lib/coverage-tier";
 import { defaultFulfillmentForTier, type RedeemQuotePayload } from "@/lib/build-redeem-quote";
 import { listTmobileAddons, type TmobileAddonSku, tmobileAddonsAvailableForRedeem } from "@/lib/tmobile-addons";
 import { localTotalsForPlan } from "@/lib/redeem-plan-selection";
@@ -340,46 +340,6 @@ export function RedeepPhase2Client({
     },
     [],
   );
-
-  const prefetchTierQuote = useCallback(
-    async (tier: CoverageTier) => {
-      if (tierRequiresManualNetworkPick(tier)) return;
-      if (!purchaseId.trim()) return;
-      const fType = defaultFulfillmentForTier(tier) as FulfillmentType;
-      const syncKey = tierQuoteSyncKey(tier, fType);
-      if (tierQuoteCacheRef.current.has(syncKey)) return;
-
-      const at = accessToken.trim();
-      try {
-        const res = await fetch("/api/redeem/quote", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            purchaseId,
-            coverageTier: tier,
-            networkSlug: networkSlugForTier(tier),
-            fulfillmentType: fType,
-            ...(voucherFromPurchase ? {} : { voucherCode }),
-            ...(at ? { accessToken: at } : {}),
-          }),
-        });
-        const data = (await res.json().catch(() => null)) as RedeemQuotePayload | null;
-        if (res.ok && data?.plans) {
-          tierQuoteCacheRef.current.set(syncKey, data);
-        }
-      } catch {
-        /* prefetch is best-effort */
-      }
-    },
-    [accessToken, purchaseId, voucherCode, voucherFromPurchase],
-  );
-
-  useEffect(() => {
-    if (wizardStep !== stepMap.setup || !showTierStep || !purchaseId.trim()) return;
-    for (const tier of COVERAGE_TIER_ORDER) {
-      void prefetchTierQuote(tier);
-    }
-  }, [wizardStep, stepMap.setup, showTierStep, purchaseId, prefetchTierQuote]);
 
   async function redeemStartFromPin() {
     setError(null);

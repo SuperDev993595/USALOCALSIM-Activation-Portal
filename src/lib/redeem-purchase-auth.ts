@@ -1,9 +1,18 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
+const redeemVoucherInclude = {
+  plan: true,
+  prepaidCard: true,
+} as const;
+
 const redeemPurchaseInclude = {
-  prepaidCard: { include: { voucher: true } },
-  voucher: true,
+  prepaidCard: {
+    include: {
+      voucher: { include: redeemVoucherInclude },
+    },
+  },
+  voucher: { include: redeemVoucherInclude },
 } satisfies Prisma.CartPurchaseInclude;
 
 export type RedeemAuthorizedPurchase = Prisma.CartPurchaseGetPayload<{

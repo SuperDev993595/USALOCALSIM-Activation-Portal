@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { exclusiveNetworkSlugForProductType } from "@/lib/exclusive-voucher-redeem";
 import { GLOBAL_NETWORK_SLUGS, type GlobalNetworkSlug } from "@/lib/network-catalog";
+import { getCachedActiveNetwork, setCachedActiveNetwork } from "@/lib/network-lookup-cache";
 import {
   VOUCHER_PRODUCT_TYPE,
   effectiveVoucherProductType,
@@ -30,10 +31,14 @@ export async function resolveNetworkForRedeem(input: {
     return null;
   }
 
+  const cached = getCachedActiveNetwork(slug);
+  if (cached !== undefined) return cached;
+
   const network = await prisma.network.findFirst({
     where: { slug, active: true },
     select: { id: true, slug: true },
   });
+  setCachedActiveNetwork(slug, network);
   return network;
 }
 

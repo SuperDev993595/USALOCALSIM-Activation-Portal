@@ -24,6 +24,13 @@ export type RedeemVoucherResolveSuccess = {
 
 export type RedeemVoucherResolveResult = RedeemVoucherResolveSuccess | RedeemVoucherResolveFailure;
 
+function asLoadedVoucher(voucher: unknown): RedeemResolvedVoucher | null {
+  if (!voucher || typeof voucher !== "object") return null;
+  const row = voucher as { id?: string; plan?: unknown };
+  if (!row.id || !row.plan || typeof row.plan !== "object") return null;
+  return voucher as RedeemResolvedVoucher;
+}
+
 async function loadVoucherById(id: string): Promise<NonNullable<RedeemResolvedVoucher> | null> {
   return prisma.voucher.findUnique({
     where: { id },
@@ -34,6 +41,7 @@ async function loadVoucherById(id: string): Promise<NonNullable<RedeemResolvedVo
 /**
  * Resolve voucher for Phase 2 redeem APIs.
  * When the purchase is already linked to a voucher, PIN is optional (validated at /redeem/enter).
+ * Prefer the already-included voucher graph from the purchase load to avoid an extra MySQL round-trip.
  */
 export async function resolveVoucherForRedeem(
   purchase: RedeemAuthorizedPurchase,
@@ -43,11 +51,15 @@ export async function resolveVoucherForRedeem(
   const pinInput = pinInputRaw?.trim() ?? "";
 
   if (!pinInput && bound) {
+    const loaded = asLoadedVoucher(bound);
+    if (loaded) return { ok: true, voucher: loaded };
     const voucher = await loadVoucherById(bound.id);
     if (voucher) return { ok: true, voucher };
   }
 
   if (pinInput && bound && (await matchesVoucherPin(bound, pinInput))) {
+    const loaded = asLoadedVoucher(bound);
+    if (loaded) return { ok: true, voucher: loaded };
     const voucher = await loadVoucherById(bound.id);
     if (voucher) return { ok: true, voucher };
   }
@@ -63,6 +75,8 @@ export async function resolveVoucherForRedeem(
           code: "VOUCHER_MISMATCH",
         };
       }
+      const loaded = asLoadedVoucher(resolved);
+      if (loaded) return { ok: true, voucher: loaded };
       const voucher = await loadVoucherById(resolved.id);
       if (voucher) return { ok: true, voucher };
     }
@@ -76,6 +90,8 @@ export async function resolveVoucherForRedeem(
   }
 
   if (bound) {
+    const loaded = asLoadedVoucher(bound);
+    if (loaded) return { ok: true, voucher: loaded };
     const voucher = await loadVoucherById(bound.id);
     if (voucher) return { ok: true, voucher };
   }
